@@ -1,3 +1,4 @@
+import SearchBox from "./SearchBox";
 export default function Hero() {
     return (
       <section className="bg-gradient-to-br from-blue-50 to-white py-20">
@@ -10,14 +11,15 @@ export default function Hero() {
             </span>
   
             <h1 className="mt-6 text-5xl font-bold text-blue-900 leading-tight">
-              Trova il professionista sanitario giusto direttamente a casa tua.
+              Trova il tuo professionista sanitario direttamente a casa tua.
             </h1>
   
             <p className="mt-6 text-xl text-gray-600">
               Infermieri, OSS, fisioterapisti, medici e molti altri
               professionisti qualificati disponibili in tutta Italia.
             </p>
-  
+            <SearchBox /> 
+
           </div>
         </div>
       </section>
