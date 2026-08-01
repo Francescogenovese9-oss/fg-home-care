@@ -29,7 +29,7 @@ export default function Header() {
 
         <nav className="hidden md:flex gap-8">
 
-          <Link href="/">Home</Link>
+          <Link href="/">Chi siamo</Link>
 
           <Link href="#">Servizi</Link>
 
