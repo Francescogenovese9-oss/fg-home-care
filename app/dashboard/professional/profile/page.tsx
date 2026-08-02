@@ -1,7 +1,7 @@
 import { redirect } from "next/navigation";
 
-import ProfessionalDocumentsForm from "@/components/professional/ProfessionalDocumentsForm";
-import ProfessionalProfileForm from "@/components/professional/ProfessionalProfileForm";
+import ProfessionalDocumentsForm from "@/components/professionals/ProfessionalDocumentsForm";
+import ProfessionalProfileForm from "@/components/professionals/ProfessionalProfileForm";
 import { createClient } from "@/lib/supabase/server";
 
 export default async function ProfessionalProfilePage() {
