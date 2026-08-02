@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 
+import ProfessionalDocumentsForm from "@/components/professional/ProfessionalDocumentsForm";
 import ProfessionalProfileForm from "@/components/professional/ProfessionalProfileForm";
 import { createClient } from "@/lib/supabase/server";
 
@@ -14,11 +15,18 @@ export default async function ProfessionalProfilePage() {
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
+  const { data: profile, error: profileError } = await supabase
     .from("profiles")
     .select("role")
     .eq("id", user.id)
     .maybeSingle();
+
+  if (profileError) {
+    console.error(
+      "Errore lettura ruolo professionista:",
+      profileError
+    );
+  }
 
   if (profile?.role !== "PROFESSIONAL") {
     redirect("/dashboard/patient");
@@ -33,16 +41,21 @@ export default async function ProfessionalProfilePage() {
           </p>
 
           <h1 className="mt-2 text-3xl font-bold text-slate-900">
-            Completa il tuo profilo
+            Completa il tuo profilo professionale
           </h1>
 
-          <p className="mt-2 text-slate-600">
-            Inserisci le informazioni professionali che saranno
-            utilizzate nella tua scheda.
+          <p className="mt-2 max-w-3xl text-slate-600">
+            Inserisci i dati professionali, le aree in cui operi,
+            la disponibilità, la tariffa e i documenti necessari
+            per la verifica del profilo.
           </p>
         </div>
 
-        <ProfessionalProfileForm />
+        <div className="space-y-8">
+          <ProfessionalProfileForm />
+
+          <ProfessionalDocumentsForm />
+        </div>
       </div>
     </main>
   );

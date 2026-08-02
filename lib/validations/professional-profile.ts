@@ -63,6 +63,10 @@ export const professionalProfileSchema = z.object({
   videoConsultations: z.boolean(),
 });
 
-export type ProfessionalProfileValues = z.infer<
+export type ProfessionalProfileInput = z.input<
+  typeof professionalProfileSchema
+>;
+
+export type ProfessionalProfileValues = z.output<
   typeof professionalProfileSchema
 >;
