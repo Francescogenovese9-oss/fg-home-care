@@ -42,6 +42,11 @@ type PublicProfessional = {
   updated_at: string;
 };
 
+type PublicProfessionalWithAvatar =
+  PublicProfessional & {
+    avatarUrl: string | null;
+  };
+
 const weekdayLabels: Record<string, string> = {
   MONDAY: "Lunedì",
   TUESDAY: "Martedì",
@@ -57,8 +62,9 @@ function getFullName(
   lastName: string | null
 ) {
   return (
-    [firstName, lastName].filter(Boolean).join(" ") ||
-    "Professionista sanitario"
+    [firstName, lastName]
+      .filter(Boolean)
+      .join(" ") || "Professionista sanitario"
   );
 }
 
@@ -66,7 +72,21 @@ function formatTime(value: string | null) {
   return value?.slice(0, 5) || "Non indicato";
 }
 
-async function getProfessional(userId: string) {
+function formatLocation(
+  city: string | null,
+  province: string | null,
+  postalCode?: string | null
+) {
+  return (
+    [city, province, postalCode]
+      .filter(Boolean)
+      .join(", ") || "Località non indicata"
+  );
+}
+
+async function getProfessional(
+  userId: string
+): Promise<PublicProfessionalWithAvatar | null> {
   const supabase = await createClient();
 
   const { data, error } = await supabase
@@ -88,7 +108,8 @@ async function getProfessional(userId: string) {
     return null;
   }
 
-  const professional = data as PublicProfessional;
+  const professional =
+    data as PublicProfessional;
 
   let avatarUrl: string | null = null;
 
@@ -97,7 +118,9 @@ async function getProfessional(userId: string) {
       data: { publicUrl },
     } = supabase.storage
       .from("avatars")
-      .getPublicUrl(professional.avatar_path);
+      .getPublicUrl(
+        professional.avatar_path
+      );
 
     avatarUrl = publicUrl;
   }
@@ -112,11 +135,14 @@ export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
   const { userId } = await params;
-  const professional = await getProfessional(userId);
+
+  const professional =
+    await getProfessional(userId);
 
   if (!professional) {
     return {
-      title: "Professionista non trovato | FG Home Care",
+      title:
+        "Professionista non trovato | FG Home Care",
       description:
         "Il profilo professionale richiesto non è disponibile.",
     };
@@ -127,20 +153,18 @@ export async function generateMetadata({
     professional.last_name
   );
 
-  const location = [
+  const location = formatLocation(
     professional.city,
-    professional.province,
-  ]
-    .filter(Boolean)
-    .join(", ");
+    professional.province
+  );
+
+  const description =
+    professional.bio?.trim().slice(0, 155) ||
+    `${professional.profession} disponibile a ${location} tramite FG Home Care.`;
 
   return {
     title: `${fullName} – ${professional.profession} | FG Home Care`,
-    description:
-      professional.bio?.slice(0, 155) ||
-      `${professional.profession} disponibile${
-        location ? ` a ${location}` : ""
-      } tramite FG Home Care.`,
+    description,
   };
 }
 
@@ -148,7 +172,9 @@ export default async function ProfessionalPublicPage({
   params,
 }: PageProps) {
   const { userId } = await params;
-  const professional = await getProfessional(userId);
+
+  const professional =
+    await getProfessional(userId);
 
   if (!professional) {
     notFound();
@@ -159,17 +185,16 @@ export default async function ProfessionalPublicPage({
     professional.last_name
   );
 
-  const location =
-    [
-      professional.city,
-      professional.province,
-      professional.postal_code,
-    ]
-      .filter(Boolean)
-      .join(", ") || "Località non indicata";
+  const location = formatLocation(
+    professional.city,
+    professional.province,
+    professional.postal_code
+  );
 
   const availableDays =
     professional.available_weekdays ?? [];
+
+  const bookingUrl = `/professionisti/${professional.user_id}/prenota`;
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -199,7 +224,7 @@ export default async function ProfessionalPublicPage({
 
             <Link
               href="/register"
-              className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
+              className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
             >
               Registrati
             </Link>
@@ -226,7 +251,9 @@ export default async function ProfessionalPublicPage({
                 />
               ) : (
                 <div className="flex h-40 w-40 items-center justify-center rounded-3xl border-4 border-white bg-blue-100 text-5xl font-bold text-blue-800 shadow-lg">
-                  {fullName.charAt(0).toUpperCase()}
+                  {fullName
+                    .charAt(0)
+                    .toUpperCase()}
                 </div>
               )}
             </div>
@@ -238,7 +265,9 @@ export default async function ProfessionalPublicPage({
                 </h1>
 
                 <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-                  <span aria-hidden="true">✓</span>
+                  <span aria-hidden="true">
+                    ✓
+                  </span>
                   Professionista verificato
                 </span>
               </div>
@@ -249,7 +278,9 @@ export default async function ProfessionalPublicPage({
 
               {professional.specialization && (
                 <p className="mt-2 text-lg text-slate-600">
-                  {professional.specialization}
+                  {
+                    professional.specialization
+                  }
                 </p>
               )}
 
@@ -278,28 +309,32 @@ export default async function ProfessionalPublicPage({
               </p>
 
               <p className="mt-2 text-3xl font-bold text-slate-900">
-                {professional.hourly_rate !== null
+                {professional.hourly_rate !==
+                null
                   ? `${Number(
                       professional.hourly_rate
                     ).toFixed(2)} €`
                   : "Da concordare"}
               </p>
 
-              {professional.hourly_rate !== null && (
+              {professional.hourly_rate !==
+                null && (
                 <p className="mt-1 text-sm text-slate-500">
                   per ora
                 </p>
               )}
 
               <Link
-                href={`/login?redirect=/professionisti/${professional.user_id}`}
+                href={bookingUrl}
                 className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-blue-700 px-5 py-3 font-semibold text-white transition hover:bg-blue-800"
               >
                 Richiedi assistenza
               </Link>
 
-              <p className="mt-3 text-center text-xs text-slate-500">
-                Accedi o registrati per inviare una richiesta.
+              <p className="mt-3 text-center text-xs leading-5 text-slate-500">
+                Accedi o registrati per
+                inviare una richiesta al
+                professionista.
               </p>
             </aside>
           </div>
@@ -356,7 +391,7 @@ export default async function ProfessionalPublicPage({
 
                 <p className="mt-2 text-sm leading-6 text-slate-600">
                   {professional.video_consultations
-                    ? "Disponibile per consulenze e valutazioni a distanza."
+                    ? "Disponibile per consulenze e valutazioni professionali a distanza."
                     : "Il professionista non offre attualmente videoconsulti."}
                 </p>
               </article>
@@ -370,14 +405,17 @@ export default async function ProfessionalPublicPage({
 
             {availableDays.length > 0 ? (
               <div className="mt-6 flex flex-wrap gap-3">
-                {availableDays.map((day) => (
-                  <span
-                    key={day}
-                    className="rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700"
-                  >
-                    {weekdayLabels[day] ?? day}
-                  </span>
-                ))}
+                {availableDays.map(
+                  (day) => (
+                    <span
+                      key={day}
+                      className="rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700"
+                    >
+                      {weekdayLabels[day] ??
+                        day}
+                    </span>
+                  )
+                )}
               </div>
             ) : (
               <p className="mt-5 text-slate-600">
@@ -400,6 +438,69 @@ export default async function ProfessionalPublicPage({
                 )}
               </p>
             </div>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+            <h2 className="text-2xl font-bold text-slate-900">
+              Come funziona la richiesta
+            </h2>
+
+            <div className="mt-6 grid gap-5 md:grid-cols-3">
+              <article className="rounded-2xl bg-slate-50 p-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-800">
+                  1
+                </div>
+
+                <h3 className="mt-4 font-bold text-slate-900">
+                  Scegli il servizio
+                </h3>
+
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Seleziona assistenza
+                  domiciliare o videoconsulto,
+                  in base ai servizi disponibili.
+                </p>
+              </article>
+
+              <article className="rounded-2xl bg-slate-50 p-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-800">
+                  2
+                </div>
+
+                <h3 className="mt-4 font-bold text-slate-900">
+                  Indica data e orario
+                </h3>
+
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Scegli un giorno compatibile
+                  con la disponibilità del
+                  professionista.
+                </p>
+              </article>
+
+              <article className="rounded-2xl bg-slate-50 p-5">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-800">
+                  3
+                </div>
+
+                <h3 className="mt-4 font-bold text-slate-900">
+                  Attendi la conferma
+                </h3>
+
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  La richiesta sarà confermata
+                  dopo l’accettazione da parte
+                  del professionista.
+                </p>
+              </article>
+            </div>
+
+            <Link
+              href={bookingUrl}
+              className="mt-7 inline-flex rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white transition hover:bg-blue-800"
+            >
+              Inizia la richiesta
+            </Link>
           </section>
         </div>
 
@@ -426,10 +527,44 @@ export default async function ProfessionalPublicPage({
                 </dt>
 
                 <dd className="mt-1 font-semibold text-slate-900">
-                  {professional.service_radius_km} km
+                  {
+                    professional.service_radius_km
+                  }{" "}
+                  km
                 </dd>
               </div>
             </dl>
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <h2 className="text-xl font-bold text-slate-900">
+              Dettagli economici
+            </h2>
+
+            <dl className="mt-5 space-y-5">
+              <div>
+                <dt className="text-sm font-semibold text-slate-500">
+                  Tariffa oraria
+                </dt>
+
+                <dd className="mt-1 text-xl font-bold text-slate-900">
+                  {professional.hourly_rate !==
+                  null
+                    ? `${Number(
+                        professional.hourly_rate
+                      ).toFixed(2)} €`
+                    : "Da concordare"}
+                </dd>
+              </div>
+            </dl>
+
+            <p className="mt-5 text-xs leading-5 text-slate-500">
+              La tariffa mostrata è
+              indicativa. Eventuali costi
+              aggiuntivi dovranno essere
+              comunicati prima della conferma
+              della prestazione.
+            </p>
           </section>
 
           <section className="rounded-3xl border border-green-200 bg-green-50 p-6">
@@ -438,8 +573,9 @@ export default async function ProfessionalPublicPage({
             </h2>
 
             <p className="mt-3 text-sm leading-6 text-green-800">
-              FG Home Care ha controllato i dati e i documenti
-              professionali caricati dall’operatore.
+              FG Home Care ha controllato i
+              dati e i documenti professionali
+              caricati dall’operatore.
             </p>
           </section>
 
@@ -449,13 +585,15 @@ export default async function ProfessionalPublicPage({
             </h2>
 
             <p className="mt-3 text-sm leading-6 text-blue-800">
-              Accedi alla piattaforma per inviare una richiesta
-              e indicare le tue necessità.
+              Invia una richiesta indicando il
+              servizio, la data, l’orario e una
+              breve descrizione delle tue
+              esigenze.
             </p>
 
             <Link
-              href={`/login?redirect=/professionisti/${professional.user_id}`}
-              className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"
+              href={bookingUrl}
+              className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
             >
               Invia una richiesta
             </Link>

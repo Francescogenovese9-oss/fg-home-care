@@ -4,6 +4,21 @@ import { redirect } from "next/navigation";
 import LogoutButton from "@/components/auth/LogoutButton";
 import { createClient } from "@/lib/supabase/server";
 
+type AppointmentStatus =
+  | "PENDING"
+  | "ACCEPTED"
+  | "REJECTED"
+  | "CANCELLED"
+  | "COMPLETED";
+
+type AppointmentSummary = {
+  id: string;
+  status: AppointmentStatus;
+  appointment_date: string;
+  appointment_time: string;
+  patient_id: string;
+};
+
 export default async function ProfessionalDashboardPage() {
   const supabase = await createClient();
 
@@ -15,20 +30,187 @@ export default async function ProfessionalDashboardPage() {
     redirect("/login");
   }
 
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("first_name, last_name, role")
-    .eq("id", user.id)
-    .maybeSingle();
+  const { data: profile, error: profileError } =
+    await supabase
+      .from("profiles")
+      .select(
+        `
+          first_name,
+          last_name,
+          email,
+          role
+        `
+      )
+      .eq("id", user.id)
+      .maybeSingle();
+
+  if (profileError) {
+    console.error(
+      "Errore lettura profilo professionista:",
+      profileError
+    );
+  }
+
+  if (profile?.role === "PATIENT") {
+    redirect("/dashboard/patient");
+  }
+
+  if (profile?.role === "ADMIN") {
+    redirect("/dashboard/admin");
+  }
 
   if (profile?.role !== "PROFESSIONAL") {
-    redirect("/dashboard/patient");
+    redirect("/login");
+  }
+
+  const {
+    data: professionalProfile,
+    error: professionalProfileError,
+  } = await supabase
+    .from("professional_profiles")
+    .select(
+      `
+        profession,
+        specialization,
+        city,
+        province,
+        profile_completed,
+        documents_submitted,
+        verification_status,
+        published
+      `
+    )
+    .eq("user_id", user.id)
+    .maybeSingle();
+
+  if (professionalProfileError) {
+    console.error(
+      "Errore lettura profilo professionale:",
+      professionalProfileError
+    );
+  }
+
+  const {
+    data: appointmentsData,
+    error: appointmentsError,
+  } = await supabase
+    .from("appointments")
+    .select(
+      `
+        id,
+        status,
+        appointment_date,
+        appointment_time,
+        patient_id
+      `
+    )
+    .eq("professional_id", user.id)
+    .order("appointment_date", {
+      ascending: true,
+    })
+    .order("appointment_time", {
+      ascending: true,
+    });
+
+  if (appointmentsError) {
+    console.error(
+      "Errore lettura richieste professionista:",
+      appointmentsError
+    );
+  }
+
+  const appointments =
+    (appointmentsData ?? []) as AppointmentSummary[];
+
+  const pendingCount = appointments.filter(
+    (appointment) =>
+      appointment.status === "PENDING"
+  ).length;
+
+  const acceptedCount = appointments.filter(
+    (appointment) =>
+      appointment.status === "ACCEPTED"
+  ).length;
+
+  const completedCount = appointments.filter(
+    (appointment) =>
+      appointment.status === "COMPLETED"
+  ).length;
+
+  const today = new Date();
+
+  today.setHours(0, 0, 0, 0);
+
+  const nextAppointment =
+    appointments.find((appointment) => {
+      if (
+        appointment.status !== "PENDING" &&
+        appointment.status !== "ACCEPTED"
+      ) {
+        return false;
+      }
+
+      const appointmentDate = new Date(
+        `${appointment.appointment_date}T${appointment.appointment_time}`
+      );
+
+      return appointmentDate.getTime() >= today.getTime();
+    }) ?? null;
+
+  let nextPatientName = "Paziente";
+
+  if (nextAppointment) {
+    const { data: patientProfile } = await supabase
+      .from("profiles")
+      .select("first_name, last_name")
+      .eq("id", nextAppointment.patient_id)
+      .maybeSingle();
+
+    if (patientProfile) {
+      nextPatientName =
+        [
+          patientProfile.first_name,
+          patientProfile.last_name,
+        ]
+          .filter(Boolean)
+          .join(" ") || "Paziente";
+    }
   }
 
   const displayName =
     [profile.first_name, profile.last_name]
       .filter(Boolean)
       .join(" ") || "Professionista";
+
+  const nextAppointmentDate = nextAppointment
+    ? new Intl.DateTimeFormat("it-IT", {
+        weekday: "long",
+        day: "2-digit",
+        month: "long",
+        year: "numeric",
+      }).format(
+        new Date(
+          `${nextAppointment.appointment_date}T12:00:00`
+        )
+      )
+    : null;
+
+  const nextAppointmentTime =
+    nextAppointment?.appointment_time.slice(0, 5) ??
+    null;
+
+  const verificationStatus =
+    professionalProfile?.verification_status ??
+    "PENDING";
+
+  const isProfileComplete =
+    professionalProfile?.profile_completed ?? false;
+
+  const documentsSubmitted =
+    professionalProfile?.documents_submitted ?? false;
+
+  const isPublished =
+    professionalProfile?.published ?? false;
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -44,48 +226,268 @@ export default async function ProfessionalDashboardPage() {
             </h1>
           </div>
 
-          <LogoutButton />
+          <div className="flex items-center gap-4">
+            <Link
+              href="/professionisti"
+              className="text-sm font-semibold text-slate-600 hover:text-blue-700"
+            >
+              Marketplace
+            </Link>
+
+            <LogoutButton />
+          </div>
         </div>
       </header>
 
       <div className="mx-auto max-w-7xl px-6 py-10">
-        <section className="rounded-2xl bg-white p-8 shadow-sm">
-          <p className="text-sm font-semibold text-blue-700">
+        <section className="rounded-3xl bg-gradient-to-br from-blue-700 to-blue-900 p-8 text-white shadow-lg">
+          <p className="text-sm font-semibold text-blue-100">
             Benvenuto
           </p>
 
-          <h2 className="mt-2 text-3xl font-bold text-slate-900">
+          <h2 className="mt-2 text-3xl font-bold">
             {displayName}
           </h2>
 
-          <p className="mt-3 max-w-2xl text-slate-600">
-            Gestisci il tuo profilo professionale, inserisci i
-            servizi offerti, la disponibilità, la tariffa e il
-            territorio in cui effettui assistenza domiciliare.
+          <p className="mt-4 max-w-2xl leading-7 text-blue-100">
+            Gestisci il tuo profilo, controlla le richieste
+            ricevute e organizza le prestazioni di assistenza.
           </p>
 
-          <Link
-            href="/dashboard/professional/profile"
-            className="mt-8 inline-flex rounded-xl bg-blue-700 px-5 py-3 font-semibold text-white transition hover:bg-blue-800"
-          >
-            Completa il profilo professionale
-          </Link>
+          <div className="mt-7 flex flex-wrap gap-4">
+            <Link
+              href="/dashboard/professional/appointments"
+              className="inline-flex rounded-xl bg-white px-5 py-3 text-sm font-semibold text-blue-800 transition hover:bg-blue-50"
+            >
+              Gestisci richieste
+            </Link>
+
+            <Link
+              href="/dashboard/professional/profile"
+              className="inline-flex rounded-xl border border-blue-300 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+            >
+              Modifica profilo
+            </Link>
+          </div>
         </section>
 
         <section className="mt-8 grid gap-6 md:grid-cols-3">
           <article className="rounded-2xl bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold text-blue-700">
-              Profilo
+            <p className="text-sm font-semibold text-amber-700">
+              In attesa
             </p>
 
-            <h3 className="mt-2 text-xl font-bold text-slate-900">
-              Dati professionali
+            <p className="mt-3 text-4xl font-bold text-slate-900">
+              {pendingCount}
+            </p>
+
+            <p className="mt-2 text-sm text-slate-600">
+              Richieste che devono ancora essere accettate
+              oppure rifiutate.
+            </p>
+
+            <Link
+              href="/dashboard/professional/appointments?status=PENDING"
+              className="mt-5 inline-flex text-sm font-semibold text-blue-700 hover:underline"
+            >
+              Visualizza richieste
+            </Link>
+          </article>
+
+          <article className="rounded-2xl bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-green-700">
+              Accettate
+            </p>
+
+            <p className="mt-3 text-4xl font-bold text-slate-900">
+              {acceptedCount}
+            </p>
+
+            <p className="mt-2 text-sm text-slate-600">
+              Prestazioni confermate e ancora da completare.
+            </p>
+
+            <Link
+              href="/dashboard/professional/appointments?status=ACCEPTED"
+              className="mt-5 inline-flex text-sm font-semibold text-blue-700 hover:underline"
+            >
+              Visualizza confermate
+            </Link>
+          </article>
+
+          <article className="rounded-2xl bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-blue-700">
+              Completate
+            </p>
+
+            <p className="mt-3 text-4xl font-bold text-slate-900">
+              {completedCount}
+            </p>
+
+            <p className="mt-2 text-sm text-slate-600">
+              Prestazioni concluse e registrate nella
+              piattaforma.
+            </p>
+
+            <Link
+              href="/dashboard/professional/appointments?status=COMPLETED"
+              className="mt-5 inline-flex text-sm font-semibold text-blue-700 hover:underline"
+            >
+              Visualizza storico
+            </Link>
+          </article>
+        </section>
+
+        <section className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
+          <article className="rounded-3xl bg-white p-8 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-blue-700">
+                  Prossima richiesta
+                </p>
+
+                <h3 className="mt-2 text-2xl font-bold text-slate-900">
+                  {nextAppointment
+                    ? nextPatientName
+                    : "Nessun appuntamento programmato"}
+                </h3>
+              </div>
+
+              {nextAppointment && (
+                <span
+                  className={
+                    nextAppointment.status === "ACCEPTED"
+                      ? "rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700"
+                      : "rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700"
+                  }
+                >
+                  {nextAppointment.status === "ACCEPTED"
+                    ? "Confermato"
+                    : "In attesa"}
+                </span>
+              )}
+            </div>
+
+            {nextAppointment ? (
+              <div className="mt-6 grid gap-4 sm:grid-cols-2">
+                <div className="rounded-2xl bg-slate-50 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Data
+                  </p>
+
+                  <p className="mt-2 font-bold capitalize text-slate-900">
+                    {nextAppointmentDate}
+                  </p>
+                </div>
+
+                <div className="rounded-2xl bg-slate-50 p-5">
+                  <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                    Orario
+                  </p>
+
+                  <p className="mt-2 font-bold text-slate-900">
+                    {nextAppointmentTime}
+                  </p>
+                </div>
+              </div>
+            ) : (
+              <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
+                <p className="text-sm leading-6 text-slate-600">
+                  Non risultano richieste future in attesa o
+                  già accettate.
+                </p>
+              </div>
+            )}
+
+            <div className="mt-6">
+              <Link
+                href="/dashboard/professional/appointments"
+                className="inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"
+              >
+                Gestisci appuntamenti
+              </Link>
+            </div>
+          </article>
+
+          <article className="rounded-3xl bg-white p-8 shadow-sm">
+            <p className="text-sm font-semibold text-blue-700">
+              Stato del profilo
+            </p>
+
+            <h3 className="mt-2 text-2xl font-bold text-slate-900">
+              Pubblicazione
             </h3>
 
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Inserisci professione, specializzazione, numero
-              d’iscrizione all’albo, Partita IVA e descrizione
-              delle tue esperienze.
+            <dl className="mt-6 space-y-5">
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Dati professionali
+                </dt>
+
+                <dd className="mt-1 font-semibold text-slate-900">
+                  {isProfileComplete
+                    ? "Completati"
+                    : "Da completare"}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Documenti
+                </dt>
+
+                <dd className="mt-1 font-semibold text-slate-900">
+                  {documentsSubmitted
+                    ? "Inviati"
+                    : "Da caricare"}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Verifica
+                </dt>
+
+                <dd className="mt-1 font-semibold text-slate-900">
+                  {verificationStatus === "APPROVED"
+                    ? "Approvato"
+                    : verificationStatus === "REJECTED"
+                      ? "Rifiutato"
+                      : "In attesa"}
+                </dd>
+              </div>
+
+              <div>
+                <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Profilo pubblico
+                </dt>
+
+                <dd className="mt-1 font-semibold text-slate-900">
+                  {isPublished
+                    ? "Pubblicato"
+                    : "Non pubblicato"}
+                </dd>
+              </div>
+            </dl>
+
+            <Link
+              href="/dashboard/professional/profile"
+              className="mt-6 inline-flex text-sm font-semibold text-blue-700 hover:underline"
+            >
+              Aggiorna profilo e documenti
+            </Link>
+          </article>
+        </section>
+
+        <section className="mt-8 grid gap-6 md:grid-cols-3">
+          <article className="rounded-2xl bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900">
+              Profilo professionale
+            </h3>
+
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Modifica professione, specializzazione, tariffa,
+              disponibilità e raggio d’intervento.
             </p>
 
             <Link
@@ -97,36 +499,31 @@ export default async function ProfessionalDashboardPage() {
           </article>
 
           <article className="rounded-2xl bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold text-blue-700">
-              Disponibilità
-            </p>
-
-            <h3 className="mt-2 text-xl font-bold text-slate-900">
-              Agenda e reperibilità
-            </h3>
-
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Imposta i giorni e gli orari in cui sei disponibile
-              per assistenza domiciliare o videoconsulto.
-            </p>
-
-            <span className="mt-5 inline-flex text-sm font-medium text-slate-400">
-              Funzione in preparazione
-            </span>
-          </article>
-
-          <article className="rounded-2xl bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold text-blue-700">
-              Prenotazioni
-            </p>
-
-            <h3 className="mt-2 text-xl font-bold text-slate-900">
+            <h3 className="text-lg font-semibold text-slate-900">
               Richieste ricevute
             </h3>
 
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Qui potrai visualizzare, accettare o rifiutare le
-              richieste di assistenza inviate dagli utenti.
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Accetta, rifiuta o completa le richieste inviate
+              dai pazienti.
+            </p>
+
+            <Link
+              href="/dashboard/professional/appointments"
+              className="mt-5 inline-flex text-sm font-semibold text-blue-700 hover:underline"
+            >
+              Gestisci richieste
+            </Link>
+          </article>
+
+          <article className="rounded-2xl bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900">
+              Agenda professionale
+            </h3>
+
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Presto potrai visualizzare gli appuntamenti in
+              un calendario e bloccare giorni e orari.
             </p>
 
             <span className="mt-5 inline-flex text-sm font-medium text-slate-400">
@@ -137,14 +534,59 @@ export default async function ProfessionalDashboardPage() {
 
         <section className="mt-8 rounded-2xl border border-blue-100 bg-blue-50 p-6">
           <h3 className="text-lg font-bold text-slate-900">
-            Completa il profilo prima della pubblicazione
+            Informazioni professionali
           </h3>
 
-          <p className="mt-2 max-w-3xl text-sm leading-6 text-slate-600">
-            Il profilo sarà visibile nella ricerca solo dopo il
-            completamento dei dati e la verifica da parte di
-            FG Home Care.
-          </p>
+          <dl className="mt-5 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Professione
+              </dt>
+
+              <dd className="mt-1 font-semibold text-slate-900">
+                {professionalProfile?.profession ||
+                  "Non indicata"}
+              </dd>
+            </div>
+
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Specializzazione
+              </dt>
+
+              <dd className="mt-1 font-semibold text-slate-900">
+                {professionalProfile?.specialization ||
+                  "Non indicata"}
+              </dd>
+            </div>
+
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Località
+              </dt>
+
+              <dd className="mt-1 font-semibold text-slate-900">
+                {[
+                  professionalProfile?.city,
+                  professionalProfile?.province,
+                ]
+                  .filter(Boolean)
+                  .join(", ") || "Non indicata"}
+              </dd>
+            </div>
+
+            <div>
+              <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                Email account
+              </dt>
+
+              <dd className="mt-1 break-all font-semibold text-slate-900">
+                {profile.email ??
+                  user.email ??
+                  "Non disponibile"}
+              </dd>
+            </div>
+          </dl>
         </section>
       </div>
     </main>
