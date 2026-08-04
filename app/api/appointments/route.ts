@@ -13,15 +13,48 @@ const weekdayMap: Record<number, string> = {
   6: "SATURDAY",
 };
 
-function normalizeTime(value: string | null | undefined) {
+function normalizeTime(
+  value: string | null | undefined
+) {
   return value?.slice(0, 5) ?? null;
+}
+
+function convertTimeToMinutes(time: string) {
+  const [hours, minutes] = time
+    .split(":")
+    .map(Number);
+
+  return hours * 60 + minutes;
+}
+
+function formatMinutesAsTime(totalMinutes: number) {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return `${String(hours).padStart(
+    2,
+    "0"
+  )}:${String(minutes).padStart(2, "0")}`;
+}
+
+function addMinutesToTime(
+  time: string,
+  minutesToAdd: number
+) {
+  const startingMinutes =
+    convertTimeToMinutes(time);
+
+  return formatMinutesAsTime(
+    startingMinutes + minutesToAdd
+  );
 }
 
 export async function POST(request: NextRequest) {
   try {
     const body: unknown = await request.json();
 
-    const validation = appointmentSchema.safeParse(body);
+    const validation =
+      appointmentSchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
@@ -43,7 +76,10 @@ export async function POST(request: NextRequest) {
     } = await supabase.auth.getUser();
 
     if (userError) {
-      console.error("Errore lettura utente:", userError);
+      console.error(
+        "Errore lettura utente:",
+        userError
+      );
     }
 
     if (!user) {
@@ -110,9 +146,8 @@ export async function POST(request: NextRequest) {
     }
 
     /*
-     * Usiamo la vista pubblica perché è leggibile anche
-     * dall’account paziente e contiene soltanto professionisti
-     * approvati e pubblicati.
+     * Leggiamo il professionista dalla vista pubblica,
+     * che contiene soltanto profili approvati e pubblicati.
      */
     const {
       data: professional,
@@ -132,7 +167,10 @@ export async function POST(request: NextRequest) {
           published
         `
       )
-      .eq("user_id", values.professionalId)
+      .eq(
+        "user_id",
+        values.professionalId
+      )
       .maybeSingle();
 
     if (professionalError) {
@@ -161,7 +199,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (
-      professional.verification_status !== "APPROVED" ||
+      professional.verification_status !==
+        "APPROVED" ||
       professional.published !== true
     ) {
       return NextResponse.json(
@@ -174,7 +213,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (
-      values.serviceType === "HOME_VISIT" &&
+      values.serviceType ===
+        "HOME_VISIT" &&
       !professional.home_visits
     ) {
       return NextResponse.json(
@@ -187,7 +227,8 @@ export async function POST(request: NextRequest) {
     }
 
     if (
-      values.serviceType === "VIDEO_CONSULTATION" &&
+      values.serviceType ===
+        "VIDEO_CONSULTATION" &&
       !professional.video_consultations
     ) {
       return NextResponse.json(
@@ -199,32 +240,61 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    /*
-     * Usiamo mezzogiorno per evitare variazioni del giorno
-     * causate dal fuso orario durante il calcolo del weekday.
-     */
-    const selectedDate = new Date(
-      `${values.appointmentDate}T12:00:00`
+    const selectedDateTime = new Date(
+      `${values.appointmentDate}T${values.appointmentTime}:00`
     );
 
-    if (Number.isNaN(selectedDate.getTime())) {
+    if (
+      Number.isNaN(
+        selectedDateTime.getTime()
+      )
+    ) {
       return NextResponse.json(
         {
-          message: "La data selezionata non è valida.",
+          message:
+            "La data o l’orario selezionati non sono validi.",
         },
         { status: 400 }
       );
     }
 
+    if (
+      selectedDateTime.getTime() <=
+      Date.now()
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            "La data e l’orario devono essere successivi al momento attuale.",
+        },
+        { status: 400 }
+      );
+    }
+
+    /*
+     * Utilizziamo mezzogiorno per calcolare
+     * il giorno della settimana senza variazioni
+     * causate dal fuso orario.
+     */
+    const selectedDateForWeekday =
+      new Date(
+        `${values.appointmentDate}T12:00:00`
+      );
+
     const selectedWeekday =
-      weekdayMap[selectedDate.getDay()];
+      weekdayMap[
+        selectedDateForWeekday.getDay()
+      ];
 
     const availableWeekdays: string[] =
-      professional.available_weekdays ?? [];
+      professional.available_weekdays ??
+      [];
 
     if (
       availableWeekdays.length > 0 &&
-      !availableWeekdays.includes(selectedWeekday)
+      !availableWeekdays.includes(
+        selectedWeekday
+      )
     ) {
       return NextResponse.json(
         {
@@ -235,17 +305,46 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const availableFrom = normalizeTime(
-      professional.available_from
-    );
+    const availableFrom =
+      normalizeTime(
+        professional.available_from
+      );
 
-    const availableTo = normalizeTime(
-      professional.available_to
-    );
+    const availableTo =
+      normalizeTime(
+        professional.available_to
+      );
+
+    const appointmentEndTime =
+      addMinutesToTime(
+        values.appointmentTime,
+        values.durationMinutes
+      );
+
+    /*
+     * Evitiamo appuntamenti che terminano
+     * nel giorno successivo.
+     */
+    if (
+      convertTimeToMinutes(
+        values.appointmentTime
+      ) +
+        values.durationMinutes >=
+      24 * 60
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            "La prestazione non può terminare nel giorno successivo.",
+        },
+        { status: 400 }
+      );
+    }
 
     if (
       availableFrom &&
-      values.appointmentTime < availableFrom
+      values.appointmentTime <
+        availableFrom
     ) {
       return NextResponse.json(
         {
@@ -257,26 +356,88 @@ export async function POST(request: NextRequest) {
 
     if (
       availableTo &&
-      values.appointmentTime > availableTo
+      appointmentEndTime > availableTo
     ) {
       return NextResponse.json(
         {
-          message: `Il professionista è disponibile fino alle ${availableTo}.`,
+          message:
+            `La prestazione terminerebbe alle ${appointmentEndTime}, ` +
+            `ma il professionista è disponibile fino alle ${availableTo}.`,
         },
         { status: 400 }
       );
     }
 
     /*
-     * Verifichiamo se esiste già una richiesta attiva
-     * per lo stesso professionista, giorno e orario.
+     * Controllo dei blocchi inseriti
+     * nell’agenda dal professionista.
      */
     const {
-      data: conflictingAppointments,
+      data: isAvailable,
+      error: availabilityError,
+    } = await supabase.rpc(
+      "is_professional_available",
+      {
+        p_professional_id:
+          values.professionalId,
+        p_appointment_date:
+          values.appointmentDate,
+        p_appointment_time:
+          values.appointmentTime,
+        p_duration_minutes:
+          values.durationMinutes,
+      }
+    );
+
+    if (availabilityError) {
+      console.error(
+        "Errore verifica indisponibilità:",
+        {
+          message:
+            availabilityError.message,
+          code: availabilityError.code,
+          details:
+            availabilityError.details,
+          hint: availabilityError.hint,
+        }
+      );
+
+      return NextResponse.json(
+        {
+          message:
+            "Non è stato possibile verificare la disponibilità del professionista.",
+        },
+        { status: 500 }
+      );
+    }
+
+    if (isAvailable !== true) {
+      return NextResponse.json(
+        {
+          message:
+            "Il professionista non è disponibile nella data o nella fascia oraria selezionata.",
+        },
+        { status: 409 }
+      );
+    }
+
+    /*
+     * Recuperiamo gli appuntamenti attivi
+     * del professionista nella stessa data.
+     */
+    const {
+      data: existingAppointments,
       error: conflictError,
     } = await supabase
       .from("appointments")
-      .select("id")
+      .select(
+        `
+          id,
+          appointment_time,
+          duration_minutes,
+          status
+        `
+      )
       .eq(
         "professional_id",
         values.professionalId
@@ -285,49 +446,91 @@ export async function POST(request: NextRequest) {
         "appointment_date",
         values.appointmentDate
       )
-      .eq(
-        "appointment_time",
-        values.appointmentTime
-      )
-      .in("status", ["PENDING", "ACCEPTED"])
-      .limit(1);
+      .in("status", [
+        "PENDING",
+        "ACCEPTED",
+      ]);
 
     if (conflictError) {
       console.error(
-        "Errore controllo disponibilità:",
-        conflictError
+        "Errore controllo appuntamenti:",
+        {
+          message:
+            conflictError.message,
+          code: conflictError.code,
+          details:
+            conflictError.details,
+          hint: conflictError.hint,
+        }
       );
 
       return NextResponse.json(
         {
           message:
-            "Non è stato possibile verificare la disponibilità dell’orario.",
+            "Non è stato possibile verificare gli appuntamenti già presenti.",
         },
         { status: 500 }
       );
     }
 
-    if (
-      conflictingAppointments &&
-      conflictingAppointments.length > 0
-    ) {
+    const requestedStart =
+      convertTimeToMinutes(
+        values.appointmentTime
+      );
+
+    const requestedEnd =
+      requestedStart +
+      values.durationMinutes;
+
+    const hasAppointmentConflict =
+      (
+        existingAppointments ?? []
+      ).some((appointment) => {
+        const existingStart =
+          convertTimeToMinutes(
+            appointment.appointment_time.slice(
+              0,
+              5
+            )
+          );
+
+        const existingEnd =
+          existingStart +
+          appointment.duration_minutes;
+
+        return (
+          requestedStart < existingEnd &&
+          requestedEnd > existingStart
+        );
+      });
+
+    if (hasAppointmentConflict) {
       return NextResponse.json(
         {
           message:
-            "L’orario selezionato non è più disponibile.",
+            "La fascia oraria selezionata si sovrappone a un’altra richiesta o prenotazione.",
         },
         { status: 409 }
       );
     }
 
-    console.log("Creazione appuntamento:", {
-      patientId: user.id,
-      professionalId: values.professionalId,
-      serviceType: values.serviceType,
-      appointmentDate: values.appointmentDate,
-      appointmentTime: values.appointmentTime,
-      durationMinutes: values.durationMinutes,
-    });
+    console.log(
+      "Creazione appuntamento:",
+      {
+        patientId: user.id,
+        professionalId:
+          values.professionalId,
+        serviceType:
+          values.serviceType,
+        appointmentDate:
+          values.appointmentDate,
+        appointmentTime:
+          values.appointmentTime,
+        appointmentEndTime,
+        durationMinutes:
+          values.durationMinutes,
+      }
+    );
 
     const {
       data: appointment,
@@ -336,14 +539,21 @@ export async function POST(request: NextRequest) {
       .from("appointments")
       .insert({
         patient_id: user.id,
-        professional_id: values.professionalId,
-        service_type: values.serviceType,
-        appointment_date: values.appointmentDate,
-        appointment_time: values.appointmentTime,
-        duration_minutes: values.durationMinutes,
-        hourly_rate: professional.hourly_rate,
+        professional_id:
+          values.professionalId,
+        service_type:
+          values.serviceType,
+        appointment_date:
+          values.appointmentDate,
+        appointment_time:
+          values.appointmentTime,
+        duration_minutes:
+          values.durationMinutes,
+        hourly_rate:
+          professional.hourly_rate,
         patient_notes:
-          values.patientNotes?.trim() || null,
+          values.patientNotes?.trim() ||
+          null,
         status: "PENDING",
       })
       .select(
@@ -364,12 +574,15 @@ export async function POST(request: NextRequest) {
       .single();
 
     if (insertError) {
-      console.error("Errore creazione appuntamento:", {
-        message: insertError.message,
-        code: insertError.code,
-        details: insertError.details,
-        hint: insertError.hint,
-      });
+      console.error(
+        "Errore creazione appuntamento:",
+        {
+          message: insertError.message,
+          code: insertError.code,
+          details: insertError.details,
+          hint: insertError.hint,
+        }
+      );
 
       return NextResponse.json(
         {
