@@ -19,30 +19,54 @@ type AppointmentSummary = {
   patient_id: string;
 };
 
+type ProfessionalProfile = {
+  profession: string | null;
+  specialization: string | null;
+  city: string | null;
+  province: string | null;
+  profile_completed: boolean;
+  documents_submitted: boolean;
+  verification_status:
+    | "PENDING"
+    | "APPROVED"
+    | "REJECTED";
+  published: boolean;
+};
+
 export default async function ProfessionalDashboardPage() {
   const supabase = await createClient();
 
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
+
+  if (userError) {
+    console.error(
+      "Errore lettura utente professionista:",
+      userError
+    );
+  }
 
   if (!user) {
     redirect("/login");
   }
 
-  const { data: profile, error: profileError } =
-    await supabase
-      .from("profiles")
-      .select(
-        `
-          first_name,
-          last_name,
-          email,
-          role
-        `
-      )
-      .eq("id", user.id)
-      .maybeSingle();
+  const {
+    data: profile,
+    error: profileError,
+  } = await supabase
+    .from("profiles")
+    .select(
+      `
+        first_name,
+        last_name,
+        email,
+        role
+      `
+    )
+    .eq("id", user.id)
+    .maybeSingle();
 
   if (profileError) {
     console.error(
@@ -64,7 +88,7 @@ export default async function ProfessionalDashboardPage() {
   }
 
   const {
-    data: professionalProfile,
+    data: professionalProfileData,
     error: professionalProfileError,
   } = await supabase
     .from("professional_profiles")
@@ -89,6 +113,9 @@ export default async function ProfessionalDashboardPage() {
       professionalProfileError
     );
   }
+
+  const professionalProfile =
+    professionalProfileData as ProfessionalProfile | null;
 
   const {
     data: appointmentsData,
@@ -137,9 +164,7 @@ export default async function ProfessionalDashboardPage() {
       appointment.status === "COMPLETED"
   ).length;
 
-  const today = new Date();
-
-  today.setHours(0, 0, 0, 0);
+  const now = new Date();
 
   const nextAppointment =
     appointments.find((appointment) => {
@@ -150,21 +175,37 @@ export default async function ProfessionalDashboardPage() {
         return false;
       }
 
-      const appointmentDate = new Date(
+      const appointmentDateTime = new Date(
         `${appointment.appointment_date}T${appointment.appointment_time}`
       );
 
-      return appointmentDate.getTime() >= today.getTime();
+      return (
+        !Number.isNaN(
+          appointmentDateTime.getTime()
+        ) &&
+        appointmentDateTime.getTime() >=
+          now.getTime()
+      );
     }) ?? null;
 
   let nextPatientName = "Paziente";
 
   if (nextAppointment) {
-    const { data: patientProfile } = await supabase
+    const {
+      data: patientProfile,
+      error: patientProfileError,
+    } = await supabase
       .from("profiles")
       .select("first_name, last_name")
       .eq("id", nextAppointment.patient_id)
       .maybeSingle();
+
+    if (patientProfileError) {
+      console.error(
+        "Errore lettura prossimo paziente:",
+        patientProfileError
+      );
+    }
 
     if (patientProfile) {
       nextPatientName =
@@ -175,6 +216,28 @@ export default async function ProfessionalDashboardPage() {
           .filter(Boolean)
           .join(" ") || "Paziente";
     }
+  }
+
+  const {
+    count: futureUnavailabilityCount,
+    error: unavailabilityCountError,
+  } = await supabase
+    .from("professional_unavailability")
+    .select("id", {
+      count: "exact",
+      head: true,
+    })
+    .eq("professional_id", user.id)
+    .gte(
+      "unavailable_date",
+      new Date().toISOString().slice(0, 10)
+    );
+
+  if (unavailabilityCountError) {
+    console.error(
+      "Errore conteggio indisponibilità:",
+      unavailabilityCountError
+    );
   }
 
   const displayName =
@@ -196,21 +259,33 @@ export default async function ProfessionalDashboardPage() {
     : null;
 
   const nextAppointmentTime =
-    nextAppointment?.appointment_time.slice(0, 5) ??
-    null;
+    nextAppointment?.appointment_time.slice(
+      0,
+      5
+    ) ?? null;
 
   const verificationStatus =
     professionalProfile?.verification_status ??
     "PENDING";
 
   const isProfileComplete =
-    professionalProfile?.profile_completed ?? false;
+    professionalProfile?.profile_completed ??
+    false;
 
   const documentsSubmitted =
-    professionalProfile?.documents_submitted ?? false;
+    professionalProfile?.documents_submitted ??
+    false;
 
   const isPublished =
     professionalProfile?.published ?? false;
+
+  const location =
+    [
+      professionalProfile?.city,
+      professionalProfile?.province,
+    ]
+      .filter(Boolean)
+      .join(", ") || "Non indicata";
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -226,12 +301,19 @@ export default async function ProfessionalDashboardPage() {
             </h1>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Link
               href="/professionisti"
               className="text-sm font-semibold text-slate-600 hover:text-blue-700"
             >
               Marketplace
+            </Link>
+
+            <Link
+              href="/dashboard/professional/calendar"
+              className="text-sm font-semibold text-slate-600 hover:text-blue-700"
+            >
+              Agenda
             </Link>
 
             <LogoutButton />
@@ -250,8 +332,9 @@ export default async function ProfessionalDashboardPage() {
           </h2>
 
           <p className="mt-4 max-w-2xl leading-7 text-blue-100">
-            Gestisci il tuo profilo, controlla le richieste
-            ricevute e organizza le prestazioni di assistenza.
+            Gestisci il tuo profilo, controlla le
+            richieste ricevute e organizza la tua
+            agenda professionale.
           </p>
 
           <div className="mt-7 flex flex-wrap gap-4">
@@ -263,6 +346,13 @@ export default async function ProfessionalDashboardPage() {
             </Link>
 
             <Link
+              href="/dashboard/professional/calendar"
+              className="inline-flex rounded-xl border border-blue-300 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+            >
+              Apri agenda
+            </Link>
+
+            <Link
               href="/dashboard/professional/profile"
               className="inline-flex rounded-xl border border-blue-300 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
             >
@@ -271,7 +361,7 @@ export default async function ProfessionalDashboardPage() {
           </div>
         </section>
 
-        <section className="mt-8 grid gap-6 md:grid-cols-3">
+        <section className="mt-8 grid gap-6 md:grid-cols-4">
           <article className="rounded-2xl bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold text-amber-700">
               In attesa
@@ -282,8 +372,8 @@ export default async function ProfessionalDashboardPage() {
             </p>
 
             <p className="mt-2 text-sm text-slate-600">
-              Richieste che devono ancora essere accettate
-              oppure rifiutate.
+              Richieste che devono ancora essere
+              accettate o rifiutate.
             </p>
 
             <Link
@@ -304,7 +394,8 @@ export default async function ProfessionalDashboardPage() {
             </p>
 
             <p className="mt-2 text-sm text-slate-600">
-              Prestazioni confermate e ancora da completare.
+              Prestazioni confermate e ancora da
+              completare.
             </p>
 
             <Link
@@ -325,8 +416,8 @@ export default async function ProfessionalDashboardPage() {
             </p>
 
             <p className="mt-2 text-sm text-slate-600">
-              Prestazioni concluse e registrate nella
-              piattaforma.
+              Prestazioni concluse e registrate
+              nella piattaforma.
             </p>
 
             <Link
@@ -336,6 +427,28 @@ export default async function ProfessionalDashboardPage() {
               Visualizza storico
             </Link>
           </article>
+
+          <article className="rounded-2xl bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-red-700">
+              Indisponibilità
+            </p>
+
+            <p className="mt-3 text-4xl font-bold text-slate-900">
+              {futureUnavailabilityCount ?? 0}
+            </p>
+
+            <p className="mt-2 text-sm text-slate-600">
+              Giornate o fasce orarie future già
+              bloccate.
+            </p>
+
+            <Link
+              href="/dashboard/professional/calendar"
+              className="mt-5 inline-flex text-sm font-semibold text-blue-700 hover:underline"
+            >
+              Gestisci agenda
+            </Link>
+          </article>
         </section>
 
         <section className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
@@ -343,7 +456,7 @@ export default async function ProfessionalDashboardPage() {
             <div className="flex flex-wrap items-center justify-between gap-4">
               <div>
                 <p className="text-sm font-semibold text-blue-700">
-                  Prossima richiesta
+                  Prossimo appuntamento
                 </p>
 
                 <h3 className="mt-2 text-2xl font-bold text-slate-900">
@@ -356,12 +469,14 @@ export default async function ProfessionalDashboardPage() {
               {nextAppointment && (
                 <span
                   className={
-                    nextAppointment.status === "ACCEPTED"
+                    nextAppointment.status ===
+                    "ACCEPTED"
                       ? "rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700"
                       : "rounded-full border border-amber-200 bg-amber-50 px-3 py-1 text-xs font-semibold text-amber-700"
                   }
                 >
-                  {nextAppointment.status === "ACCEPTED"
+                  {nextAppointment.status ===
+                  "ACCEPTED"
                     ? "Confermato"
                     : "In attesa"}
                 </span>
@@ -393,18 +508,25 @@ export default async function ProfessionalDashboardPage() {
             ) : (
               <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
                 <p className="text-sm leading-6 text-slate-600">
-                  Non risultano richieste future in attesa o
-                  già accettate.
+                  Non risultano richieste future in
+                  attesa o già accettate.
                 </p>
               </div>
             )}
 
-            <div className="mt-6">
+            <div className="mt-6 flex flex-wrap gap-4">
               <Link
                 href="/dashboard/professional/appointments"
                 className="inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"
               >
                 Gestisci appuntamenti
+              </Link>
+
+              <Link
+                href="/dashboard/professional/calendar"
+                className="inline-flex rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+              >
+                Visualizza agenda
               </Link>
             </div>
           </article>
@@ -449,9 +571,11 @@ export default async function ProfessionalDashboardPage() {
                 </dt>
 
                 <dd className="mt-1 font-semibold text-slate-900">
-                  {verificationStatus === "APPROVED"
+                  {verificationStatus ===
+                  "APPROVED"
                     ? "Approvato"
-                    : verificationStatus === "REJECTED"
+                    : verificationStatus ===
+                        "REJECTED"
                       ? "Rifiutato"
                       : "In attesa"}
                 </dd>
@@ -486,8 +610,10 @@ export default async function ProfessionalDashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Modifica professione, specializzazione, tariffa,
-              disponibilità e raggio d’intervento.
+              Modifica professione,
+              specializzazione, tariffa,
+              disponibilità e raggio
+              d’intervento.
             </p>
 
             <Link
@@ -504,8 +630,8 @@ export default async function ProfessionalDashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Accetta, rifiuta o completa le richieste inviate
-              dai pazienti.
+              Accetta, rifiuta o completa le
+              richieste inviate dai pazienti.
             </p>
 
             <Link
@@ -522,13 +648,17 @@ export default async function ProfessionalDashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Presto potrai visualizzare gli appuntamenti in
-              un calendario e bloccare giorni e orari.
+              Visualizza gli appuntamenti e
+              blocca giorni o fasce orarie in
+              cui non sei disponibile.
             </p>
 
-            <span className="mt-5 inline-flex text-sm font-medium text-slate-400">
-              Funzione in preparazione
-            </span>
+            <Link
+              href="/dashboard/professional/calendar"
+              className="mt-5 inline-flex text-sm font-semibold text-blue-700 hover:underline"
+            >
+              Apri agenda
+            </Link>
           </article>
         </section>
 
@@ -555,7 +685,8 @@ export default async function ProfessionalDashboardPage() {
               </dt>
 
               <dd className="mt-1 font-semibold text-slate-900">
-                {professionalProfile?.specialization ||
+                {professionalProfile
+                  ?.specialization ||
                   "Non indicata"}
               </dd>
             </div>
@@ -566,12 +697,7 @@ export default async function ProfessionalDashboardPage() {
               </dt>
 
               <dd className="mt-1 font-semibold text-slate-900">
-                {[
-                  professionalProfile?.city,
-                  professionalProfile?.province,
-                ]
-                  .filter(Boolean)
-                  .join(", ") || "Non indicata"}
+                {location}
               </dd>
             </div>
 
