@@ -11,7 +11,8 @@ type NotificationType =
   | "APPOINTMENT_ACCEPTED"
   | "APPOINTMENT_REJECTED"
   | "APPOINTMENT_CANCELLED"
-  | "APPOINTMENT_COMPLETED";
+  | "APPOINTMENT_COMPLETED"
+  | "MESSAGE_RECEIVED";
 
 type NotificationRecord = {
   id: string;
@@ -41,6 +42,9 @@ function getNotificationIcon(
     case "APPOINTMENT_COMPLETED":
       return "🏁";
 
+    case "MESSAGE_RECEIVED":
+      return "💬";
+
     default:
       return "📅";
   }
@@ -61,6 +65,9 @@ function getNotificationLabel(
 
     case "APPOINTMENT_COMPLETED":
       return "Prestazione completata";
+
+    case "MESSAGE_RECEIVED":
+      return "Nuovo messaggio";
 
     default:
       return "Nuova richiesta";

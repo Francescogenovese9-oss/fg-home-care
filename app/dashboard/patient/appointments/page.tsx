@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import CancelAppointmentButton from "@/components/appointments/CancelAppointmentButton";
 import LogoutButton from "@/components/auth/LogoutButton";
+import ChatLink from "@/components/chat/ChatLink";
 import { createClient } from "@/lib/supabase/server";
 
 type AppointmentStatus =
@@ -12,42 +13,38 @@ type AppointmentStatus =
   | "CANCELLED"
   | "COMPLETED";
 
+type ServiceType =
+  | "HOME_VISIT"
+  | "VIDEO_CONSULTATION";
+
 type Appointment = {
   id: string;
   professional_id: string;
-
-  service_type:
-    | "HOME_VISIT"
-    | "VIDEO_CONSULTATION";
-
+  service_type: ServiceType;
   appointment_date: string;
   appointment_time: string;
   duration_minutes: number;
-
   hourly_rate: number | null;
-
   patient_notes: string | null;
   professional_notes: string | null;
-
   status: AppointmentStatus;
-
   created_at: string;
   updated_at: string;
 };
 
 type PublicProfessional = {
   user_id: string;
-
   first_name: string | null;
   last_name: string | null;
-
   profession: string;
   specialization: string | null;
-
   city: string | null;
   province: string | null;
-
   avatar_path: string | null;
+};
+
+type UnreadMessageRecord = {
+  appointment_id: string;
 };
 
 type SearchParams = {
@@ -57,12 +54,6 @@ type SearchParams = {
 type PageProps = {
   searchParams: Promise<SearchParams>;
 };
-
-type AppointmentWithProfessional =
-  Appointment & {
-    professional: PublicProfessional | null;
-    avatarUrl: string | null;
-  };
 
 const allowedStatuses: AppointmentStatus[] = [
   "PENDING",
@@ -75,11 +66,9 @@ const allowedStatuses: AppointmentStatus[] = [
 function getSingleValue(
   value: string | string[] | undefined
 ) {
-  if (Array.isArray(value)) {
-    return value[0] ?? "";
-  }
-
-  return value ?? "";
+  return Array.isArray(value)
+    ? value[0] ?? ""
+    : value ?? "";
 }
 
 function getStatusLabel(
@@ -125,7 +114,7 @@ function getStatusClass(
 }
 
 function getServiceLabel(
-  serviceType: Appointment["service_type"]
+  serviceType: ServiceType
 ) {
   return serviceType ===
     "VIDEO_CONSULTATION"
@@ -148,59 +137,6 @@ function formatTime(value: string) {
   return value.slice(0, 5);
 }
 
-function formatCreatedAt(value: string) {
-  return new Intl.DateTimeFormat("it-IT", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(value));
-}
-
-function getProfessionalName(
-  professional: PublicProfessional | null
-) {
-  if (!professional) {
-    return "Professionista sanitario";
-  }
-
-  return (
-    [
-      professional.first_name,
-      professional.last_name,
-    ]
-      .filter(Boolean)
-      .join(" ") ||
-    "Professionista sanitario"
-  );
-}
-
-function getProfessionalLocation(
-  professional: PublicProfessional | null
-) {
-  if (!professional) {
-    return "";
-  }
-
-  return [
-    professional.city,
-    professional.province,
-  ]
-    .filter(Boolean)
-    .join(", ");
-}
-
-function isChatAvailable(
-  status: AppointmentStatus
-) {
-  return [
-    "PENDING",
-    "ACCEPTED",
-    "COMPLETED",
-  ].includes(status);
-}
-
 export default async function PatientAppointmentsPage({
   searchParams,
 }: PageProps) {
@@ -213,7 +149,7 @@ export default async function PatientAppointmentsPage({
 
   if (userError) {
     console.error(
-      "Errore lettura utente prenotazioni:",
+      "Errore lettura utente paziente:",
       userError
     );
   }
@@ -240,10 +176,7 @@ export default async function PatientAppointmentsPage({
     );
   }
 
-  if (
-    accountProfile?.role ===
-    "PROFESSIONAL"
-  ) {
+  if (accountProfile?.role === "PROFESSIONAL") {
     redirect(
       "/dashboard/professional/appointments"
     );
@@ -259,8 +192,9 @@ export default async function PatientAppointmentsPage({
 
   const params = await searchParams;
 
-  const requestedStatus =
-    getSingleValue(params.status).toUpperCase() as AppointmentStatus;
+  const requestedStatus = getSingleValue(
+    params.status
+  ).toUpperCase() as AppointmentStatus;
 
   const selectedStatus =
     allowedStatuses.includes(requestedStatus)
@@ -316,6 +250,64 @@ export default async function PatientAppointmentsPage({
   const appointments =
     (appointmentsData ?? []) as Appointment[];
 
+  /*
+   * Recupera il numero dei messaggi non letti
+   * per ogni prenotazione mostrata.
+   */
+  const appointmentIds = appointments.map(
+    (appointment) => appointment.id
+  );
+
+  let unreadMessages: UnreadMessageRecord[] =
+    [];
+
+  if (appointmentIds.length > 0) {
+    const {
+      data: unreadMessagesData,
+      error: unreadMessagesError,
+    } = await supabase
+      .from("appointment_messages")
+      .select("appointment_id")
+      .in(
+        "appointment_id",
+        appointmentIds
+      )
+      .neq("sender_id", user.id)
+      .eq("read", false);
+
+    if (unreadMessagesError) {
+      console.error(
+        "Errore lettura messaggi non letti:",
+        unreadMessagesError
+      );
+    }
+
+    unreadMessages =
+      (unreadMessagesData ??
+        []) as UnreadMessageRecord[];
+  }
+
+  const unreadMessagesMap = new Map<
+    string,
+    number
+  >();
+
+  for (const message of unreadMessages) {
+    const currentCount =
+      unreadMessagesMap.get(
+        message.appointment_id
+      ) ?? 0;
+
+    unreadMessagesMap.set(
+      message.appointment_id,
+      currentCount + 1
+    );
+  }
+
+  /*
+   * Recupera i dati pubblici dei professionisti
+   * associati alle prenotazioni.
+   */
   const professionalIds = Array.from(
     new Set(
       appointments.map(
@@ -367,7 +359,7 @@ export default async function PatientAppointmentsPage({
     ])
   );
 
-  const appointmentsWithProfessionals: AppointmentWithProfessional[] =
+  const appointmentsWithProfessionals =
     appointments.map((appointment) => {
       const professional =
         professionalsMap.get(
@@ -392,6 +384,10 @@ export default async function PatientAppointmentsPage({
         ...appointment,
         professional,
         avatarUrl,
+        unreadMessagesCount:
+          unreadMessagesMap.get(
+            appointment.id
+          ) ?? 0,
       };
     });
 
@@ -412,14 +408,14 @@ export default async function PatientAppointmentsPage({
           <div className="flex flex-wrap items-center gap-4">
             <Link
               href="/dashboard/patient"
-              className="text-sm font-semibold text-slate-600 transition hover:text-blue-700"
+              className="text-sm font-semibold text-slate-600 hover:text-blue-700"
             >
               Dashboard
             </Link>
 
             <Link
               href="/professionisti"
-              className="text-sm font-semibold text-slate-600 transition hover:text-blue-700"
+              className="text-sm font-semibold text-slate-600 hover:text-blue-700"
             >
               Cerca professionisti
             </Link>
@@ -439,24 +435,17 @@ export default async function PatientAppointmentsPage({
             Appuntamenti e richieste
           </h2>
 
-          <p className="mt-3 max-w-3xl leading-7 text-slate-600">
-            Controlla lo stato delle richieste,
-            comunica con il professionista e
-            gestisci gli appuntamenti.
+          <p className="mt-3 max-w-3xl text-slate-600">
+            Controlla lo stato delle richieste
+            inviate, comunica con il professionista
+            e gestisci le prenotazioni ancora in
+            attesa.
           </p>
         </section>
 
-        <nav
-          aria-label="Filtra prenotazioni"
-          className="mt-8 flex flex-wrap gap-3"
-        >
+        <nav className="mt-8 flex flex-wrap gap-3">
           <Link
             href="/dashboard/patient/appointments"
-            aria-current={
-              !selectedStatus
-                ? "page"
-                : undefined
-            }
             className={
               !selectedStatus
                 ? "rounded-full bg-blue-700 px-5 py-2 text-sm font-semibold text-white"
@@ -470,11 +459,6 @@ export default async function PatientAppointmentsPage({
             <Link
               key={status}
               href={`/dashboard/patient/appointments?status=${status}`}
-              aria-current={
-                selectedStatus === status
-                  ? "page"
-                  : undefined
-              }
               className={
                 selectedStatus === status
                   ? "rounded-full bg-blue-700 px-5 py-2 text-sm font-semibold text-white"
@@ -486,37 +470,13 @@ export default async function PatientAppointmentsPage({
           ))}
         </nav>
 
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
-          <p className="text-sm text-slate-600">
-            <strong className="text-slate-900">
-              {
-                appointmentsWithProfessionals.length
-              }
-            </strong>{" "}
-            {appointmentsWithProfessionals.length ===
-            1
-              ? "prenotazione trovata"
-              : "prenotazioni trovate"}
-          </p>
-
-          {selectedStatus && (
-            <Link
-              href="/dashboard/patient/appointments"
-              className="text-sm font-semibold text-blue-700 hover:underline"
-            >
-              Rimuovi filtro
-            </Link>
-          )}
-        </div>
-
         {appointmentsError ? (
           <div
             role="alert"
             className="mt-8 rounded-2xl border border-red-300 bg-red-50 p-6 text-red-700"
           >
             Non è stato possibile caricare le
-            prenotazioni. Controlla il terminale
-            e le policy Supabase.
+            prenotazioni.
           </div>
         ) : appointmentsWithProfessionals.length ===
           0 ? (
@@ -530,47 +490,55 @@ export default async function PatientAppointmentsPage({
             </h3>
 
             <p className="mt-3 text-slate-600">
-              {selectedStatus
-                ? "Non sono presenti richieste con lo stato selezionato."
-                : "Cerca un professionista e invia la tua prima richiesta di assistenza."}
+              Non sono presenti richieste con il
+              filtro selezionato.
             </p>
 
-            <div className="mt-6 flex flex-wrap justify-center gap-4">
-              {selectedStatus && (
-                <Link
-                  href="/dashboard/patient/appointments"
-                  className="inline-flex rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
-                  Mostra tutte
-                </Link>
-              )}
-
-              <Link
-                href="/professionisti"
-                className="inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
-              >
-                Cerca un professionista
-              </Link>
-            </div>
+            <Link
+              href="/professionisti"
+              className="mt-6 inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+            >
+              Cerca un professionista
+            </Link>
           </section>
         ) : (
           <div className="mt-8 space-y-6">
             {appointmentsWithProfessionals.map(
               (appointment) => {
                 const professionalName =
-                  getProfessionalName(
-                    appointment.professional
-                  );
+                  appointment.professional
+                    ? [
+                        appointment
+                          .professional
+                          .first_name,
+                        appointment
+                          .professional
+                          .last_name,
+                      ]
+                        .filter(Boolean)
+                        .join(" ") ||
+                      "Professionista sanitario"
+                    : "Professionista sanitario";
 
-                const location =
-                  getProfessionalLocation(
-                    appointment.professional
-                  );
+                const location = appointment
+                  .professional
+                  ? [
+                      appointment
+                        .professional.city,
+                      appointment
+                        .professional.province,
+                    ]
+                      .filter(Boolean)
+                      .join(", ")
+                  : "";
 
-                const chatAvailable =
-                  isChatAvailable(
-                    appointment.status
-                  );
+                const chatAvailable = [
+                  "PENDING",
+                  "ACCEPTED",
+                  "COMPLETED",
+                ].includes(
+                  appointment.status
+                );
 
                 return (
                   <article
@@ -585,7 +553,7 @@ export default async function PatientAppointmentsPage({
                               appointment.avatarUrl
                             }
                             alt={`Foto di ${professionalName}`}
-                            className="h-20 w-20 shrink-0 rounded-2xl border border-slate-200 object-cover"
+                            className="h-20 w-20 shrink-0 rounded-2xl object-cover"
                           />
                         ) : (
                           <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-2xl font-bold text-blue-800">
@@ -693,7 +661,7 @@ export default async function PatientAppointmentsPage({
 
                       <div>
                         <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          Tariffa indicativa
+                          Tariffa
                         </dt>
 
                         <dd className="mt-1 font-semibold text-slate-900">
@@ -735,45 +703,32 @@ export default async function PatientAppointmentsPage({
                       </div>
                     )}
 
-                    {!chatAvailable && (
-                      <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-                        <p className="text-sm text-slate-600">
-                          La chat non è disponibile
-                          perché la richiesta è stata{" "}
-                          {appointment.status ===
-                          "REJECTED"
-                            ? "rifiutata"
-                            : "annullata"}
-                          .
-                        </p>
-                      </div>
-                    )}
-
-                    <div className="mt-6 flex flex-wrap items-center gap-3">
-                      {chatAvailable && (
-                        <Link
-                          href={`/dashboard/appointments/${appointment.id}/chat`}
-                          className="inline-flex items-center justify-center rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
-                        >
-                          Apri chat
-                        </Link>
+                    <div className="mt-6 flex flex-wrap gap-3">
+                      {chatAvailable ? (
+                        <ChatLink
+                          appointmentId={
+                            appointment.id
+                          }
+                          currentUserId={
+                            user.id
+                          }
+                          initialUnreadCount={
+                            appointment.unreadMessagesCount
+                          }
+                          label="Apri chat"
+                        />
+                      ) : (
+                        <span className="inline-flex cursor-not-allowed items-center justify-center rounded-xl border border-slate-200 bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-400">
+                          Chat non disponibile
+                        </span>
                       )}
 
                       <Link
                         href={`/professionisti/${appointment.professional_id}`}
-                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                       >
                         Profilo professionista
                       </Link>
-                    </div>
-
-                    <div className="mt-5 border-t border-slate-100 pt-4">
-                      <p className="text-xs text-slate-400">
-                        Richiesta inviata il{" "}
-                        {formatCreatedAt(
-                          appointment.created_at
-                        )}
-                      </p>
                     </div>
                   </article>
                 );

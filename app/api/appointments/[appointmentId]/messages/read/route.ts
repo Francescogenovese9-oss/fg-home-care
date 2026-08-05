@@ -13,7 +13,8 @@ export async function PATCH(
   context: RouteContext
 ) {
   try {
-    const { appointmentId } = await context.params;
+    const { appointmentId } =
+      await context.params;
 
     const supabase = await createClient();
 
@@ -38,6 +39,10 @@ export async function PATCH(
       );
     }
 
+    /*
+     * Verifica che l’appuntamento esista e che
+     * l’utente autenticato sia uno dei partecipanti.
+     */
     const {
       data: appointment,
       error: appointmentError,
@@ -55,24 +60,37 @@ export async function PATCH(
 
     if (appointmentError) {
       console.error(
-        "Errore lettura appuntamento:",
+        "Errore lettura appuntamento chat:",
         appointmentError
       );
 
       return NextResponse.json(
         {
           message:
-            "Impossibile verificare la conversazione.",
+            "Non è stato possibile verificare la conversazione.",
         },
         { status: 500 }
       );
     }
 
-    if (
-      !appointment ||
-      (appointment.patient_id !== user.id &&
-        appointment.professional_id !== user.id)
-    ) {
+    if (!appointment) {
+      return NextResponse.json(
+        {
+          message:
+            "Prenotazione non trovata.",
+        },
+        { status: 404 }
+      );
+    }
+
+    const isPatient =
+      appointment.patient_id === user.id;
+
+    const isProfessional =
+      appointment.professional_id ===
+      user.id;
+
+    if (!isPatient && !isProfessional) {
       return NextResponse.json(
         {
           message:
@@ -82,41 +100,132 @@ export async function PATCH(
       );
     }
 
-    const { data, error } = await supabase
+    const readAt = new Date().toISOString();
+
+    /*
+     * Segna come letti soltanto i messaggi:
+     *
+     * - appartenenti alla conversazione;
+     * - inviati dall’altro partecipante;
+     * - ancora non letti.
+     */
+    const {
+      data: updatedMessages,
+      error: messagesError,
+    } = await supabase
       .from("appointment_messages")
       .update({
         read: true,
-        read_at: new Date().toISOString(),
+        read_at: readAt,
       })
-      .eq("appointment_id", appointmentId)
+      .eq(
+        "appointment_id",
+        appointmentId
+      )
       .neq("sender_id", user.id)
       .eq("read", false)
-      .select("id, read, read_at");
+      .select(
+        `
+          id,
+          appointment_id,
+          sender_id,
+          read,
+          read_at
+        `
+      );
 
-    if (error) {
+    if (messagesError) {
       console.error(
-        "Errore aggiornamento messaggi:",
+        "Errore aggiornamento messaggi letti:",
         {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
+          message: messagesError.message,
+          code: messagesError.code,
+          details: messagesError.details,
+          hint: messagesError.hint,
         }
       );
 
       return NextResponse.json(
         {
           message:
-            error.message ||
-            "Impossibile aggiornare i messaggi.",
+            messagesError.message ||
+            "Non è stato possibile aggiornare i messaggi.",
         },
         { status: 400 }
       );
     }
 
+    /*
+     * Segna come lette anche tutte le notifiche
+     * MESSAGE_RECEIVED associate alla stessa chat.
+     *
+     * In questo modo, quando l’utente apre la
+     * conversazione:
+     *
+     * - il badge della chat torna a zero;
+     * - il contatore della campanella diminuisce;
+     * - le notifiche della conversazione risultano lette.
+     */
+    const {
+      data: updatedNotifications,
+      error: notificationError,
+    } = await supabase
+      .from("notifications")
+      .update({
+        read: true,
+        read_at: readAt,
+      })
+      .eq("user_id", user.id)
+      .eq(
+        "appointment_id",
+        appointmentId
+      )
+      .eq(
+        "type",
+        "MESSAGE_RECEIVED"
+      )
+      .eq("read", false)
+      .select(
+        `
+          id,
+          appointment_id,
+          type,
+          read,
+          read_at
+        `
+      );
+
+    /*
+     * Un errore sulle notifiche non deve annullare
+     * l’aggiornamento dei messaggi già completato.
+     * Lo registriamo nel terminale e restituiamo
+     * comunque una risposta positiva.
+     */
+    if (notificationError) {
+      console.error(
+        "Errore aggiornamento notifiche chat:",
+        {
+          message:
+            notificationError.message,
+          code: notificationError.code,
+          details:
+            notificationError.details,
+          hint: notificationError.hint,
+        }
+      );
+    }
+
     return NextResponse.json({
       success: true,
-      messages: data ?? [],
+      messages: updatedMessages ?? [],
+      notifications:
+        updatedNotifications ?? [],
+      updatedMessagesCount:
+        updatedMessages?.length ?? 0,
+      updatedNotificationsCount:
+        updatedNotifications?.length ?? 0,
+      message:
+        "Messaggi e notifiche della conversazione aggiornati.",
     });
   } catch (error) {
     console.error(
@@ -127,7 +236,9 @@ export async function PATCH(
     return NextResponse.json(
       {
         message:
-          "Il server non è riuscito ad aggiornare i messaggi.",
+          error instanceof Error
+            ? error.message
+            : "Il server non è riuscito ad aggiornare i messaggi.",
       },
       { status: 500 }
     );
