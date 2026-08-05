@@ -15,28 +15,38 @@ type AppointmentStatus =
 type Appointment = {
   id: string;
   professional_id: string;
+
   service_type:
     | "HOME_VISIT"
     | "VIDEO_CONSULTATION";
+
   appointment_date: string;
   appointment_time: string;
   duration_minutes: number;
+
   hourly_rate: number | null;
+
   patient_notes: string | null;
   professional_notes: string | null;
+
   status: AppointmentStatus;
+
   created_at: string;
   updated_at: string;
 };
 
 type PublicProfessional = {
   user_id: string;
+
   first_name: string | null;
   last_name: string | null;
+
   profession: string;
   specialization: string | null;
+
   city: string | null;
   province: string | null;
+
   avatar_path: string | null;
 };
 
@@ -47,6 +57,12 @@ type SearchParams = {
 type PageProps = {
   searchParams: Promise<SearchParams>;
 };
+
+type AppointmentWithProfessional =
+  Appointment & {
+    professional: PublicProfessional | null;
+    avatarUrl: string | null;
+  };
 
 const allowedStatuses: AppointmentStatus[] = [
   "PENDING",
@@ -59,9 +75,11 @@ const allowedStatuses: AppointmentStatus[] = [
 function getSingleValue(
   value: string | string[] | undefined
 ) {
-  return Array.isArray(value)
-    ? value[0] ?? ""
-    : value ?? "";
+  if (Array.isArray(value)) {
+    return value[0] ?? "";
+  }
+
+  return value ?? "";
 }
 
 function getStatusLabel(
@@ -130,6 +148,59 @@ function formatTime(value: string) {
   return value.slice(0, 5);
 }
 
+function formatCreatedAt(value: string) {
+  return new Intl.DateTimeFormat("it-IT", {
+    day: "2-digit",
+    month: "2-digit",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  }).format(new Date(value));
+}
+
+function getProfessionalName(
+  professional: PublicProfessional | null
+) {
+  if (!professional) {
+    return "Professionista sanitario";
+  }
+
+  return (
+    [
+      professional.first_name,
+      professional.last_name,
+    ]
+      .filter(Boolean)
+      .join(" ") ||
+    "Professionista sanitario"
+  );
+}
+
+function getProfessionalLocation(
+  professional: PublicProfessional | null
+) {
+  if (!professional) {
+    return "";
+  }
+
+  return [
+    professional.city,
+    professional.province,
+  ]
+    .filter(Boolean)
+    .join(", ");
+}
+
+function isChatAvailable(
+  status: AppointmentStatus
+) {
+  return [
+    "PENDING",
+    "ACCEPTED",
+    "COMPLETED",
+  ].includes(status);
+}
+
 export default async function PatientAppointmentsPage({
   searchParams,
 }: PageProps) {
@@ -137,7 +208,15 @@ export default async function PatientAppointmentsPage({
 
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
+
+  if (userError) {
+    console.error(
+      "Errore lettura utente prenotazioni:",
+      userError
+    );
+  }
 
   if (!user) {
     redirect(
@@ -145,22 +224,43 @@ export default async function PatientAppointmentsPage({
     );
   }
 
-  const { data: accountProfile } =
-    await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
+  const {
+    data: accountProfile,
+    error: accountProfileError,
+  } = await supabase
+    .from("profiles")
+    .select("role")
+    .eq("id", user.id)
+    .maybeSingle();
+
+  if (accountProfileError) {
+    console.error(
+      "Errore lettura ruolo paziente:",
+      accountProfileError
+    );
+  }
+
+  if (
+    accountProfile?.role ===
+    "PROFESSIONAL"
+  ) {
+    redirect(
+      "/dashboard/professional/appointments"
+    );
+  }
+
+  if (accountProfile?.role === "ADMIN") {
+    redirect("/dashboard/admin");
+  }
 
   if (accountProfile?.role !== "PATIENT") {
-    redirect("/dashboard");
+    redirect("/login");
   }
 
   const params = await searchParams;
 
-  const requestedStatus = getSingleValue(
-    params.status
-  ).toUpperCase() as AppointmentStatus;
+  const requestedStatus =
+    getSingleValue(params.status).toUpperCase() as AppointmentStatus;
 
   const selectedStatus =
     allowedStatuses.includes(requestedStatus)
@@ -225,7 +325,8 @@ export default async function PatientAppointmentsPage({
     )
   );
 
-  let professionals: PublicProfessional[] = [];
+  let professionals: PublicProfessional[] =
+    [];
 
   if (professionalIds.length > 0) {
     const {
@@ -266,7 +367,7 @@ export default async function PatientAppointmentsPage({
     ])
   );
 
-  const appointmentsWithProfessionals =
+  const appointmentsWithProfessionals: AppointmentWithProfessional[] =
     appointments.map((appointment) => {
       const professional =
         professionalsMap.get(
@@ -308,12 +409,19 @@ export default async function PatientAppointmentsPage({
             </h1>
           </div>
 
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Link
               href="/dashboard/patient"
-              className="text-sm font-semibold text-slate-600 hover:text-blue-700"
+              className="text-sm font-semibold text-slate-600 transition hover:text-blue-700"
             >
               Dashboard
+            </Link>
+
+            <Link
+              href="/professionisti"
+              className="text-sm font-semibold text-slate-600 transition hover:text-blue-700"
+            >
+              Cerca professionisti
             </Link>
 
             <LogoutButton />
@@ -331,19 +439,28 @@ export default async function PatientAppointmentsPage({
             Appuntamenti e richieste
           </h2>
 
-          <p className="mt-3 max-w-3xl text-slate-600">
-            Controlla lo stato delle richieste
-            inviate ai professionisti.
+          <p className="mt-3 max-w-3xl leading-7 text-slate-600">
+            Controlla lo stato delle richieste,
+            comunica con il professionista e
+            gestisci gli appuntamenti.
           </p>
         </section>
 
-        <nav className="mt-8 flex flex-wrap gap-3">
+        <nav
+          aria-label="Filtra prenotazioni"
+          className="mt-8 flex flex-wrap gap-3"
+        >
           <Link
             href="/dashboard/patient/appointments"
+            aria-current={
+              !selectedStatus
+                ? "page"
+                : undefined
+            }
             className={
               !selectedStatus
                 ? "rounded-full bg-blue-700 px-5 py-2 text-sm font-semibold text-white"
-                : "rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                : "rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
             }
           >
             Tutte
@@ -353,10 +470,15 @@ export default async function PatientAppointmentsPage({
             <Link
               key={status}
               href={`/dashboard/patient/appointments?status=${status}`}
+              aria-current={
+                selectedStatus === status
+                  ? "page"
+                  : undefined
+              }
               className={
                 selectedStatus === status
                   ? "rounded-full bg-blue-700 px-5 py-2 text-sm font-semibold text-white"
-                  : "rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
+                  : "rounded-full border border-slate-300 bg-white px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
               }
             >
               {getStatusLabel(status)}
@@ -364,61 +486,91 @@ export default async function PatientAppointmentsPage({
           ))}
         </nav>
 
+        <div className="mt-6 flex flex-wrap items-center justify-between gap-4">
+          <p className="text-sm text-slate-600">
+            <strong className="text-slate-900">
+              {
+                appointmentsWithProfessionals.length
+              }
+            </strong>{" "}
+            {appointmentsWithProfessionals.length ===
+            1
+              ? "prenotazione trovata"
+              : "prenotazioni trovate"}
+          </p>
+
+          {selectedStatus && (
+            <Link
+              href="/dashboard/patient/appointments"
+              className="text-sm font-semibold text-blue-700 hover:underline"
+            >
+              Rimuovi filtro
+            </Link>
+          )}
+        </div>
+
         {appointmentsError ? (
-          <div className="mt-8 rounded-2xl border border-red-300 bg-red-50 p-6 text-red-700">
+          <div
+            role="alert"
+            className="mt-8 rounded-2xl border border-red-300 bg-red-50 p-6 text-red-700"
+          >
             Non è stato possibile caricare le
-            prenotazioni.
+            prenotazioni. Controlla il terminale
+            e le policy Supabase.
           </div>
         ) : appointmentsWithProfessionals.length ===
           0 ? (
           <section className="mt-8 rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center">
-            <h3 className="text-xl font-bold text-slate-900">
+            <div className="text-4xl">
+              📅
+            </div>
+
+            <h3 className="mt-4 text-xl font-bold text-slate-900">
               Nessuna richiesta trovata
             </h3>
 
             <p className="mt-3 text-slate-600">
-              Cerca un professionista e invia
-              la tua prima richiesta di
-              assistenza.
+              {selectedStatus
+                ? "Non sono presenti richieste con lo stato selezionato."
+                : "Cerca un professionista e invia la tua prima richiesta di assistenza."}
             </p>
 
-            <Link
-              href="/professionisti"
-              className="mt-6 inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"
-            >
-              Cerca un professionista
-            </Link>
+            <div className="mt-6 flex flex-wrap justify-center gap-4">
+              {selectedStatus && (
+                <Link
+                  href="/dashboard/patient/appointments"
+                  className="inline-flex rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+                >
+                  Mostra tutte
+                </Link>
+              )}
+
+              <Link
+                href="/professionisti"
+                className="inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+              >
+                Cerca un professionista
+              </Link>
+            </div>
           </section>
         ) : (
           <div className="mt-8 space-y-6">
             {appointmentsWithProfessionals.map(
               (appointment) => {
                 const professionalName =
-                  appointment.professional
-                    ? [
-                        appointment
-                          .professional
-                          .first_name,
-                        appointment
-                          .professional
-                          .last_name,
-                      ]
-                        .filter(Boolean)
-                        .join(" ") ||
-                      "Professionista sanitario"
-                    : "Professionista sanitario";
+                  getProfessionalName(
+                    appointment.professional
+                  );
 
-                const location = appointment
-                  .professional
-                  ? [
-                      appointment
-                        .professional.city,
-                      appointment
-                        .professional.province,
-                    ]
-                      .filter(Boolean)
-                      .join(", ")
-                  : "";
+                const location =
+                  getProfessionalLocation(
+                    appointment.professional
+                  );
+
+                const chatAvailable =
+                  isChatAvailable(
+                    appointment.status
+                  );
 
                 return (
                   <article
@@ -433,7 +585,7 @@ export default async function PatientAppointmentsPage({
                               appointment.avatarUrl
                             }
                             alt={`Foto di ${professionalName}`}
-                            className="h-20 w-20 shrink-0 rounded-2xl object-cover"
+                            className="h-20 w-20 shrink-0 rounded-2xl border border-slate-200 object-cover"
                           />
                         ) : (
                           <div className="flex h-20 w-20 shrink-0 items-center justify-center rounded-2xl bg-blue-100 text-2xl font-bold text-blue-800">
@@ -443,7 +595,7 @@ export default async function PatientAppointmentsPage({
                           </div>
                         )}
 
-                        <div>
+                        <div className="min-w-0">
                           <div className="flex flex-wrap items-center gap-3">
                             <h3 className="text-xl font-bold text-slate-900">
                               {professionalName}
@@ -466,6 +618,18 @@ export default async function PatientAppointmentsPage({
                               ?.profession ??
                               "Professionista sanitario"}
                           </p>
+
+                          {appointment
+                            .professional
+                            ?.specialization && (
+                            <p className="mt-1 text-sm text-slate-500">
+                              {
+                                appointment
+                                  .professional
+                                  .specialization
+                              }
+                            </p>
+                          )}
 
                           {location && (
                             <p className="mt-1 text-sm text-slate-500">
@@ -529,7 +693,7 @@ export default async function PatientAppointmentsPage({
 
                       <div>
                         <dt className="text-xs font-semibold uppercase tracking-wide text-slate-500">
-                          Tariffa
+                          Tariffa indicativa
                         </dt>
 
                         <dd className="mt-1 font-semibold text-slate-900">
@@ -571,14 +735,45 @@ export default async function PatientAppointmentsPage({
                       </div>
                     )}
 
-                    <div className="mt-6">
+                    {!chatAvailable && (
+                      <div className="mt-5 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+                        <p className="text-sm text-slate-600">
+                          La chat non è disponibile
+                          perché la richiesta è stata{" "}
+                          {appointment.status ===
+                          "REJECTED"
+                            ? "rifiutata"
+                            : "annullata"}
+                          .
+                        </p>
+                      </div>
+                    )}
+
+                    <div className="mt-6 flex flex-wrap items-center gap-3">
+                      {chatAvailable && (
+                        <Link
+                          href={`/dashboard/appointments/${appointment.id}/chat`}
+                          className="inline-flex items-center justify-center rounded-xl bg-blue-700 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-blue-800"
+                        >
+                          Apri chat
+                        </Link>
+                      )}
+
                       <Link
                         href={`/professionisti/${appointment.professional_id}`}
-                        className="text-sm font-semibold text-blue-700 hover:underline"
+                        className="inline-flex items-center justify-center rounded-xl border border-slate-300 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
                       >
-                        Visualizza il profilo del
-                        professionista
+                        Profilo professionista
                       </Link>
+                    </div>
+
+                    <div className="mt-5 border-t border-slate-100 pt-4">
+                      <p className="text-xs text-slate-400">
+                        Richiesta inviata il{" "}
+                        {formatCreatedAt(
+                          appointment.created_at
+                        )}
+                      </p>
                     </div>
                   </article>
                 );

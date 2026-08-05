@@ -2,7 +2,9 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import LogoutButton from "@/components/auth/LogoutButton";
-import NotificationBell from "@/components/notifications/NotificationBell";
+import NotificationBell, {
+  type NotificationPreview,
+} from "@/components/notifications/NotificationBell";
 import { createClient } from "@/lib/supabase/server";
 
 type AppointmentStatus =
@@ -18,13 +20,6 @@ type AppointmentSummary = {
   appointment_date: string;
   appointment_time: string;
   professional_id: string;
-};
-
-type PatientProfile = {
-  first_name: string | null;
-  last_name: string | null;
-  email: string | null;
-  role: string;
 };
 
 export default async function PatientDashboardPage() {
@@ -47,7 +42,7 @@ export default async function PatientDashboardPage() {
   }
 
   const {
-    data: profileData,
+    data: profile,
     error: profileError,
   } = await supabase
     .from("profiles")
@@ -68,9 +63,6 @@ export default async function PatientDashboardPage() {
       profileError
     );
   }
-
-  const profile =
-    profileData as PatientProfile | null;
 
   if (profile?.role === "PROFESSIONAL") {
     redirect("/dashboard/professional");
@@ -108,7 +100,7 @@ export default async function PatientDashboardPage() {
 
   if (appointmentsError) {
     console.error(
-      "Errore lettura prenotazioni paziente:",
+      "Errore lettura riepilogo prenotazioni:",
       appointmentsError
     );
   }
@@ -158,11 +150,6 @@ export default async function PatientDashboardPage() {
   let nextProfessionalName =
     "Professionista sanitario";
 
-  let nextProfessionalProfession =
-    "Professionista sanitario";
-
-  let nextProfessionalLocation = "";
-
   if (nextAppointment) {
     const {
       data: professionalData,
@@ -172,10 +159,7 @@ export default async function PatientDashboardPage() {
       .select(
         `
           first_name,
-          last_name,
-          profession,
-          city,
-          province
+          last_name
         `
       )
       .eq(
@@ -200,17 +184,6 @@ export default async function PatientDashboardPage() {
           .filter(Boolean)
           .join(" ") ||
         "Professionista sanitario";
-
-      nextProfessionalProfession =
-        professionalData.profession ||
-        "Professionista sanitario";
-
-      nextProfessionalLocation = [
-        professionalData.city,
-        professionalData.province,
-      ]
-        .filter(Boolean)
-        .join(", ");
     }
   }
 
@@ -233,15 +206,43 @@ export default async function PatientDashboardPage() {
     );
   }
 
+  const {
+    data: recentNotificationsData,
+    error: recentNotificationsError,
+  } = await supabase
+    .from("notifications")
+    .select(
+      `
+        id,
+        type,
+        title,
+        message,
+        link,
+        read,
+        created_at
+      `
+    )
+    .eq("user_id", user.id)
+    .order("created_at", {
+      ascending: false,
+    })
+    .limit(5);
+
+  if (recentNotificationsError) {
+    console.error(
+      "Errore lettura notifiche recenti:",
+      recentNotificationsError
+    );
+  }
+
+  const recentNotifications =
+    (recentNotificationsData ??
+      []) as NotificationPreview[];
+
   const displayName =
     [profile.first_name, profile.last_name]
       .filter(Boolean)
       .join(" ") || "Utente";
-
-  const email =
-    profile.email ??
-    user.email ??
-    "Non disponibile";
 
   const nextAppointmentDate =
     nextAppointment
@@ -290,6 +291,9 @@ export default async function PatientDashboardPage() {
               initialUnreadCount={
                 unreadNotificationCount ?? 0
               }
+              initialNotifications={
+                recentNotifications
+              }
             />
 
             <LogoutButton />
@@ -308,9 +312,10 @@ export default async function PatientDashboardPage() {
           </h2>
 
           <p className="mt-4 max-w-2xl leading-7 text-blue-100">
-            Cerca professionisti verificati, invia
-            richieste di assistenza e controlla lo
-            stato delle tue prenotazioni.
+            Cerca professionisti verificati,
+            invia richieste di assistenza e
+            controlla lo stato delle tue
+            prenotazioni.
           </p>
 
           <div className="mt-7 flex flex-wrap gap-4">
@@ -327,17 +332,10 @@ export default async function PatientDashboardPage() {
             >
               Le mie prenotazioni
             </Link>
-
-            <Link
-              href="/dashboard/notifications"
-              className="inline-flex rounded-xl border border-blue-300 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
-            >
-              Visualizza notifiche
-            </Link>
           </div>
         </section>
 
-        <section className="mt-8 grid gap-6 md:grid-cols-4">
+        <section className="mt-8 grid gap-6 md:grid-cols-3">
           <article className="rounded-2xl bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold text-amber-700">
               In attesa
@@ -347,7 +345,7 @@ export default async function PatientDashboardPage() {
               {pendingCount}
             </p>
 
-            <p className="mt-2 text-sm leading-6 text-slate-600">
+            <p className="mt-2 text-sm text-slate-600">
               Richieste in attesa di conferma da
               parte del professionista.
             </p>
@@ -369,7 +367,7 @@ export default async function PatientDashboardPage() {
               {acceptedCount}
             </p>
 
-            <p className="mt-2 text-sm leading-6 text-slate-600">
+            <p className="mt-2 text-sm text-slate-600">
               Prenotazioni confermate dai
               professionisti.
             </p>
@@ -391,7 +389,7 @@ export default async function PatientDashboardPage() {
               {completedCount}
             </p>
 
-            <p className="mt-2 text-sm leading-6 text-slate-600">
+            <p className="mt-2 text-sm text-slate-600">
               Prestazioni concluse e registrate
               nella piattaforma.
             </p>
@@ -401,28 +399,6 @@ export default async function PatientDashboardPage() {
               className="mt-5 inline-flex text-sm font-semibold text-blue-700 hover:underline"
             >
               Visualizza storico
-            </Link>
-          </article>
-
-          <article className="rounded-2xl bg-white p-6 shadow-sm">
-            <p className="text-sm font-semibold text-red-700">
-              Notifiche
-            </p>
-
-            <p className="mt-3 text-4xl font-bold text-slate-900">
-              {unreadNotificationCount ?? 0}
-            </p>
-
-            <p className="mt-2 text-sm leading-6 text-slate-600">
-              Aggiornamenti non ancora letti sulle
-              tue richieste.
-            </p>
-
-            <Link
-              href="/dashboard/notifications"
-              className="mt-5 inline-flex text-sm font-semibold text-blue-700 hover:underline"
-            >
-              Apri notifiche
             </Link>
           </article>
         </section>
@@ -440,20 +416,6 @@ export default async function PatientDashboardPage() {
                     ? nextProfessionalName
                     : "Nessun appuntamento programmato"}
                 </h3>
-
-                {nextAppointment && (
-                  <>
-                    <p className="mt-2 font-semibold text-blue-700">
-                      {nextProfessionalProfession}
-                    </p>
-
-                    {nextProfessionalLocation && (
-                      <p className="mt-1 text-sm text-slate-500">
-                        {nextProfessionalLocation}
-                      </p>
-                    )}
-                  </>
-                )}
               </div>
 
               {nextAppointment && (
@@ -498,9 +460,9 @@ export default async function PatientDashboardPage() {
             ) : (
               <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
                 <p className="text-sm leading-6 text-slate-600">
-                  Non hai appuntamenti futuri. Cerca
-                  un professionista e invia una nuova
-                  richiesta.
+                  Non hai appuntamenti futuri.
+                  Cerca un professionista e invia
+                  una nuova richiesta.
                 </p>
               </div>
             )}
@@ -548,7 +510,9 @@ export default async function PatientDashboardPage() {
                 </dt>
 
                 <dd className="mt-1 break-all font-semibold text-slate-900">
-                  {email}
+                  {profile.email ??
+                    user.email ??
+                    "Non disponibile"}
                 </dd>
               </div>
 
@@ -564,8 +528,9 @@ export default async function PatientDashboardPage() {
             </dl>
 
             <p className="mt-6 text-sm leading-6 text-slate-500">
-              La modifica dei dati personali sarà
-              aggiunta in uno sprint successivo.
+              La modifica dei dati personali
+              sarà aggiunta in uno sprint
+              successivo.
             </p>
           </article>
         </section>
@@ -597,7 +562,7 @@ export default async function PatientDashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Controlla richieste in attesa,
+              Controlla le richieste in attesa,
               accettate, rifiutate, annullate o
               completate.
             </p>
@@ -616,9 +581,8 @@ export default async function PatientDashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Leggi gli aggiornamenti relativi
-              all’accettazione, al rifiuto o al
-              completamento delle richieste.
+              Controlla gli aggiornamenti sulle
+              richieste e sulle prestazioni.
             </p>
 
             <Link
