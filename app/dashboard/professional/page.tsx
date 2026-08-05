@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import LogoutButton from "@/components/auth/LogoutButton";
+import NotificationBell from "@/components/notifications/NotificationBell";
 import { createClient } from "@/lib/supabase/server";
 
 type AppointmentStatus =
@@ -218,6 +219,10 @@ export default async function ProfessionalDashboardPage() {
     }
   }
 
+  const today = new Date()
+    .toISOString()
+    .slice(0, 10);
+
   const {
     count: futureUnavailabilityCount,
     error: unavailabilityCountError,
@@ -228,15 +233,31 @@ export default async function ProfessionalDashboardPage() {
       head: true,
     })
     .eq("professional_id", user.id)
-    .gte(
-      "unavailable_date",
-      new Date().toISOString().slice(0, 10)
-    );
+    .gte("unavailable_date", today);
 
   if (unavailabilityCountError) {
     console.error(
       "Errore conteggio indisponibilità:",
       unavailabilityCountError
+    );
+  }
+
+  const {
+    count: unreadNotificationCount,
+    error: unreadNotificationsError,
+  } = await supabase
+    .from("notifications")
+    .select("id", {
+      count: "exact",
+      head: true,
+    })
+    .eq("user_id", user.id)
+    .eq("read", false);
+
+  if (unreadNotificationsError) {
+    console.error(
+      "Errore conteggio notifiche:",
+      unreadNotificationsError
     );
   }
 
@@ -316,6 +337,13 @@ export default async function ProfessionalDashboardPage() {
               Agenda
             </Link>
 
+            <NotificationBell
+              userId={user.id}
+              initialUnreadCount={
+                unreadNotificationCount ?? 0
+              }
+            />
+
             <LogoutButton />
           </div>
         </div>
@@ -333,8 +361,8 @@ export default async function ProfessionalDashboardPage() {
 
           <p className="mt-4 max-w-2xl leading-7 text-blue-100">
             Gestisci il tuo profilo, controlla le
-            richieste ricevute e organizza la tua
-            agenda professionale.
+            richieste ricevute, consulta le notifiche e
+            organizza la tua agenda professionale.
           </p>
 
           <div className="mt-7 flex flex-wrap gap-4">
@@ -353,6 +381,13 @@ export default async function ProfessionalDashboardPage() {
             </Link>
 
             <Link
+              href="/dashboard/notifications"
+              className="inline-flex rounded-xl border border-blue-300 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+            >
+              Visualizza notifiche
+            </Link>
+
+            <Link
               href="/dashboard/professional/profile"
               className="inline-flex rounded-xl border border-blue-300 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
             >
@@ -361,7 +396,7 @@ export default async function ProfessionalDashboardPage() {
           </div>
         </section>
 
-        <section className="mt-8 grid gap-6 md:grid-cols-4">
+        <section className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-5">
           <article className="rounded-2xl bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold text-amber-700">
               In attesa
@@ -372,8 +407,8 @@ export default async function ProfessionalDashboardPage() {
             </p>
 
             <p className="mt-2 text-sm text-slate-600">
-              Richieste che devono ancora essere
-              accettate o rifiutate.
+              Richieste ancora da accettare o
+              rifiutare.
             </p>
 
             <Link
@@ -416,8 +451,7 @@ export default async function ProfessionalDashboardPage() {
             </p>
 
             <p className="mt-2 text-sm text-slate-600">
-              Prestazioni concluse e registrate
-              nella piattaforma.
+              Prestazioni concluse e registrate.
             </p>
 
             <Link
@@ -447,6 +481,27 @@ export default async function ProfessionalDashboardPage() {
               className="mt-5 inline-flex text-sm font-semibold text-blue-700 hover:underline"
             >
               Gestisci agenda
+            </Link>
+          </article>
+
+          <article className="rounded-2xl bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-purple-700">
+              Notifiche
+            </p>
+
+            <p className="mt-3 text-4xl font-bold text-slate-900">
+              {unreadNotificationCount ?? 0}
+            </p>
+
+            <p className="mt-2 text-sm text-slate-600">
+              Aggiornamenti non ancora letti.
+            </p>
+
+            <Link
+              href="/dashboard/notifications"
+              className="mt-5 inline-flex text-sm font-semibold text-blue-700 hover:underline"
+            >
+              Apri notifiche
             </Link>
           </article>
         </section>
@@ -509,7 +564,7 @@ export default async function ProfessionalDashboardPage() {
               <div className="mt-6 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6">
                 <p className="text-sm leading-6 text-slate-600">
                   Non risultano richieste future in
-                  attesa o già accettate.
+                  attesa o appuntamenti già accettati.
                 </p>
               </div>
             )}
@@ -603,16 +658,15 @@ export default async function ProfessionalDashboardPage() {
           </article>
         </section>
 
-        <section className="mt-8 grid gap-6 md:grid-cols-3">
+        <section className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           <article className="rounded-2xl bg-white p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-slate-900">
               Profilo professionale
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Modifica professione,
-              specializzazione, tariffa,
-              disponibilità e raggio
+              Modifica professione, specializzazione,
+              tariffa, disponibilità e raggio
               d’intervento.
             </p>
 
@@ -630,8 +684,8 @@ export default async function ProfessionalDashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Accetta, rifiuta o completa le
-              richieste inviate dai pazienti.
+              Accetta, rifiuta o completa le richieste
+              inviate dai pazienti.
             </p>
 
             <Link
@@ -648,9 +702,9 @@ export default async function ProfessionalDashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Visualizza gli appuntamenti e
-              blocca giorni o fasce orarie in
-              cui non sei disponibile.
+              Visualizza gli appuntamenti e blocca
+              giorni o fasce orarie in cui non sei
+              disponibile.
             </p>
 
             <Link
@@ -658,6 +712,24 @@ export default async function ProfessionalDashboardPage() {
               className="mt-5 inline-flex text-sm font-semibold text-blue-700 hover:underline"
             >
               Apri agenda
+            </Link>
+          </article>
+
+          <article className="rounded-2xl bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900">
+              Notifiche
+            </h3>
+
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Controlla nuove richieste, annullamenti e
+              aggiornamenti sulle prestazioni.
+            </p>
+
+            <Link
+              href="/dashboard/notifications"
+              className="mt-5 inline-flex text-sm font-semibold text-blue-700 hover:underline"
+            >
+              Visualizza notifiche
             </Link>
           </article>
         </section>
