@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 type ProfessionalCardProps = {
@@ -27,28 +28,39 @@ function truncateText(
     return value;
   }
 
-  return `${value.slice(0, maximumLength).trim()}…`;
+  return `${value
+    .slice(0, maximumLength)
+    .trim()}…`;
 }
 
 export default function ProfessionalCard({
   professional,
 }: ProfessionalCardProps) {
   const fullName =
-    [professional.first_name, professional.last_name]
+    [
+      professional.first_name,
+      professional.last_name,
+    ]
       .filter(Boolean)
-      .join(" ") || "Professionista sanitario";
+      .join(" ") ||
+    "Professionista sanitario";
 
   const location =
-    [professional.city, professional.province]
+    [
+      professional.city,
+      professional.province,
+    ]
       .filter(Boolean)
-      .join(", ") || "Località non indicata";
+      .join(", ") ||
+    "Località non indicata";
 
-  const bio = professional.bio
-    ? truncateText(professional.bio, 150)
+  const description = professional.bio
+    ? truncateText(professional.bio, 145)
     : "Professionista sanitario verificato disponibile attraverso FG Home Care.";
 
   const availableDays =
-    professional.available_weekdays?.length ?? 0;
+    professional.available_weekdays?.length ??
+    0;
 
   return (
     <article className="group flex h-full flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm transition duration-300 hover:-translate-y-1 hover:border-blue-200 hover:shadow-xl">
@@ -62,14 +74,20 @@ export default function ProfessionalCard({
 
         <div className="flex items-start gap-4 pr-20">
           {professional.avatarUrl ? (
-            <img
-              src={professional.avatarUrl}
-              alt={`Foto profilo di ${fullName}`}
-              className="h-24 w-24 shrink-0 rounded-2xl border-4 border-white object-cover shadow-sm"
-            />
+            <div className="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl border-4 border-white shadow-sm">
+              <Image
+                src={professional.avatarUrl}
+                alt={`Foto profilo di ${fullName}`}
+                fill
+                sizes="96px"
+                className="object-cover"
+              />
+            </div>
           ) : (
             <div className="flex h-24 w-24 shrink-0 items-center justify-center rounded-2xl border-4 border-white bg-blue-100 text-3xl font-bold text-blue-800 shadow-sm">
-              {fullName.charAt(0).toUpperCase()}
+              {fullName
+                .charAt(0)
+                .toUpperCase()}
             </div>
           )}
 
@@ -84,7 +102,9 @@ export default function ProfessionalCard({
 
             {professional.specialization && (
               <p className="mt-1 line-clamp-2 text-sm text-slate-500">
-                {professional.specialization}
+                {
+                  professional.specialization
+                }
               </p>
             )}
           </div>
@@ -93,7 +113,7 @@ export default function ProfessionalCard({
 
       <div className="flex flex-1 flex-col p-6">
         <p className="text-sm leading-6 text-slate-600">
-          {bio}
+          {description}
         </p>
 
         <dl className="mt-6 grid grid-cols-2 gap-4">
@@ -113,7 +133,10 @@ export default function ProfessionalCard({
             </dt>
 
             <dd className="mt-1 text-sm font-bold text-slate-900">
-              {professional.service_radius_km} km
+              {
+                professional.service_radius_km
+              }{" "}
+              km
             </dd>
           </div>
 
@@ -123,7 +146,8 @@ export default function ProfessionalCard({
             </dt>
 
             <dd className="mt-1 text-sm font-bold text-slate-900">
-              {professional.hourly_rate !== null
+              {professional.hourly_rate !==
+              null
                 ? `${Number(
                     professional.hourly_rate
                   ).toFixed(2)} € / ora`

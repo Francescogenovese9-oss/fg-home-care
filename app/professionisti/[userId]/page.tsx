@@ -1,7 +1,9 @@
 import type { Metadata } from "next";
+import Image from "next/image";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
+import { getSiteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
 
 type PageProps = {
@@ -26,7 +28,7 @@ type PublicProfessional = {
   service_radius_km: number;
   hourly_rate: number | null;
 
-  available_weekdays: string[];
+  available_weekdays: string[] | null;
   available_from: string | null;
   available_to: string | null;
 
@@ -84,6 +86,32 @@ function formatLocation(
   );
 }
 
+function buildDescription(
+  professional: PublicProfessionalWithAvatar
+) {
+  const fullName = getFullName(
+    professional.first_name,
+    professional.last_name
+  );
+
+  const location = formatLocation(
+    professional.city,
+    professional.province
+  );
+
+  const customDescription =
+    professional.bio
+      ?.trim()
+      .replace(/\s+/g, " ")
+      .slice(0, 155);
+
+  if (customDescription) {
+    return customDescription;
+  }
+
+  return `${fullName}, ${professional.profession} disponibile a ${location} per assistenza domiciliare e servizi sanitari tramite FG Home Care.`;
+}
+
 async function getProfessional(
   userId: string
 ): Promise<PublicProfessionalWithAvatar | null> {
@@ -91,14 +119,43 @@ async function getProfessional(
 
   const { data, error } = await supabase
     .from("public_professionals")
-    .select("*")
+    .select(
+      `
+        user_id,
+        first_name,
+        last_name,
+        profession,
+        specialization,
+        bio,
+        city,
+        province,
+        postal_code,
+        service_radius_km,
+        hourly_rate,
+        available_weekdays,
+        available_from,
+        available_to,
+        home_visits,
+        video_consultations,
+        avatar_path,
+        verification_status,
+        published,
+        created_at,
+        updated_at
+      `
+    )
     .eq("user_id", userId)
     .maybeSingle();
 
   if (error) {
     console.error(
       "Errore lettura professionista pubblico:",
-      error
+      {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint,
+      }
     );
 
     return null;
@@ -145,6 +202,10 @@ export async function generateMetadata({
         "Professionista non trovato | FG Home Care",
       description:
         "Il profilo professionale richiesto non è disponibile.",
+      robots: {
+        index: false,
+        follow: false,
+      },
     };
   }
 
@@ -153,18 +214,64 @@ export async function generateMetadata({
     professional.last_name
   );
 
-  const location = formatLocation(
-    professional.city,
-    professional.province
-  );
-
   const description =
-    professional.bio?.trim().slice(0, 155) ||
-    `${professional.profession} disponibile a ${location} tramite FG Home Care.`;
+    buildDescription(professional);
+
+  const siteUrl = getSiteUrl();
+
+  const profileUrl =
+    `${siteUrl}/professionisti/${professional.user_id}`;
+
+  const metadataTitle =
+    `${fullName} – ${professional.profession}`;
 
   return {
-    title: `${fullName} – ${professional.profession} | FG Home Care`,
+    title: `${metadataTitle} | FG Home Care`,
     description,
+
+    alternates: {
+      canonical: profileUrl,
+    },
+
+    openGraph: {
+      title: metadataTitle,
+      description,
+      url: profileUrl,
+      siteName: "FG Home Care",
+      type: "profile",
+      locale: "it_IT",
+      images: professional.avatarUrl
+        ? [
+            {
+              url: professional.avatarUrl,
+              width: 800,
+              height: 800,
+              alt: `Foto professionale di ${fullName}`,
+            },
+          ]
+        : undefined,
+    },
+
+    twitter: {
+      card: "summary",
+      title: metadataTitle,
+      description,
+      images: professional.avatarUrl
+        ? [professional.avatarUrl]
+        : undefined,
+    },
+
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        "max-image-preview": "large",
+        "max-snippet": -1,
+        "max-video-preview": -1,
+      },
+    },
   };
 }
 
@@ -194,7 +301,8 @@ export default async function ProfessionalPublicPage({
   const availableDays =
     professional.available_weekdays ?? [];
 
-  const bookingUrl = `/professionisti/${professional.user_id}/prenota`;
+  const bookingUrl =
+    `/professionisti/${professional.user_id}/prenota`;
 
   return (
     <main className="min-h-screen bg-slate-50">
@@ -207,7 +315,7 @@ export default async function ProfessionalPublicPage({
             FG Home Care
           </Link>
 
-          <nav className="flex items-center gap-4">
+          <nav className="flex flex-wrap items-center gap-4">
             <Link
               href="/professionisti"
               className="text-sm font-semibold text-slate-700 hover:text-blue-700"
@@ -244,11 +352,16 @@ export default async function ProfessionalPublicPage({
           <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-center">
             <div className="shrink-0">
               {professional.avatarUrl ? (
-                <img
-                  src={professional.avatarUrl}
-                  alt={`Foto profilo di ${fullName}`}
-                  className="h-40 w-40 rounded-3xl border-4 border-white object-cover shadow-lg"
-                />
+                <div className="relative h-40 w-40 overflow-hidden rounded-3xl border-4 border-white shadow-lg">
+                  <Image
+                    src={professional.avatarUrl}
+                    alt={`Foto profilo di ${fullName}`}
+                    fill
+                    priority
+                    sizes="160px"
+                    className="object-cover"
+                  />
+                </div>
               ) : (
                 <div className="flex h-40 w-40 items-center justify-center rounded-3xl border-4 border-white bg-blue-100 text-5xl font-bold text-blue-800 shadow-lg">
                   {fullName
@@ -268,6 +381,7 @@ export default async function ProfessionalPublicPage({
                   <span aria-hidden="true">
                     ✓
                   </span>
+
                   Professionista verificato
                 </span>
               </div>
@@ -332,9 +446,8 @@ export default async function ProfessionalPublicPage({
               </Link>
 
               <p className="mt-3 text-center text-xs leading-5 text-slate-500">
-                Accedi o registrati per
-                inviare una richiesta al
-                professionista.
+                Accedi o registrati per inviare
+                una richiesta al professionista.
               </p>
             </aside>
           </div>
@@ -405,17 +518,15 @@ export default async function ProfessionalPublicPage({
 
             {availableDays.length > 0 ? (
               <div className="mt-6 flex flex-wrap gap-3">
-                {availableDays.map(
-                  (day) => (
-                    <span
-                      key={day}
-                      className="rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700"
-                    >
-                      {weekdayLabels[day] ??
-                        day}
-                    </span>
-                  )
-                )}
+                {availableDays.map((day) => (
+                  <span
+                    key={day}
+                    className="rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700"
+                  >
+                    {weekdayLabels[day] ??
+                      day}
+                  </span>
+                ))}
               </div>
             ) : (
               <p className="mt-5 text-slate-600">
@@ -456,9 +567,9 @@ export default async function ProfessionalPublicPage({
                 </h3>
 
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Seleziona assistenza
-                  domiciliare o videoconsulto,
-                  in base ai servizi disponibili.
+                  Seleziona assistenza domiciliare
+                  o videoconsulto in base ai
+                  servizi disponibili.
                 </p>
               </article>
 
@@ -472,9 +583,9 @@ export default async function ProfessionalPublicPage({
                 </h3>
 
                 <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Scegli un giorno compatibile
-                  con la disponibilità del
-                  professionista.
+                  Scegli una data e un orario
+                  compatibili con la disponibilità
+                  del professionista.
                 </p>
               </article>
 
@@ -559,11 +670,10 @@ export default async function ProfessionalPublicPage({
             </dl>
 
             <p className="mt-5 text-xs leading-5 text-slate-500">
-              La tariffa mostrata è
-              indicativa. Eventuali costi
-              aggiuntivi dovranno essere
-              comunicati prima della conferma
-              della prestazione.
+              La tariffa mostrata è indicativa.
+              Eventuali costi aggiuntivi dovranno
+              essere comunicati prima della
+              conferma della prestazione.
             </p>
           </section>
 
@@ -573,8 +683,8 @@ export default async function ProfessionalPublicPage({
             </h2>
 
             <p className="mt-3 text-sm leading-6 text-green-800">
-              FG Home Care ha controllato i
-              dati e i documenti professionali
+              FG Home Care ha controllato i dati
+              e i documenti professionali
               caricati dall’operatore.
             </p>
           </section>
