@@ -27,17 +27,33 @@ type ProfessionalProfile = {
   specialization: string | null;
   city: string | null;
   province: string | null;
+
   profile_completed: boolean;
   documents_submitted: boolean;
+
   verification_status:
     | "PENDING"
     | "APPROVED"
     | "REJECTED";
+
   published: boolean;
+
+  stripe_account_id: string | null;
+  stripe_account_created: boolean;
+  stripe_onboarding_completed: boolean;
+  stripe_charges_enabled: boolean;
+  stripe_payouts_enabled: boolean;
+  stripe_details_submitted: boolean;
 };
 
 export default async function ProfessionalDashboardPage() {
   const supabase = await createClient();
+
+  /*
+   * =========================================================
+   * AUTENTICAZIONE
+   * =========================================================
+   */
 
   const {
     data: { user },
@@ -54,6 +70,12 @@ export default async function ProfessionalDashboardPage() {
   if (!user) {
     redirect("/login");
   }
+
+  /*
+   * =========================================================
+   * PROFILO ACCOUNT
+   * =========================================================
+   */
 
   const {
     data: profile,
@@ -90,6 +112,12 @@ export default async function ProfessionalDashboardPage() {
     redirect("/login");
   }
 
+  /*
+   * =========================================================
+   * PROFILO PROFESSIONALE
+   * =========================================================
+   */
+
   const {
     data: professionalProfileData,
     error: professionalProfileError,
@@ -104,7 +132,13 @@ export default async function ProfessionalDashboardPage() {
         profile_completed,
         documents_submitted,
         verification_status,
-        published
+        published,
+        stripe_account_id,
+        stripe_account_created,
+        stripe_onboarding_completed,
+        stripe_charges_enabled,
+        stripe_payouts_enabled,
+        stripe_details_submitted
       `
     )
     .eq("user_id", user.id)
@@ -119,6 +153,12 @@ export default async function ProfessionalDashboardPage() {
 
   const professionalProfile =
     professionalProfileData as ProfessionalProfile | null;
+
+  /*
+   * =========================================================
+   * APPUNTAMENTI
+   * =========================================================
+   */
 
   const {
     data: appointmentsData,
@@ -150,7 +190,14 @@ export default async function ProfessionalDashboardPage() {
   }
 
   const appointments =
-    (appointmentsData ?? []) as AppointmentSummary[];
+    (appointmentsData ??
+      []) as AppointmentSummary[];
+
+  /*
+   * =========================================================
+   * CONTATORI APPUNTAMENTI
+   * =========================================================
+   */
 
   const pendingCount = appointments.filter(
     (appointment) =>
@@ -166,6 +213,12 @@ export default async function ProfessionalDashboardPage() {
     (appointment) =>
       appointment.status === "COMPLETED"
   ).length;
+
+  /*
+   * =========================================================
+   * PROSSIMO APPUNTAMENTO
+   * =========================================================
+   */
 
   const now = new Date();
 
@@ -199,7 +252,12 @@ export default async function ProfessionalDashboardPage() {
       error: patientProfileError,
     } = await supabase
       .from("profiles")
-      .select("first_name, last_name")
+      .select(
+        `
+          first_name,
+          last_name
+        `
+      )
       .eq(
         "id",
         nextAppointment.patient_id
@@ -224,6 +282,12 @@ export default async function ProfessionalDashboardPage() {
     }
   }
 
+  /*
+   * =========================================================
+   * INDISPONIBILITÀ FUTURE
+   * =========================================================
+   */
+
   const today = new Date()
     .toISOString()
     .slice(0, 10);
@@ -247,6 +311,12 @@ export default async function ProfessionalDashboardPage() {
     );
   }
 
+  /*
+   * =========================================================
+   * NOTIFICHE NON LETTE
+   * =========================================================
+   */
+
   const {
     count: unreadNotificationCount,
     error: unreadNotificationsError,
@@ -265,6 +335,12 @@ export default async function ProfessionalDashboardPage() {
       unreadNotificationsError
     );
   }
+
+  /*
+   * =========================================================
+   * ULTIME 5 NOTIFICHE
+   * =========================================================
+   */
 
   const {
     data: recentNotificationsData,
@@ -298,6 +374,12 @@ export default async function ProfessionalDashboardPage() {
   const recentNotifications =
     (recentNotificationsData ??
       []) as NotificationPreview[];
+
+  /*
+   * =========================================================
+   * DATI DERIVATI
+   * =========================================================
+   */
 
   const displayName =
     [profile.first_name, profile.last_name]
@@ -347,8 +429,44 @@ export default async function ProfessionalDashboardPage() {
       .filter(Boolean)
       .join(", ") || "Non indicata";
 
+  /*
+   * =========================================================
+   * STRIPE
+   * =========================================================
+   */
+
+  const stripeAccountCreated =
+    professionalProfile
+      ?.stripe_account_created ?? false;
+
+  const stripeOnboardingCompleted =
+    professionalProfile
+      ?.stripe_onboarding_completed ?? false;
+
+  const stripeChargesEnabled =
+    professionalProfile
+      ?.stripe_charges_enabled ?? false;
+
+  const stripePayoutsEnabled =
+    professionalProfile
+      ?.stripe_payouts_enabled ?? false;
+
+  const stripeReady =
+    stripeAccountCreated &&
+    stripeOnboardingCompleted &&
+    stripeChargesEnabled &&
+    stripePayoutsEnabled;
+
+  /*
+   * =========================================================
+   * UI
+   * =========================================================
+   */
+
   return (
     <main className="min-h-screen bg-slate-50">
+      {/* HEADER */}
+
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <div>
@@ -392,6 +510,8 @@ export default async function ProfessionalDashboardPage() {
       </header>
 
       <div className="mx-auto max-w-7xl px-6 py-10">
+        {/* HERO */}
+
         <section className="rounded-3xl bg-gradient-to-br from-blue-700 to-blue-900 p-8 text-white shadow-lg">
           <p className="text-sm font-semibold text-blue-100">
             Benvenuto
@@ -431,7 +551,9 @@ export default async function ProfessionalDashboardPage() {
           </div>
         </section>
 
-        <section className="mt-8 grid gap-6 md:grid-cols-4">
+        {/* STATISTICHE */}
+
+        <section className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
           <article className="rounded-2xl bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold text-amber-700">
               In attesa
@@ -520,6 +642,8 @@ export default async function ProfessionalDashboardPage() {
             </Link>
           </article>
         </section>
+
+        {/* PROSSIMO APPUNTAMENTO + STATO PROFILO */}
 
         <section className="mt-8 grid gap-6 lg:grid-cols-[1.2fr_0.8fr]">
           <article className="rounded-3xl bg-white p-8 shadow-sm">
@@ -673,7 +797,139 @@ export default async function ProfessionalDashboardPage() {
           </article>
         </section>
 
-        <section className="mt-8 grid gap-6 md:grid-cols-4">
+        {/* PAGAMENTI STRIPE */}
+
+        <section className="mt-8">
+          <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
+            <div className="grid gap-8 p-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
+              <div>
+                <p className="text-sm font-semibold text-blue-700">
+                  Pagamenti
+                </p>
+
+                <h3 className="mt-2 text-2xl font-bold text-slate-900">
+                  Pagamenti e accrediti Stripe
+                </h3>
+
+                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                  FG Home Care utilizzerà Stripe
+                  Connect per gestire in modo
+                  sicuro i pagamenti delle
+                  prestazioni e gli accrediti al
+                  professionista.
+                </p>
+
+                <div className="mt-6 flex flex-wrap gap-3">
+                  {stripeReady ? (
+                    <span className="inline-flex rounded-full border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700">
+                      ✓ Pagamenti configurati
+                    </span>
+                  ) : stripeAccountCreated ? (
+                    <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700">
+                      Configurazione Stripe da completare
+                    </span>
+                  ) : (
+                    <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700">
+                      Configurazione in preparazione
+                    </span>
+                  )}
+                </div>
+
+                {!stripeAccountCreated && (
+                  <p className="mt-4 text-sm text-slate-500">
+                    Il collegamento del conto
+                    Stripe sarà attivato nello
+                    Sprint 4.2.
+                  </p>
+                )}
+              </div>
+
+              <div className="rounded-2xl bg-slate-50 p-6">
+                <p className="text-sm font-semibold text-slate-900">
+                  Stato Stripe
+                </p>
+
+                <dl className="mt-5 space-y-4">
+                  <div className="flex items-center justify-between gap-4">
+                    <dt className="text-sm text-slate-600">
+                      Account
+                    </dt>
+
+                    <dd
+                      className={
+                        stripeAccountCreated
+                          ? "text-sm font-semibold text-green-700"
+                          : "text-sm font-semibold text-slate-500"
+                      }
+                    >
+                      {stripeAccountCreated
+                        ? "Creato"
+                        : "Non collegato"}
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <dt className="text-sm text-slate-600">
+                      Onboarding
+                    </dt>
+
+                    <dd
+                      className={
+                        stripeOnboardingCompleted
+                          ? "text-sm font-semibold text-green-700"
+                          : "text-sm font-semibold text-amber-700"
+                      }
+                    >
+                      {stripeOnboardingCompleted
+                        ? "Completato"
+                        : "Da completare"}
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <dt className="text-sm text-slate-600">
+                      Pagamenti
+                    </dt>
+
+                    <dd
+                      className={
+                        stripeChargesEnabled
+                          ? "text-sm font-semibold text-green-700"
+                          : "text-sm font-semibold text-slate-500"
+                      }
+                    >
+                      {stripeChargesEnabled
+                        ? "Abilitati"
+                        : "Non abilitati"}
+                    </dd>
+                  </div>
+
+                  <div className="flex items-center justify-between gap-4">
+                    <dt className="text-sm text-slate-600">
+                      Accrediti
+                    </dt>
+
+                    <dd
+                      className={
+                        stripePayoutsEnabled
+                          ? "text-sm font-semibold text-green-700"
+                          : "text-sm font-semibold text-slate-500"
+                      }
+                    >
+                      {stripePayoutsEnabled
+                        ? "Abilitati"
+                        : "Non abilitati"}
+                    </dd>
+                  </div>
+                </dl>
+              </div>
+            </div>
+          </article>
+        </section>
+
+        {/* FUNZIONI DASHBOARD */}
+
+        <section className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-5">
           <article className="rounded-2xl bg-white p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-slate-900">
               Profilo professionale
@@ -736,8 +992,9 @@ export default async function ProfessionalDashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Visualizza gli aggiornamenti sulle
-              richieste ricevute e annullate.
+              Visualizza gli aggiornamenti
+              sulle richieste, chat e
+              prenotazioni.
             </p>
 
             <Link
@@ -747,7 +1004,34 @@ export default async function ProfessionalDashboardPage() {
               Visualizza notifiche
             </Link>
           </article>
+
+          {/* NUOVA CARD PAGAMENTI */}
+
+          <article className="rounded-2xl bg-white p-6 shadow-sm">
+            <h3 className="text-lg font-semibold text-slate-900">
+              Pagamenti
+            </h3>
+
+            <p className="mt-2 text-sm leading-6 text-slate-600">
+              Collega il tuo conto Stripe per
+              ricevere i pagamenti delle
+              prestazioni effettuate tramite FG
+              Home Care.
+            </p>
+
+            {stripeReady ? (
+              <span className="mt-5 inline-flex rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
+                Pagamenti attivi
+              </span>
+            ) : (
+              <span className="mt-5 inline-flex rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+                Configurazione in preparazione
+              </span>
+            )}
+          </article>
         </section>
+
+        {/* INFORMAZIONI PROFESSIONALI */}
 
         <section className="mt-8 rounded-2xl border border-blue-100 bg-blue-50 p-6">
           <h3 className="text-lg font-bold text-slate-900">
@@ -761,7 +1045,8 @@ export default async function ProfessionalDashboardPage() {
               </dt>
 
               <dd className="mt-1 font-semibold text-slate-900">
-                {professionalProfile?.profession ||
+                {professionalProfile
+                  ?.profession ||
                   "Non indicata"}
               </dd>
             </div>
