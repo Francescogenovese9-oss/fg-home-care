@@ -190,12 +190,11 @@ export default async function ProfessionalDashboardPage() {
   }
 
   const appointments =
-    (appointmentsData ??
-      []) as AppointmentSummary[];
+    (appointmentsData ?? []) as AppointmentSummary[];
 
   /*
    * =========================================================
-   * CONTATORI APPUNTAMENTI
+   * CONTEGGI APPUNTAMENTI
    * =========================================================
    */
 
@@ -243,6 +242,12 @@ export default async function ProfessionalDashboardPage() {
           now.getTime()
       );
     }) ?? null;
+
+  /*
+   * =========================================================
+   * NOME DEL PROSSIMO PAZIENTE
+   * =========================================================
+   */
 
   let nextPatientName = "Paziente";
 
@@ -377,23 +382,29 @@ export default async function ProfessionalDashboardPage() {
 
   /*
    * =========================================================
-   * DATI DERIVATI
+   * DATI DISPLAY
    * =========================================================
    */
 
   const displayName =
-    [profile.first_name, profile.last_name]
+    [
+      profile.first_name,
+      profile.last_name,
+    ]
       .filter(Boolean)
       .join(" ") || "Professionista";
 
   const nextAppointmentDate =
     nextAppointment
-      ? new Intl.DateTimeFormat("it-IT", {
-          weekday: "long",
-          day: "2-digit",
-          month: "long",
-          year: "numeric",
-        }).format(
+      ? new Intl.DateTimeFormat(
+          "it-IT",
+          {
+            weekday: "long",
+            day: "2-digit",
+            month: "long",
+            year: "numeric",
+          }
+        ).format(
           new Date(
             `${nextAppointment.appointment_date}T12:00:00`
           )
@@ -405,6 +416,12 @@ export default async function ProfessionalDashboardPage() {
       0,
       5
     ) ?? null;
+
+  /*
+   * =========================================================
+   * STATO PROFILO
+   * =========================================================
+   */
 
   const verificationStatus =
     professionalProfile?.verification_status ??
@@ -431,31 +448,23 @@ export default async function ProfessionalDashboardPage() {
 
   /*
    * =========================================================
-   * STRIPE
+   * STATO STRIPE
    * =========================================================
    */
 
-  const stripeAccountCreated =
-    professionalProfile
-      ?.stripe_account_created ?? false;
+  const stripeConnected = Boolean(
+    professionalProfile?.stripe_account_id
+  );
 
   const stripeOnboardingCompleted =
     professionalProfile
-      ?.stripe_onboarding_completed ?? false;
-
-  const stripeChargesEnabled =
-    professionalProfile
-      ?.stripe_charges_enabled ?? false;
+      ?.stripe_onboarding_completed ??
+    false;
 
   const stripePayoutsEnabled =
     professionalProfile
-      ?.stripe_payouts_enabled ?? false;
-
-  const stripeReady =
-    stripeAccountCreated &&
-    stripeOnboardingCompleted &&
-    stripeChargesEnabled &&
-    stripePayoutsEnabled;
+      ?.stripe_payouts_enabled ??
+    false;
 
   /*
    * =========================================================
@@ -522,9 +531,10 @@ export default async function ProfessionalDashboardPage() {
           </h2>
 
           <p className="mt-4 max-w-2xl leading-7 text-blue-100">
-            Gestisci il tuo profilo, controlla
-            le richieste ricevute e organizza
-            la tua agenda professionale.
+            Gestisci il tuo profilo,
+            controlla le richieste ricevute,
+            organizza la tua agenda e configura
+            i pagamenti delle prestazioni.
           </p>
 
           <div className="mt-7 flex flex-wrap gap-4">
@@ -543,6 +553,13 @@ export default async function ProfessionalDashboardPage() {
             </Link>
 
             <Link
+              href="/dashboard/professional/payments"
+              className="inline-flex rounded-xl border border-blue-300 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+            >
+              Pagamenti
+            </Link>
+
+            <Link
               href="/dashboard/professional/profile"
               className="inline-flex rounded-xl border border-blue-300 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
             >
@@ -551,9 +568,9 @@ export default async function ProfessionalDashboardPage() {
           </div>
         </section>
 
-        {/* STATISTICHE */}
+        {/* CONTATORI */}
 
-        <section className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-4">
+        <section className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-4">
           <article className="rounded-2xl bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold text-amber-700">
               In attesa
@@ -586,8 +603,8 @@ export default async function ProfessionalDashboardPage() {
             </p>
 
             <p className="mt-2 text-sm text-slate-600">
-              Prestazioni confermate e ancora
-              da completare.
+              Prestazioni confermate e ancora da
+              completare.
             </p>
 
             <Link
@@ -630,8 +647,8 @@ export default async function ProfessionalDashboardPage() {
             </p>
 
             <p className="mt-2 text-sm text-slate-600">
-              Giornate o fasce orarie future
-              già bloccate.
+              Giornate o fasce orarie future già
+              bloccate.
             </p>
 
             <Link
@@ -797,139 +814,58 @@ export default async function ProfessionalDashboardPage() {
           </article>
         </section>
 
-        {/* PAGAMENTI STRIPE */}
+        {/* STRIPE */}
 
-        <section className="mt-8">
-          <article className="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-sm">
-            <div className="grid gap-8 p-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-center">
-              <div>
-                <p className="text-sm font-semibold text-blue-700">
-                  Pagamenti
-                </p>
+        <section className="mt-8 rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
+          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-sm font-semibold text-blue-700">
+                Stripe Connect
+              </p>
 
-                <h3 className="mt-2 text-2xl font-bold text-slate-900">
-                  Pagamenti e accrediti Stripe
-                </h3>
+              <h3 className="mt-2 text-2xl font-bold text-slate-900">
+                Pagamenti e accrediti
+              </h3>
 
-                <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
-                  FG Home Care utilizzerà Stripe
-                  Connect per gestire in modo
-                  sicuro i pagamenti delle
-                  prestazioni e gli accrediti al
-                  professionista.
-                </p>
+              <p className="mt-3 max-w-2xl text-sm leading-6 text-slate-600">
+                Collega il tuo account Stripe per
+                prepararti a ricevere gli accrediti
+                delle prestazioni effettuate tramite
+                FG Home Care.
+              </p>
 
-                <div className="mt-6 flex flex-wrap gap-3">
-                  {stripeReady ? (
-                    <span className="inline-flex rounded-full border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700">
-                      ✓ Pagamenti configurati
-                    </span>
-                  ) : stripeAccountCreated ? (
-                    <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700">
-                      Configurazione Stripe da completare
-                    </span>
-                  ) : (
-                    <span className="inline-flex rounded-full border border-amber-200 bg-amber-50 px-4 py-2 text-sm font-semibold text-amber-700">
-                      Configurazione in preparazione
-                    </span>
-                  )}
-                </div>
-
-                {!stripeAccountCreated && (
-                  <p className="mt-4 text-sm text-slate-500">
-                    Il collegamento del conto
-                    Stripe sarà attivato nello
-                    Sprint 4.2.
-                  </p>
+              <div className="mt-5 flex flex-wrap gap-3">
+                {!stripeConnected ? (
+                  <span className="rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
+                    Stripe non collegato
+                  </span>
+                ) : stripeOnboardingCompleted &&
+                  stripePayoutsEnabled ? (
+                  <span className="rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
+                    Stripe configurato
+                  </span>
+                ) : (
+                  <span className="rounded-full bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700">
+                    Configurazione Stripe da completare
+                  </span>
                 )}
               </div>
-
-              <div className="rounded-2xl bg-slate-50 p-6">
-                <p className="text-sm font-semibold text-slate-900">
-                  Stato Stripe
-                </p>
-
-                <dl className="mt-5 space-y-4">
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-sm text-slate-600">
-                      Account
-                    </dt>
-
-                    <dd
-                      className={
-                        stripeAccountCreated
-                          ? "text-sm font-semibold text-green-700"
-                          : "text-sm font-semibold text-slate-500"
-                      }
-                    >
-                      {stripeAccountCreated
-                        ? "Creato"
-                        : "Non collegato"}
-                    </dd>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-sm text-slate-600">
-                      Onboarding
-                    </dt>
-
-                    <dd
-                      className={
-                        stripeOnboardingCompleted
-                          ? "text-sm font-semibold text-green-700"
-                          : "text-sm font-semibold text-amber-700"
-                      }
-                    >
-                      {stripeOnboardingCompleted
-                        ? "Completato"
-                        : "Da completare"}
-                    </dd>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-sm text-slate-600">
-                      Pagamenti
-                    </dt>
-
-                    <dd
-                      className={
-                        stripeChargesEnabled
-                          ? "text-sm font-semibold text-green-700"
-                          : "text-sm font-semibold text-slate-500"
-                      }
-                    >
-                      {stripeChargesEnabled
-                        ? "Abilitati"
-                        : "Non abilitati"}
-                    </dd>
-                  </div>
-
-                  <div className="flex items-center justify-between gap-4">
-                    <dt className="text-sm text-slate-600">
-                      Accrediti
-                    </dt>
-
-                    <dd
-                      className={
-                        stripePayoutsEnabled
-                          ? "text-sm font-semibold text-green-700"
-                          : "text-sm font-semibold text-slate-500"
-                      }
-                    >
-                      {stripePayoutsEnabled
-                        ? "Abilitati"
-                        : "Non abilitati"}
-                    </dd>
-                  </div>
-                </dl>
-              </div>
             </div>
-          </article>
+
+            <div className="shrink-0">
+              <Link
+                href="/dashboard/professional/payments"
+                className="inline-flex w-full items-center justify-center rounded-xl bg-blue-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-800 lg:w-auto"
+              >
+                Configura pagamenti
+              </Link>
+            </div>
+          </div>
         </section>
 
-        {/* FUNZIONI DASHBOARD */}
+        {/* FUNZIONI PRINCIPALI */}
 
-        <section className="mt-8 grid gap-6 md:grid-cols-2 xl:grid-cols-5">
+        <section className="mt-8 grid gap-6 sm:grid-cols-2 xl:grid-cols-5">
           <article className="rounded-2xl bg-white p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-slate-900">
               Profilo professionale
@@ -992,9 +928,8 @@ export default async function ProfessionalDashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Visualizza gli aggiornamenti
-              sulle richieste, chat e
-              prenotazioni.
+              Visualizza gli aggiornamenti sulle
+              richieste, appuntamenti e messaggi.
             </p>
 
             <Link
@@ -1005,7 +940,7 @@ export default async function ProfessionalDashboardPage() {
             </Link>
           </article>
 
-          {/* NUOVA CARD PAGAMENTI */}
+          {/* NUOVA CARD SPRINT 4.2 */}
 
           <article className="rounded-2xl bg-white p-6 shadow-sm">
             <h3 className="text-lg font-semibold text-slate-900">
@@ -1013,21 +948,17 @@ export default async function ProfessionalDashboardPage() {
             </h3>
 
             <p className="mt-2 text-sm leading-6 text-slate-600">
-              Collega il tuo conto Stripe per
-              ricevere i pagamenti delle
-              prestazioni effettuate tramite FG
-              Home Care.
+              Collega Stripe e controlla lo stato
+              dell’account per ricevere gli
+              accrediti.
             </p>
 
-            {stripeReady ? (
-              <span className="mt-5 inline-flex rounded-full bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">
-                Pagamenti attivi
-              </span>
-            ) : (
-              <span className="mt-5 inline-flex rounded-full bg-amber-50 px-3 py-1.5 text-xs font-semibold text-amber-700">
-                Configurazione in preparazione
-              </span>
-            )}
+            <Link
+              href="/dashboard/professional/payments"
+              className="mt-5 inline-flex text-sm font-semibold text-blue-700 hover:underline"
+            >
+              Configura pagamenti
+            </Link>
           </article>
         </section>
 
@@ -1045,8 +976,7 @@ export default async function ProfessionalDashboardPage() {
               </dt>
 
               <dd className="mt-1 font-semibold text-slate-900">
-                {professionalProfile
-                  ?.profession ||
+                {professionalProfile?.profession ||
                   "Non indicata"}
               </dd>
             </div>
