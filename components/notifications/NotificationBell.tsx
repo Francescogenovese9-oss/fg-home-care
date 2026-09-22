@@ -5,18 +5,18 @@ import {
   useRef,
   useState,
 } from "react";
+
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
+import type { NotificationType } from "@/lib/notifications/types";
 import { createClient } from "@/lib/supabase/client";
 
-type NotificationType =
-  | "APPOINTMENT_CREATED"
-  | "APPOINTMENT_ACCEPTED"
-  | "APPOINTMENT_REJECTED"
-  | "APPOINTMENT_CANCELLED"
-  | "APPOINTMENT_COMPLETED"
-  | "MESSAGE_RECEIVED";
+/*
+ * =========================================================
+ * TIPI NOTIFICA
+ * =========================================================
+ */
 
 export type NotificationPreview = {
   id: string;
@@ -34,10 +34,20 @@ type NotificationBellProps = {
   initialNotifications: NotificationPreview[];
 };
 
+/*
+ * =========================================================
+ * ICONE
+ * =========================================================
+ */
+
 function getNotificationIcon(
   type: NotificationType
 ) {
   switch (type) {
+    case "APPOINTMENT_CREATED":
+    case "APPOINTMENT_REQUESTED":
+      return "📅";
+
     case "APPOINTMENT_ACCEPTED":
       return "✅";
 
@@ -49,40 +59,122 @@ function getNotificationIcon(
 
     case "APPOINTMENT_COMPLETED":
       return "🏁";
-      
-      case "MESSAGE_RECEIVED":
-        return "💬";
+
+    case "APPOINTMENT_PAYMENT_RECEIVED":
+      return "💳";
+
+    case "APPOINTMENT_REFUND_CONFIRMED":
+    case "APPOINTMENT_REFUND_RECEIVED":
+      return "↩️";
+
+    case "VIDEO_CONSULTATION_STARTED":
+      return "📹";
+
+    case "MESSAGE_RECEIVED":
+      return "💬";
+
+    /*
+     * RECENSIONI
+     */
+
+    case "REVIEW_RECEIVED":
+      return "⭐";
+
+    case "REVIEW_REPLY_RECEIVED":
+      return "💬";
+
+    case "REVIEW_REPLY_UPDATED":
+      return "✏️";
+
+    /*
+     * MODERAZIONE
+     */
+
+    case "REVIEW_REPORT_OPENED":
+      return "🚩";
+
+    case "REVIEW_REPORT_RESOLVED_HIDDEN":
+      return "🙈";
+
+    case "REVIEW_REPORT_RESTORED":
+      return "♻️";
+
+    case "REVIEW_REPORT_DISMISSED":
+      return "✓";
+
+    /*
+     * PROFILO PROFESSIONISTA
+     */
+
+    case "PROFESSIONAL_PROFILE_UPDATED":
+      return "👤";
+
+    case "PROFESSIONAL_AVATAR_UPDATED":
+      return "📷";
+
+    case "PROFESSIONAL_DOCUMENT_UPLOADED":
+      return "📄";
+
+    case "PROFESSIONAL_PROFILE_APPROVED":
+      return "✅";
+
+    case "PROFESSIONAL_PROFILE_REJECTED":
+      return "⚠️";
 
     default:
-      return "📅";
+      return "🔔";
   }
 }
 
-function formatRelativeDate(value: string) {
-  const notificationDate = new Date(value);
-  const now = new Date();
+/*
+ * =========================================================
+ * DATA RELATIVA
+ * =========================================================
+ */
+
+function formatRelativeDate(
+  value: string
+) {
+  const notificationDate =
+    new Date(value);
+
+  const now =
+    new Date();
 
   const differenceMilliseconds =
     now.getTime() -
     notificationDate.getTime();
 
-  const differenceMinutes = Math.floor(
-    differenceMilliseconds / 60000
-  );
+  const differenceMinutes =
+    Math.floor(
+      differenceMilliseconds /
+        60000
+    );
 
-  if (differenceMinutes < 1) {
+  if (
+    differenceMinutes <
+    1
+  ) {
     return "Adesso";
   }
 
-  if (differenceMinutes < 60) {
+  if (
+    differenceMinutes <
+    60
+  ) {
     return `${differenceMinutes} min fa`;
   }
 
-  const differenceHours = Math.floor(
-    differenceMinutes / 60
-  );
+  const differenceHours =
+    Math.floor(
+      differenceMinutes /
+        60
+    );
 
-  if (differenceHours < 24) {
+  if (
+    differenceHours <
+    24
+  ) {
     return `${differenceHours} ${
       differenceHours === 1
         ? "ora"
@@ -90,11 +182,16 @@ function formatRelativeDate(value: string) {
     } fa`;
   }
 
-  const differenceDays = Math.floor(
-    differenceHours / 24
-  );
+  const differenceDays =
+    Math.floor(
+      differenceHours /
+        24
+    );
 
-  if (differenceDays < 7) {
+  if (
+    differenceDays <
+    7
+  ) {
     return `${differenceDays} ${
       differenceDays === 1
         ? "giorno"
@@ -102,37 +199,98 @@ function formatRelativeDate(value: string) {
     } fa`;
   }
 
-  return new Intl.DateTimeFormat("it-IT", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-  }).format(notificationDate);
+  return new Intl.DateTimeFormat(
+    "it-IT",
+    {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    }
+  ).format(
+    notificationDate
+  );
 }
+
+/*
+ * =========================================================
+ * COMPONENTE
+ * =========================================================
+ */
 
 export default function NotificationBell({
   userId,
   initialUnreadCount,
   initialNotifications,
 }: NotificationBellProps) {
-  const router = useRouter();
+  const router =
+    useRouter();
 
   const containerRef =
-    useRef<HTMLDivElement>(null);
+    useRef<HTMLDivElement>(
+      null
+    );
 
-  const [isOpen, setIsOpen] =
+  const [
+    isOpen,
+    setIsOpen,
+  ] =
     useState(false);
 
-  const [unreadCount, setUnreadCount] =
-    useState(initialUnreadCount);
+  const [
+    unreadCount,
+    setUnreadCount,
+  ] =
+    useState(
+      initialUnreadCount
+    );
 
-  const [notifications, setNotifications] =
-    useState(initialNotifications);
+  const [
+    notifications,
+    setNotifications,
+  ] =
+    useState(
+      initialNotifications
+    );
 
-  const [isUpdating, setIsUpdating] =
+  const [
+    isUpdating,
+    setIsUpdating,
+  ] =
     useState(false);
 
-  const [error, setError] =
+  const [
+    error,
+    setError,
+  ] =
     useState("");
+
+  /*
+   * =========================================================
+   * SINCRONIZZAZIONE PROPS
+   * =========================================================
+   *
+   * Se la pagina server viene aggiornata,
+   * sincronizziamo anche lo stato locale.
+   */
+
+  useEffect(() => {
+    setUnreadCount(
+      initialUnreadCount
+    );
+
+    setNotifications(
+      initialNotifications
+    );
+  }, [
+    initialUnreadCount,
+    initialNotifications,
+  ]);
+
+  /*
+   * =========================================================
+   * CHIUSURA MENU
+   * =========================================================
+   */
 
   useEffect(() => {
     function handleOutsideClick(
@@ -151,7 +309,10 @@ export default function NotificationBell({
     function handleEscape(
       event: KeyboardEvent
     ) {
-      if (event.key === "Escape") {
+      if (
+        event.key ===
+        "Escape"
+      ) {
         setIsOpen(false);
       }
     }
@@ -179,161 +340,278 @@ export default function NotificationBell({
     };
   }, []);
 
+  /*
+   * =========================================================
+   * REALTIME SUPABASE
+   * =========================================================
+   */
+
   useEffect(() => {
-    const supabase = createClient();
+    const supabase =
+      createClient();
 
-    const channel = supabase
-      .channel(
-        `notification-menu-${userId}`
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "INSERT",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          const newNotification =
-            payload.new as NotificationPreview;
+    const channel =
+      supabase
+        .channel(
+          `notification-menu-${userId}`
+        )
 
-          setNotifications((current) => {
-            const withoutDuplicate =
-              current.filter(
-                (notification) =>
-                  notification.id !==
-                  newNotification.id
+        /*
+         * NUOVA NOTIFICA
+         */
+        .on(
+          "postgres_changes",
+          {
+            event:
+              "INSERT",
+
+            schema:
+              "public",
+
+            table:
+              "notifications",
+
+            filter:
+              `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            const newNotification =
+              payload.new as NotificationPreview;
+
+            setNotifications(
+              (
+                current
+              ) => {
+                const withoutDuplicate =
+                  current.filter(
+                    (
+                      notification
+                    ) =>
+                      notification.id !==
+                      newNotification.id
+                  );
+
+                return [
+                  newNotification,
+                  ...withoutDuplicate,
+                ].slice(
+                  0,
+                  5
+                );
+              }
+            );
+
+            if (
+              !newNotification.read
+            ) {
+              setUnreadCount(
+                (
+                  current
+                ) =>
+                  current +
+                  1
               );
-
-            return [
-              newNotification,
-              ...withoutDuplicate,
-            ].slice(0, 5);
-          });
-
-          if (!newNotification.read) {
-            setUnreadCount(
-              (current) => current + 1
-            );
+            }
           }
-        }
-      )
-      .on(
-        "postgres_changes",
-        {
-          event: "UPDATE",
-          schema: "public",
-          table: "notifications",
-          filter: `user_id=eq.${userId}`,
-        },
-        (payload) => {
-          const updatedNotification =
-            payload.new as NotificationPreview;
+        )
 
-          const previousNotification =
-            payload.old as Partial<NotificationPreview>;
+        /*
+         * NOTIFICA AGGIORNATA
+         */
+        .on(
+          "postgres_changes",
+          {
+            event:
+              "UPDATE",
 
-          setNotifications((current) =>
-            current.map((notification) =>
-              notification.id ===
-              updatedNotification.id
-                ? {
-                    ...notification,
-                    ...updatedNotification,
-                  }
-                : notification
-            )
-          );
+            schema:
+              "public",
 
-          if (
-            previousNotification.read ===
-              false &&
-            updatedNotification.read === true
-          ) {
-            setUnreadCount((current) =>
-              Math.max(0, current - 1)
+            table:
+              "notifications",
+
+            filter:
+              `user_id=eq.${userId}`,
+          },
+          (payload) => {
+            const updatedNotification =
+              payload.new as NotificationPreview;
+
+            const previousNotification =
+              payload.old as Partial<NotificationPreview>;
+
+            setNotifications(
+              (
+                current
+              ) =>
+                current.map(
+                  (
+                    notification
+                  ) =>
+                    notification.id ===
+                    updatedNotification.id
+                      ? {
+                          ...notification,
+                          ...updatedNotification,
+                        }
+                      : notification
+                )
             );
-          }
 
-          if (
-            previousNotification.read ===
-              true &&
-            updatedNotification.read ===
-              false
-          ) {
-            setUnreadCount(
-              (current) => current + 1
-            );
+            if (
+              previousNotification.read ===
+                false &&
+              updatedNotification.read ===
+                true
+            ) {
+              setUnreadCount(
+                (
+                  current
+                ) =>
+                  Math.max(
+                    0,
+                    current -
+                      1
+                  )
+              );
+            }
+
+            if (
+              previousNotification.read ===
+                true &&
+              updatedNotification.read ===
+                false
+            ) {
+              setUnreadCount(
+                (
+                  current
+                ) =>
+                  current +
+                  1
+              );
+            }
           }
-        }
-      )
-      .subscribe((status) => {
-        if (
-          status === "CHANNEL_ERROR"
-        ) {
-          console.error(
-            "Errore Realtime notifiche."
-          );
-        }
-      });
+        )
+
+        .subscribe(
+          (
+            status
+          ) => {
+            if (
+              status ===
+              "CHANNEL_ERROR"
+            ) {
+              console.error(
+                "Errore Realtime notifiche."
+              );
+            }
+          }
+        );
 
     return () => {
       void supabase.removeChannel(
         channel
       );
     };
-  }, [userId]);
+  }, [
+    userId,
+  ]);
+
+  /*
+   * =========================================================
+   * SEGNA SINGOLA NOTIFICA COME LETTA
+   * =========================================================
+   */
 
   async function markNotificationAsRead(
     notificationId: string
   ) {
     const notification =
       notifications.find(
-        (item) =>
-          item.id === notificationId
+        (
+          item
+        ) =>
+          item.id ===
+          notificationId
       );
 
-    if (!notification || notification.read) {
+    if (
+      !notification ||
+      notification.read
+    ) {
       return true;
     }
 
     try {
-      const response = await fetch(
-        "/api/notifications/read",
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            notificationId,
-          }),
-        }
-      );
+      const response =
+        await fetch(
+          "/api/notifications/read",
+          {
+            method:
+              "PATCH",
 
-      if (!response.ok) {
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify(
+                {
+                  notificationId,
+                }
+              ),
+          }
+        );
+
+      if (
+        !response.ok
+      ) {
         return false;
       }
 
-      setNotifications((current) =>
-        current.map((item) =>
-          item.id === notificationId
-            ? {
-                ...item,
-                read: true,
-              }
-            : item
-        )
+      /*
+       * Aggiornamento locale.
+       *
+       * L'evento Realtime potrebbe
+       * arrivare subito dopo.
+       * Math.max evita valori negativi.
+       */
+
+      setNotifications(
+        (
+          current
+        ) =>
+          current.map(
+            (
+              item
+            ) =>
+              item.id ===
+              notificationId
+                ? {
+                    ...item,
+                    read:
+                      true,
+                  }
+                : item
+          )
       );
 
-      setUnreadCount((current) =>
-        Math.max(0, current - 1)
+      setUnreadCount(
+        (
+          current
+        ) =>
+          Math.max(
+            0,
+            current -
+              1
+          )
       );
 
       return true;
-    } catch (requestError) {
+    } catch (
+      requestError
+    ) {
       console.error(
         "Errore lettura notifica:",
         requestError
@@ -342,6 +620,12 @@ export default function NotificationBell({
       return false;
     }
   }
+
+  /*
+   * =========================================================
+   * APERTURA NOTIFICA
+   * =========================================================
+   */
 
   async function openNotification(
     notification: NotificationPreview
@@ -369,42 +653,74 @@ export default function NotificationBell({
     router.refresh();
   }
 
+  /*
+   * =========================================================
+   * SEGNA TUTTE COME LETTE
+   * =========================================================
+   */
+
   async function markAllAsRead() {
     setError("");
-    setIsUpdating(true);
+    setIsUpdating(
+      true
+    );
 
     try {
-      const response = await fetch(
-        "/api/notifications/read",
-        {
-          method: "PATCH",
-          headers: {
-            "Content-Type":
-              "application/json",
-          },
-          body: JSON.stringify({
-            markAll: true,
-          }),
-        }
-      );
+      const response =
+        await fetch(
+          "/api/notifications/read",
+          {
+            method:
+              "PATCH",
 
-      if (!response.ok) {
+            headers: {
+              "Content-Type":
+                "application/json",
+            },
+
+            body:
+              JSON.stringify(
+                {
+                  markAll:
+                    true,
+                }
+              ),
+          }
+        );
+
+      if (
+        !response.ok
+      ) {
         setError(
           "Non è stato possibile aggiornare le notifiche."
         );
+
         return;
       }
 
-      setNotifications((current) =>
-        current.map((notification) => ({
-          ...notification,
-          read: true,
-        }))
+      setNotifications(
+        (
+          current
+        ) =>
+          current.map(
+            (
+              notification
+            ) => ({
+              ...notification,
+              read:
+                true,
+            })
+          )
       );
 
-      setUnreadCount(0);
+      setUnreadCount(
+        0
+      );
+
       router.refresh();
-    } catch (requestError) {
+    } catch (
+      requestError
+    ) {
       console.error(
         "Errore lettura notifiche:",
         requestError
@@ -414,24 +730,44 @@ export default function NotificationBell({
         "Impossibile comunicare con il server."
       );
     } finally {
-      setIsUpdating(false);
+      setIsUpdating(
+        false
+      );
     }
   }
 
+  /*
+   * =========================================================
+   * RENDER
+   * =========================================================
+   */
+
   return (
     <div
-      ref={containerRef}
+      ref={
+        containerRef
+      }
       className="relative"
     >
+      {/* CAMPANELLA */}
+
       <button
         type="button"
         onClick={() =>
-          setIsOpen((current) => !current)
+          setIsOpen(
+            (
+              current
+            ) =>
+              !current
+          )
         }
-        aria-expanded={isOpen}
+        aria-expanded={
+          isOpen
+        }
         aria-haspopup="menu"
         aria-label={
-          unreadCount > 0
+          unreadCount >
+          0
             ? `${unreadCount} notifiche non lette`
             : "Apri notifiche"
         }
@@ -441,20 +777,26 @@ export default function NotificationBell({
           🔔
         </span>
 
-        {unreadCount > 0 && (
+        {unreadCount >
+          0 && (
           <span className="absolute -right-1 -top-1 flex min-h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1.5 text-[11px] font-bold text-white">
-            {unreadCount > 99
+            {unreadCount >
+            99
               ? "99+"
               : unreadCount}
           </span>
         )}
       </button>
 
+      {/* MENU */}
+
       {isOpen && (
         <div
           role="menu"
           className="absolute right-0 z-50 mt-3 w-[min(24rem,calc(100vw-2rem))] overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl"
         >
+          {/* HEADER */}
+
           <div className="flex items-center justify-between border-b border-slate-200 px-5 py-4">
             <div>
               <h2 className="font-bold text-slate-900">
@@ -462,23 +804,28 @@ export default function NotificationBell({
               </h2>
 
               <p className="mt-1 text-xs text-slate-500">
-                {unreadCount === 0
+                {unreadCount ===
+                0
                   ? "Nessuna notifica non letta"
                   : `${unreadCount} ${
-                      unreadCount === 1
+                      unreadCount ===
+                      1
                         ? "notifica non letta"
                         : "notifiche non lette"
                     }`}
               </p>
             </div>
 
-            {unreadCount > 0 && (
+            {unreadCount >
+              0 && (
               <button
                 type="button"
                 onClick={() =>
                   void markAllAsRead()
                 }
-                disabled={isUpdating}
+                disabled={
+                  isUpdating
+                }
                 className="text-xs font-semibold text-blue-700 hover:underline disabled:cursor-not-allowed disabled:opacity-50"
               >
                 {isUpdating
@@ -487,6 +834,8 @@ export default function NotificationBell({
               </button>
             )}
           </div>
+
+          {/* ERRORE */}
 
           {error && (
             <div
@@ -497,7 +846,10 @@ export default function NotificationBell({
             </div>
           )}
 
-          {notifications.length === 0 ? (
+          {/* LISTA */}
+
+          {notifications.length ===
+          0 ? (
             <div className="px-6 py-10 text-center">
               <div className="text-3xl">
                 🔔
@@ -508,16 +860,23 @@ export default function NotificationBell({
               </p>
 
               <p className="mt-2 text-sm text-slate-500">
-                Qui vedrai gli aggiornamenti
-                sulle richieste.
+                Qui vedrai gli
+                aggiornamenti su
+                prenotazioni,
+                messaggi, recensioni
+                e moderazione.
               </p>
             </div>
           ) : (
             <div className="max-h-96 overflow-y-auto">
               {notifications.map(
-                (notification) => (
+                (
+                  notification
+                ) => (
                   <button
-                    key={notification.id}
+                    key={
+                      notification.id
+                    }
                     type="button"
                     role="menuitem"
                     onClick={() =>
@@ -568,15 +927,20 @@ export default function NotificationBell({
             </div>
           )}
 
+          {/* FOOTER */}
+
           <div className="bg-slate-50 p-3">
             <Link
               href="/dashboard/notifications"
               onClick={() =>
-                setIsOpen(false)
+                setIsOpen(
+                  false
+                )
               }
               className="flex w-full items-center justify-center rounded-xl px-4 py-3 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
             >
-              Visualizza tutte le notifiche
+              Visualizza tutte le
+              notifiche
             </Link>
           </div>
         </div>

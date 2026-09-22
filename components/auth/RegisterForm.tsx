@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { PROFESSIONS } from "@/lib/professions";
 
 import {
   registerSchema,
@@ -50,14 +51,18 @@ export default function RegisterForm() {
       password: "",
       confirmPassword: "",
       role: "PATIENT",
+      city: "",
+      province: "",
       profession: "",
       registrationNumber: "",
       vatNumber: "",
+      subscriptionPlan: "BASIC",
     },
   });
 
   const selectedRole = watch("role");
-
+  const selectedProfession = watch("profession");
+  const selectedSubscriptionPlan = watch("subscriptionPlan");
   async function onSubmit(values: RegisterValues) {
     setServerError("");
     setIsSubmitting(true);
@@ -97,7 +102,7 @@ export default function RegisterForm() {
   }
 
   return (
-    <Card className="w-full max-w-2xl shadow-xl">
+    <Card className="w-full max-w-4xl shadow-xl">
       <CardHeader className="text-center">
         <CardTitle className="text-3xl">
           Crea il tuo account
@@ -158,6 +163,21 @@ export default function RegisterForm() {
             </div>
           </div>
 
+          {selectedRole === "PATIENT" && (
+            <div className="grid gap-5 md:grid-cols-2">
+              <div className="space-y-2">
+                <Label htmlFor="city">Citta</Label>
+                <Input id="city" autoComplete="address-level2" {...register("city")} />
+                {errors.city && <p className="text-sm text-red-600">{errors.city.message}</p>}
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="province">Provincia</Label>
+                <Input id="province" autoComplete="address-level1" {...register("province")} />
+                {errors.province && <p className="text-sm text-red-600">{errors.province.message}</p>}
+              </div>
+            </div>
+          )}
+
           <div className="space-y-2">
             <Label htmlFor="email">Email</Label>
 
@@ -215,16 +235,133 @@ export default function RegisterForm() {
 
           {selectedRole === "PROFESSIONAL" && (
             <div className="space-y-5 rounded-2xl bg-slate-50 p-5">
+              <div className="space-y-4">
+                <div>
+                  <p className="text-lg font-bold text-blue-950">
+                    Piani per professionisti
+                  </p>
+                  <p className="mt-1 text-sm text-slate-600">
+                    Il piano Basic non prevede canone mensile e applica una commissione del 15% sulle prestazioni. Il piano Premium prevede un canone mensile e una commissione dell&apos;8%.
+                  </p>
+                </div>
+
+                <div className="grid gap-4 md:grid-cols-2">
+                  <button
+                    type="button"
+                    onClick={() =>
+                      setValue("subscriptionPlan", "BASIC", {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    }
+                    className={`rounded-2xl border-2 p-5 text-left transition ${
+                      selectedSubscriptionPlan === "BASIC"
+                        ? "border-blue-600 bg-blue-50 shadow-md"
+                        : "border-slate-200 bg-white hover:border-blue-300"
+                    }`}
+                  >
+                    <p className="text-sm font-bold uppercase tracking-wide text-blue-700">
+                      Basic
+                    </p>
+                    <h3 className="mt-2 text-xl font-bold text-blue-950">
+                      Piano Basic
+                    </h3>
+
+                    <div className="mt-4">
+                      <span className="text-3xl font-black text-blue-950">0 €</span>
+                    <span className="text-sm text-slate-500"> / mese</span>
+                    </div>
+
+                    <p className="mt-1 font-semibold text-blue-700">
+                      15% per prestazione
+                    </p>
+
+                    <p className="mt-4 text-sm leading-6 text-slate-600">
+                      Nessun canone mensile. La commissione del 15% viene applicata alle prestazioni gestite tramite FG Home Care.
+                    </p>
+
+                    <ul className="mt-4 space-y-2 text-sm text-slate-700">
+                      <li>✓ Profilo professionale pubblico</li>
+                      <li>✓ Prenotazioni e calendario</li>
+                      <li>✓ Chat e pagamenti in piattaforma</li>
+                      <li>✓ Recensioni verificate</li>
+                    </ul>
+                  </button>                  <button
+                    type="button"
+                    onClick={() =>
+                      setValue("subscriptionPlan", "PREMIUM", {
+                        shouldValidate: true,
+                        shouldDirty: true,
+                      })
+                    }
+                    className={`relative rounded-2xl border-2 p-5 text-left transition ${
+                      selectedSubscriptionPlan === "PREMIUM"
+                        ? "border-indigo-400 bg-gradient-to-br from-blue-700 to-indigo-800 text-white shadow-xl"
+                        : "border-indigo-200 bg-gradient-to-br from-blue-600 to-indigo-700 text-white hover:shadow-lg"
+                    }`}
+                  >
+                    <span className="absolute right-4 top-4 rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-indigo-700">
+                      PREMIUM
+                    </span>
+
+                    <p className="text-sm font-bold uppercase tracking-wide text-blue-100">
+                      Premium
+                    </p>
+
+                    <h3 className="mt-2 text-xl font-bold">
+                      Piano Premium
+                  </h3>
+
+                    <div className="mt-4">
+                      <span className="text-3xl font-black">19,90 €</span>
+                      <span className="text-sm text-blue-100"> / mese</span>
+                    </div>
+
+                    <p className="mt-1 font-semibold text-blue-100">
+                      8% per prestazione
+                    </p>
+
+                    <p className="mt-4 text-sm leading-6 text-blue-50">
+                      Il piano Premium prevede un canone di 19,90 &euro; al mese e una commissione dell&apos;8% sulle prestazioni.
+                    </p>
+
+                    <ul className="mt-4 space-y-2 text-sm text-blue-50">
+                      <li>✓ Tutto ciò che include Basic</li>
+                      <li>Commissione ridotta all&apos;8%</li>
+                      <li>✓ Maggiore visibilità nei risultati</li>
+                      <li>✓ Badge Premium e statistiche avanzate</li>
+                 <li>✓ Supporto prioritario</li>
+                    </ul>
+                  </button>
+                </div>
+
+                {errors.subscriptionPlan && (
+                  <p className="text-sm text-red-600">
+                    {errors.subscriptionPlan.message}
+                  </p>
+                )}
+
+                <p className="text-center text-xs text-slate-500">
+                  Puoi iniziare con il piano Basic e passare successivamente al piano Premium dalla dashboard professionista. Premium viene attivato dopo il completamento dell&apos;abbonamento.
+                </p>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="profession">
                   Professione
                 </Label>
 
-                <Input
+                <select
                   id="profession"
-                  placeholder="Es. Infermiere, OSS, fisioterapista"
                   {...register("profession")}
-                />
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                >
+                  <option value="">Seleziona la tua professione</option>
+                  {PROFESSIONS.map((profession) => (
+                    <option key={profession} value={profession}>
+                      {profession}
+                    </option>
+                  ))}
+                </select>
 
                 {errors.profession && (
                   <p className="text-sm text-red-600">
@@ -234,17 +371,21 @@ export default function RegisterForm() {
               </div>
 
               <div className="grid gap-5 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="registrationNumber">
-                    Numero iscrizione albo
-                  </Label>
+                {selectedProfession !== "Badante" &&
+                  selectedProfession !==
+                    "Operatore socio sanitario (OSS)" && (
+                    <div className="space-y-2">
+                      <Label htmlFor="registrationNumber">
+                        Numero iscrizione albo
+                      </Label>
 
-                  <Input
-                    id="registrationNumber"
-                    placeholder="Facoltativo"
-                    {...register("registrationNumber")}
-                  />
-                </div>
+                      <Input
+                        id="registrationNumber"
+                        placeholder="Facoltativo"
+                        {...register("registrationNumber")}
+                      />
+                    </div>
+                  )}
 
                 <div className="space-y-2">
                   <Label htmlFor="vatNumber">

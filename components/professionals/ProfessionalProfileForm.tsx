@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import { PROFESSIONS, isProfession } from "@/lib/professions";
 import {
   professionalProfileSchema,
   type ProfessionalProfileInput,
@@ -94,6 +95,7 @@ export default function ProfessionalProfileForm() {
   });
 
   const selectedDays = watch("availableWeekdays") ?? [];
+  const selectedProfession = watch("profession");
 
   useEffect(() => {
     async function loadProfile() {
@@ -129,7 +131,10 @@ export default function ProfessionalProfileForm() {
         const profile = result.profile;
 
         reset({
-          profession: profile.profession ?? "",
+          profession:
+            profile.profession && isProfession(profile.profession)
+              ? profile.profession
+              : "",
           specialization: profile.specialization ?? "",
           registrationNumber:
             profile.registration_number ?? "",
@@ -266,11 +271,18 @@ export default function ProfessionalProfileForm() {
                 Professione
               </Label>
 
-              <Input
+              <select
                 id="profession"
-                placeholder="Es. Infermiere"
                 {...register("profession")}
-              />
+                className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+              >
+                <option value="">Seleziona la tua professione</option>
+                {PROFESSIONS.map((profession) => (
+                  <option key={profession} value={profession}>
+                    {profession}
+                  </option>
+                ))}
+              </select>
 
               {errors.profession && (
                 <p className="text-sm text-red-600">
@@ -281,12 +293,18 @@ export default function ProfessionalProfileForm() {
 
             <div className="space-y-2">
               <Label htmlFor="specialization">
-                Specializzazione
+                {selectedProfession === "Medico specialista"
+                  ? "Specializzazione medica"
+                  : "Ambito di competenza"}
               </Label>
 
               <Input
                 id="specialization"
-                placeholder="Es. assistenza post-operatoria"
+                placeholder={
+                  selectedProfession === "Medico specialista"
+                    ? "Es. Urologia, Cardiologia, Ortopedia"
+                    : "Es. assistenza post-operatoria"
+                }
                 {...register("specialization")}
               />
 
@@ -297,23 +315,26 @@ export default function ProfessionalProfileForm() {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="registrationNumber">
-                Numero iscrizione albo
-              </Label>
+            {selectedProfession !== "Badante" &&
+              selectedProfession !==
+                "Operatore socio sanitario (OSS)" && (
+                <div className="space-y-2">
+                  <Label htmlFor="registrationNumber">
+                    Numero iscrizione albo
+                  </Label>
 
-              <Input
-                id="registrationNumber"
-                {...register("registrationNumber")}
-              />
+                  <Input
+                    id="registrationNumber"
+                    {...register("registrationNumber")}
+                  />
 
-              {errors.registrationNumber && (
-                <p className="text-sm text-red-600">
-                  {errors.registrationNumber.message}
-                </p>
+                  {errors.registrationNumber && (
+                    <p className="text-sm text-red-600">
+                      {errors.registrationNumber.message}
+                    </p>
+                  )}
+                </div>
               )}
-            </div>
-
             <div className="space-y-2">
               <Label htmlFor="vatNumber">
                 Partita IVA

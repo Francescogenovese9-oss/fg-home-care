@@ -32,10 +32,22 @@ export default async function ProfessionalProfilePage() {
     redirect("/dashboard/patient");
   }
 
+  const { data: professionalProfile } = await supabase
+    .from("professional_profiles")
+    .select("profession")
+    .eq("user_id", user.id)
+    .maybeSingle();
   return (
     <main className="min-h-screen bg-slate-50">
       <div className="mx-auto max-w-5xl px-6 py-10">
         <div className="mb-8">
+          <a
+            href="/dashboard/professional"
+            className="mb-5 inline-flex items-center text-sm font-semibold text-slate-600 transition hover:text-blue-700"
+          >
+            ← Indietro
+          </a>
+
           <p className="text-sm font-semibold text-blue-700">
             FG Home Care
           </p>
@@ -54,7 +66,9 @@ export default async function ProfessionalProfilePage() {
         <div className="space-y-8">
           <ProfessionalProfileForm />
 
-          <ProfessionalDocumentsForm />
+          <ProfessionalDocumentsForm
+            profession={professionalProfile?.profession ?? null}
+          />
         </div>
       </div>
     </main>

@@ -10,37 +10,93 @@ import {
 
 import { getStripe } from "@/lib/stripe/server";
 
-import { syncConnectedAccount } from "@/lib/stripe/sync-connected-account";
+import {
+  syncConnectedAccount,
+} from "@/lib/stripe/sync-connected-account";
 
-import { createClient } from "@/lib/supabase/server";
+import {
+  createClient,
+} from "@/lib/supabase/server";
 
-import { getSiteUrl } from "@/lib/site-url";
+import {
+  getSupabaseAdmin,
+} from "@/lib/supabase/admin";
+
+import {
+  getSiteUrl,
+} from "@/lib/site-url";
 
 export async function POST(
   _request: NextRequest
 ) {
   try {
-    const supabase = await createClient();
+    /*
+     * =====================================================
+     * CLIENT UTENTE
+     * =====================================================
+     *
+     * Serve per autenticazione e controlli
+     * sul professionista loggato.
+     * =====================================================
+     */
+
+    const supabase =
+      await createClient();
+
+    /*
+     * =====================================================
+     * AUTENTICAZIONE
+     * =====================================================
+     */
 
     const {
-      data: { user },
-    } = await supabase.auth.getUser();
+      data: {
+        user,
+      },
+      error:
+        userError,
+    } =
+      await supabase.auth.getUser();
 
-    if (!user) {
+    if (
+      userError
+    ) {
+      console.error(
+        "Errore autenticazione onboarding Stripe:",
+        userError
+      );
+    }
+
+    if (
+      !user
+    ) {
       return NextResponse.json(
         {
           message:
             "Utente non autenticato.",
         },
-        { status: 401 }
+        {
+          status: 401,
+        }
       );
     }
 
+    /*
+     * =====================================================
+     * PROFILO ACCOUNT
+     * =====================================================
+     */
+
     const {
-      data: profile,
-      error: profileError,
+      data:
+        profile,
+
+      error:
+        profileError,
     } = await supabase
-      .from("profiles")
+      .from(
+        "profiles"
+      )
       .select(
         `
           id,
@@ -50,21 +106,37 @@ export async function POST(
           role
         `
       )
-      .eq("id", user.id)
+      .eq(
+        "id",
+        user.id
+      )
       .maybeSingle();
 
     if (
       profileError ||
       !profile
     ) {
+      console.error(
+        "Errore lettura profilo onboarding Stripe:",
+        profileError
+      );
+
       return NextResponse.json(
         {
           message:
             "Profilo utente non disponibile.",
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
+
+    /*
+     * =====================================================
+     * VERIFICA RUOLO
+     * =====================================================
+     */
 
     if (
       profile.role !==
@@ -75,15 +147,28 @@ export async function POST(
           message:
             "Operazione riservata ai professionisti.",
         },
-        { status: 403 }
+        {
+          status: 403,
+        }
       );
     }
 
+    /*
+     * =====================================================
+     * PROFILO PROFESSIONALE
+     * =====================================================
+     */
+
     const {
-      data: professionalProfile,
-      error: professionalError,
+      data:
+        professionalProfile,
+
+      error:
+        professionalError,
     } = await supabase
-      .from("professional_profiles")
+      .from(
+        "professional_profiles"
+      )
       .select(
         `
           user_id,
@@ -92,24 +177,41 @@ export async function POST(
           stripe_account_id
         `
       )
-      .eq("user_id", user.id)
+      .eq(
+        "user_id",
+        user.id
+      )
       .maybeSingle();
 
     if (
       professionalError ||
       !professionalProfile
     ) {
+      console.error(
+        "Errore lettura profilo professionale onboarding Stripe:",
+        professionalError
+      );
+
       return NextResponse.json(
         {
           message:
             "Profilo professionale non disponibile.",
         },
-        { status: 500 }
+        {
+          status: 500,
+        }
       );
     }
 
+    /*
+     * =====================================================
+     * PROFILO APPROVATO
+     * =====================================================
+     */
+
     if (
-      professionalProfile.verification_status !==
+      professionalProfile
+        .verification_status !==
       "APPROVED"
     ) {
       return NextResponse.json(
@@ -117,9 +219,17 @@ export async function POST(
           message:
             "Il profilo deve essere approvato prima di collegare Stripe.",
         },
-        { status: 403 }
+        {
+          status: 403,
+        }
       );
     }
+
+    /*
+     * =====================================================
+     * NOME PROFESSIONISTA
+     * =====================================================
+     */
 
     const displayName =
       [
@@ -135,12 +245,33 @@ export async function POST(
         .stripe_account_id;
 
     /*
-     * CREAZIONE ACCOUNT V2
+     * =====================================================
+     * CLIENT ADMIN PRIVILEGIATO
+     * =====================================================
+     *
+     * I campi Stripe sono dati di sistema.
+     *
+     * Non devono essere modificabili direttamente
+     * da un account authenticated.
+     * =====================================================
      */
-    if (!stripeAccountId) {
+
+    const supabaseAdmin =
+      getSupabaseAdmin();
+
+    /*
+     * =====================================================
+     * CREAZIONE ACCOUNT STRIPE V2
+     * =====================================================
+     */
+
+    if (
+      !stripeAccountId
+    ) {
       const account =
         await createStripeV2Account({
-          userId: user.id,
+          userId:
+            user.id,
 
           email:
             profile.email ??
@@ -149,16 +280,29 @@ export async function POST(
           displayName,
 
           profession:
-            professionalProfile.profession,
+            professionalProfile
+              .profession,
         });
 
       stripeAccountId =
         account.id;
 
+      /*
+       * ===================================================
+       * SALVATAGGIO ACCOUNT STRIPE
+       * ===================================================
+       *
+       * Scrittura con service role.
+       * ===================================================
+       */
+
       const {
-        error: saveError,
-      } = await supabase
-        .from("professional_profiles")
+        error:
+          saveError,
+      } = await supabaseAdmin
+        .from(
+          "professional_profiles"
+        )
         .update({
           stripe_account_id:
             account.id,
@@ -167,14 +311,38 @@ export async function POST(
             true,
 
           stripe_account_updated_at:
-            new Date().toISOString(),
+            new Date()
+              .toISOString(),
         })
-        .eq("user_id", user.id);
+        .eq(
+          "user_id",
+          user.id
+        );
 
-      if (saveError) {
+      if (
+        saveError
+      ) {
         console.error(
           "Errore salvataggio account Stripe:",
-          saveError
+          {
+            message:
+              saveError.message,
+
+            code:
+              saveError.code,
+
+            details:
+              saveError.details,
+
+            hint:
+              saveError.hint,
+
+            userId:
+              user.id,
+
+            stripeAccountId:
+              account.id,
+          }
         );
 
         return NextResponse.json(
@@ -182,14 +350,30 @@ export async function POST(
             message:
               "Account Stripe creato ma non salvato nel database.",
           },
-          { status: 500 }
+          {
+            status: 500,
+          }
         );
       }
+
+      /*
+       * Sincronizzazione capability e stato
+       * dell'account Stripe.
+       *
+       * syncConnectedAccount utilizza già
+       * getSupabaseAdmin().
+       */
 
       await syncConnectedAccount(
         account
       );
     } else {
+      /*
+       * ===================================================
+       * ACCOUNT STRIPE GIÀ ESISTENTE
+       * ===================================================
+       */
+
       const existingAccount =
         await retrieveStripeV2Account(
           stripeAccountId
@@ -201,12 +385,19 @@ export async function POST(
     }
 
     /*
-     * Account Links resta l'onboarding
-     * Stripe-hosted.
+     * =====================================================
+     * ACCOUNT LINK STRIPE
+     * =====================================================
+     *
+     * L'onboarding resta Stripe-hosted.
+     * =====================================================
      */
-    const stripe = getStripe();
 
-    const siteUrl = getSiteUrl();
+    const stripe =
+      getStripe();
+
+    const siteUrl =
+      getSiteUrl();
 
     const accountLink =
       await stripe.accountLinks.create({
@@ -228,9 +419,18 @@ export async function POST(
         },
       });
 
+    /*
+     * =====================================================
+     * RISPOSTA
+     * =====================================================
+     */
+
     return NextResponse.json({
-      success: true,
-      url: accountLink.url,
+      success:
+        true,
+
+      url:
+        accountLink.url,
     });
   } catch (error) {
     console.error(
@@ -245,7 +445,9 @@ export async function POST(
             ? error.message
             : "Impossibile avviare Stripe.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }

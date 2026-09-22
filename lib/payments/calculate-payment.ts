@@ -3,11 +3,13 @@ import "server-only";
 import {
   getPlatformCommissionPercent,
   PAYMENT_CURRENCY,
+  type ProfessionalPlan,
 } from "@/lib/payments/config";
 
 type CalculatePaymentInput = {
   hourlyRate: number;
   durationMinutes: number;
+  plan: ProfessionalPlan;
 };
 
 export type PaymentBreakdown = {
@@ -51,6 +53,7 @@ export function centsToEuros(
 export function calculatePaymentBreakdown({
   hourlyRate,
   durationMinutes,
+  plan,
 }: CalculatePaymentInput): PaymentBreakdown {
   if (
     !Number.isFinite(hourlyRate) ||
@@ -72,7 +75,7 @@ export function calculatePaymentBreakdown({
   }
 
   const commissionPercent =
-    getPlatformCommissionPercent();
+    getPlatformCommissionPercent(plan);
 
   const subtotalEuros =
     hourlyRate *

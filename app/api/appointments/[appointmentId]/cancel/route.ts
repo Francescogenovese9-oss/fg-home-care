@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 type RouteContext = {
   params: Promise<{
@@ -39,21 +40,57 @@ export async function PATCH(
     }
 
     const {
+      data: profile,
+      error: profileError,
+    } = await supabase
+      .from("profiles")
+      .select("role")
+      .eq("id", user.id)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error(
+        "Errore lettura profilo:",
+        profileError
+      );
+
+      return NextResponse.json(
+        {
+          message:
+            "Impossibile verificare il profilo utente.",
+        },
+        { status: 500 }
+      );
+    }
+
+    if (!profile || profile.role !== "PATIENT") {
+      return NextResponse.json(
+        {
+          message:
+            "Solo il paziente può annullare questa richiesta.",
+        },
+        { status: 403 }
+      );
+    }
+
+    const admin = getSupabaseAdmin();
+
+    const {
       data: appointment,
       error: appointmentError,
-    } = await supabase
+    } = await admin
       .from("appointments")
       .select(
         `
           id,
           patient_id,
           status,
+          payment_status,
           appointment_date,
           appointment_time
         `
       )
       .eq("id", appointmentId)
-      .eq("patient_id", user.id)
       .maybeSingle();
 
     if (appointmentError) {
@@ -80,21 +117,37 @@ export async function PATCH(
       );
     }
 
+    if (appointment.patient_id !== user.id) {
+      return NextResponse.json(
+        {
+          message:
+            "Non sei autorizzato ad annullare questa richiesta.",
+        },
+        { status: 403 }
+      );
+    }
+
     if (appointment.status !== "PENDING") {
       return NextResponse.json(
         {
           message:
             "Puoi annullare soltanto le richieste ancora in attesa.",
         },
-        { status: 400 }
+        { status: 409 }
       );
     }
 
-    const { data, error } = await supabase
+    const now = new Date().toISOString();
+
+    const {
+      data: cancelledAppointment,
+      error: cancelError,
+    } = await admin
       .from("appointments")
       .update({
         status: "CANCELLED",
-        updated_at: new Date().toISOString(),
+        cancelled_at: now,
+        updated_at: now,
       })
       .eq("id", appointmentId)
       .eq("patient_id", user.id)
@@ -103,35 +156,46 @@ export async function PATCH(
         `
           id,
           status,
+          payment_status,
+          cancelled_at,
           updated_at
         `
       )
-      .single();
+      .maybeSingle();
 
-    if (error) {
+    if (cancelError) {
       console.error(
         "Errore annullamento appuntamento:",
         {
-          message: error.message,
-          code: error.code,
-          details: error.details,
-          hint: error.hint,
+          message: cancelError.message,
+          code: cancelError.code,
+          details: cancelError.details,
+          hint: cancelError.hint,
         }
       );
 
       return NextResponse.json(
         {
           message:
-            error.message ||
             "Impossibile annullare la richiesta.",
         },
-        { status: 400 }
+        { status: 500 }
+      );
+    }
+
+    if (!cancelledAppointment) {
+      return NextResponse.json(
+        {
+          message:
+            "La richiesta non è più in attesa e non può essere annullata.",
+        },
+        { status: 409 }
       );
     }
 
     return NextResponse.json({
       success: true,
-      appointment: data,
+      appointment: cancelledAppointment,
       message:
         "Richiesta annullata correttamente.",
     });

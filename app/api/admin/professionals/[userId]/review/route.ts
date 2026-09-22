@@ -1,8 +1,20 @@
-import { NextRequest, NextResponse } from "next/server";
+import {
+  NextRequest,
+  NextResponse,
+} from "next/server";
 
-import { createClient } from "@/lib/supabase/server";
+import {
+  createClient,
+} from "@/lib/supabase/server";
+import { getProfessionCategory, isProfession } from "@/lib/professions";
 
-type ReviewAction = "APPROVE" | "REJECT";
+import {
+  getSupabaseAdmin,
+} from "@/lib/supabase/admin";
+
+type ReviewAction =
+  | "APPROVE"
+  | "REJECT";
 
 type ReviewBody = {
   action?: ReviewAction;
@@ -20,92 +32,244 @@ export async function PATCH(
   context: RouteContext
 ) {
   try {
-    const { userId } = await context.params;
-
-    const supabase = await createClient();
+    /*
+     * =====================================================
+     * PARAMETRI
+     * =====================================================
+     */
 
     const {
-      data: { user: adminUser },
-    } = await supabase.auth.getUser();
+      userId,
+    } =
+      await context.params;
 
-    if (!adminUser) {
-      return NextResponse.json(
-        {
-          message: "Utente non autenticato.",
-        },
-        { status: 401 }
+    /*
+     * =====================================================
+     * CLIENT UTENTE
+     * =====================================================
+     */
+
+    const supabase =
+      await createClient();
+
+    /*
+     * =====================================================
+     * AUTENTICAZIONE ADMIN
+     * =====================================================
+     */
+
+    const {
+      data: {
+        user:
+          adminUser,
+      },
+
+      error:
+        adminUserError,
+    } =
+      await supabase.auth.getUser();
+
+    if (
+      adminUserError
+    ) {
+      console.error(
+        "Errore autenticazione amministratore:",
+        adminUserError
       );
     }
 
-    const { data: adminProfile, error: adminProfileError } =
-      await supabase
-        .from("profiles")
-        .select("role")
-        .eq("id", adminUser.id)
-        .maybeSingle();
+    if (
+      !adminUser
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            "Utente non autenticato.",
+        },
+        {
+          status: 401,
+        }
+      );
+    }
 
-    if (adminProfileError) {
+    /*
+     * =====================================================
+     * VERIFICA RUOLO ADMIN
+     * =====================================================
+     */
+
+    const {
+      data:
+        adminProfile,
+
+      error:
+        adminProfileError,
+    } = await supabase
+      .from(
+        "profiles"
+      )
+      .select(
+        "role"
+      )
+      .eq(
+        "id",
+        adminUser.id
+      )
+      .maybeSingle();
+
+    if (
+      adminProfileError
+    ) {
       console.error(
         "Errore lettura profilo amministratore:",
         adminProfileError
       );
+
+      return NextResponse.json(
+        {
+          message:
+            "Impossibile verificare il tuo account.",
+        },
+        {
+          status: 500,
+        }
+      );
     }
 
-    if (adminProfile?.role !== "ADMIN") {
+    if (
+      adminProfile?.role !==
+      "ADMIN"
+    ) {
       return NextResponse.json(
         {
           message:
             "Non sei autorizzato a verificare i professionisti.",
         },
-        { status: 403 }
+        {
+          status: 403,
+        }
       );
     }
 
-    const body = (await request.json()) as ReviewBody;
+    /*
+     * =====================================================
+     * BODY
+     * =====================================================
+     */
+
+    let body:
+      ReviewBody;
+
+    try {
+      body =
+        (await request.json()) as ReviewBody;
+    } catch {
+      return NextResponse.json(
+        {
+          message:
+            "Richiesta non valida.",
+        },
+        {
+          status: 400,
+        }
+      );
+    }
+
+    /*
+     * =====================================================
+     * VALIDAZIONE AZIONE
+     * =====================================================
+     */
 
     if (
-      body.action !== "APPROVE" &&
-      body.action !== "REJECT"
+      body.action !==
+        "APPROVE" &&
+      body.action !==
+        "REJECT"
     ) {
       return NextResponse.json(
         {
-          message: "Azione di verifica non valida.",
+          message:
+            "Azione di verifica non valida.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    const notes = body.notes?.trim() || null;
+    const notes =
+      body.notes
+        ?.trim() ||
+      null;
 
-    if (body.action === "REJECT" && !notes) {
+    if (
+      body.action ===
+        "REJECT" &&
+      !notes
+    ) {
       return NextResponse.json(
         {
           message:
             "Inserisci una motivazione prima di rifiutare il profilo.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
     const verificationStatus =
-      body.action === "APPROVE"
+      body.action ===
+      "APPROVE"
         ? "APPROVED"
         : "REJECTED";
 
-    const { data: professionalProfile, error: readError } =
-      await supabase
-        .from("professional_profiles")
-        .select(
-          `
-            user_id,
-            profile_completed,
-            documents_submitted
-          `
-        )
-        .eq("user_id", userId)
-        .maybeSingle();
+    /*
+     * =====================================================
+     * CLIENT ADMIN PRIVILEGIATO
+     * =====================================================
+     */
 
-    if (readError) {
+    const supabaseAdmin =
+      getSupabaseAdmin();
+
+    /*
+     * =====================================================
+     * LETTURA PROFILO PROFESSIONALE
+     * =====================================================
+     */
+
+    const {
+      data:
+        professionalProfile,
+
+      error:
+        readError,
+    } = await supabaseAdmin
+      .from(
+        "professional_profiles"
+      )
+      .select(
+        `
+          user_id,
+          profession,
+          profile_completed,
+          documents_submitted,
+          verification_status,
+          verified,
+          published
+        `
+      )
+      .eq(
+        "user_id",
+        userId
+      )
+      .maybeSingle();
+
+    if (
+      readError
+    ) {
       console.error(
         "Errore lettura professionista:",
         readError
@@ -116,50 +280,209 @@ export async function PATCH(
           message:
             "Impossibile leggere il profilo professionale.",
         },
-        { status: 500 }
-      );
-    }
-
-    if (!professionalProfile) {
-      return NextResponse.json(
         {
-          message: "Profilo professionale non trovato.",
-        },
-        { status: 404 }
+          status: 500,
+        }
       );
     }
 
     if (
-      body.action === "APPROVE" &&
-      (!professionalProfile.profile_completed ||
-        !professionalProfile.documents_submitted)
+      !professionalProfile
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            "Profilo professionale non trovato.",
+        },
+        {
+          status: 404,
+        }
+      );
+    }
+
+    /*
+     * =====================================================
+     * CONTROLLO COMPLETEZZA
+     * =====================================================
+     */
+
+    if (
+      body.action ===
+        "APPROVE" &&
+      (
+        !professionalProfile
+          .profile_completed ||
+        !professionalProfile
+          .documents_submitted
+      )
     ) {
       return NextResponse.json(
         {
           message:
             "Il profilo non può essere approvato finché dati e documenti non sono completi.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
-    const { data, error } = await supabase
-      .from("professional_profiles")
+    /*
+     * =====================================================
+     * CONTROLLO DOCUMENTI APPROVATI
+     * =====================================================
+     */
+
+    if (body.action === "APPROVE") {
+      const professionCategory =
+        isProfession(professionalProfile.profession)
+          ? getProfessionCategory(professionalProfile.profession)
+          : null;
+
+      const {
+        data: professionalDocuments,
+        error: documentsReadError,
+      } = await supabaseAdmin
+        .from("professional_documents")
+        .select(
+          `
+            document_type,
+            verification_status
+          `
+        )
+        .eq("professional_id", userId);
+
+      if (documentsReadError) {
+        console.error(
+          "Errore lettura documenti professionali:",
+          documentsReadError
+        );
+
+        return NextResponse.json(
+          {
+            message:
+              "Impossibile verificare lo stato dei documenti professionali.",
+          },
+          {
+            status: 500,
+          }
+        );
+      }
+
+      const identityApproved =
+        professionalDocuments?.some(
+          (document) =>
+            document.document_type === "identity" &&
+            document.verification_status === "APPROVED"
+        ) ?? false;
+
+      const registrationRequired =
+        professionCategory !== "CARE_ASSISTANCE";
+
+      const registrationApproved =
+        professionalDocuments?.some(
+          (document) =>
+            document.document_type === "registration" &&
+            document.verification_status === "APPROVED"
+        ) ?? false;
+
+        const cvApproved =
+          professionalDocuments?.some(
+            (document) =>
+              document.document_type === "cv" &&
+              document.verification_status === "APPROVED"
+          ) ?? false;
+
+      if (!identityApproved) {
+        return NextResponse.json(
+          {
+            message:
+              "Il documento di identità deve essere approvato prima di approvare il professionista.",
+          },
+          {
+            status: 400,
+          }
+        );
+      }
+
+        if (
+          registrationRequired &&
+          !registrationApproved
+        ) {
+          return NextResponse.json(
+            {
+              message:
+                professionCategory === "HEALTH_OPERATOR"
+                  ? "La qualifica OSS deve essere approvata prima di approvare il professionista."
+                  : "Il documento professionale deve essere approvato prima di approvare il professionista.",
+            },
+            {
+              status: 400,
+            }
+          );
+        }
+
+        if (!cvApproved) {
+          return NextResponse.json(
+            {
+              message:
+                "Il Curriculum Vitae deve essere approvato prima di approvare il professionista.",
+            },
+            {
+              status: 400,
+            }
+          );
+        }    }
+
+    /*
+     * =====================================================
+     * AGGIORNAMENTO VERIFICA
+     * =====================================================
+     */
+
+    const now =
+      new Date()
+        .toISOString();
+
+    const {
+      data,
+      error,
+    } = await supabaseAdmin
+      .from(
+        "professional_profiles"
+      )
       .update({
-        verification_status: verificationStatus,
-        verification_notes: notes,
-        verified_at: new Date().toISOString(),
-        verified_by: adminUser.id,
+        verification_status:
+          verificationStatus,
+
+        verification_notes:
+          notes,
+
+        verified_at:
+          now,
+
+        verified_by:
+          adminUser.id,
+
         verified:
-          body.action === "APPROVE",
+          body.action ===
+          "APPROVE",
+
         published:
-          body.action === "APPROVE",
-        updated_at: new Date().toISOString(),
+          body.action ===
+          "APPROVE",
+
+        updated_at:
+          now,
       })
-      .eq("user_id", userId)
+      .eq(
+        "user_id",
+        userId
+      )
       .select(
         `
           user_id,
+          profession,
           verification_status,
           verification_notes,
           verified,
@@ -170,10 +493,24 @@ export async function PATCH(
       )
       .single();
 
-    if (error) {
+    if (
+      error
+    ) {
       console.error(
         "Errore aggiornamento verifica:",
-        error
+        {
+          message:
+            error.message,
+
+          code:
+            error.code,
+
+          details:
+            error.details,
+
+          hint:
+            error.hint,
+        }
       );
 
       return NextResponse.json(
@@ -182,15 +519,138 @@ export async function PATCH(
             error.message ||
             "Impossibile aggiornare la verifica.",
         },
-        { status: 400 }
+        {
+          status: 400,
+        }
       );
     }
 
+    /*
+     * =====================================================
+     * NOTIFICA PROFESSIONISTA
+     * =====================================================
+     *
+     * La decisione Admin è già stata salvata.
+     * Un eventuale errore di notifica non deve
+     * annullare la verifica.
+     * =====================================================
+     */
+
+    const notificationType =
+      body.action ===
+      "APPROVE"
+        ? "PROFESSIONAL_PROFILE_APPROVED"
+        : "PROFESSIONAL_PROFILE_REJECTED";
+
+    const notificationTitle =
+      body.action ===
+      "APPROVE"
+        ? "Modifiche approvate"
+        : "Modifiche da rivedere";
+
+    const baseMessage =
+      body.action ===
+      "APPROVE"
+        ? "L'amministratore ha verificato e approvato le modifiche al tuo profilo professionale."
+        : "L'amministratore ha verificato il tuo profilo e non ha approvato le modifiche.";
+
+    const notificationMessage =
+      notes
+        ? `${baseMessage} Nota amministratore: ${notes}`
+        : baseMessage;
+
+    const notificationLink =
+      "/dashboard/professional/profile";
+
+    const {
+      data:
+        notification,
+
+      error:
+        notificationError,
+    } = await supabaseAdmin
+      .from(
+        "notifications"
+      )
+      .insert({
+        user_id:
+          userId,
+
+        appointment_id:
+          null,
+
+        review_report_id:
+          null,
+
+        type:
+          notificationType,
+
+        title:
+          notificationTitle,
+
+        message:
+          notificationMessage,
+
+        link:
+          notificationLink,
+
+        read:
+          false,
+      })
+      .select(
+        `
+          id,
+          type,
+          link
+        `
+      )
+      .single();
+
+    if (
+      notificationError
+    ) {
+      console.error(
+        "Verifica professionista completata ma notifica non creata:",
+        {
+          professionalId:
+            userId,
+
+          action:
+            body.action,
+
+          error:
+            notificationError,
+        }
+      );
+    }
+
+    /*
+     * =====================================================
+     * RISPOSTA
+     * =====================================================
+     */
+
     return NextResponse.json({
       success: true,
-      profile: data,
+
+      profile:
+        data,
+
+      notificationCreated:
+        !notificationError,
+
+      notificationId:
+        notification
+          ?.id ??
+        null,
+
+      notificationType,
+
+      notificationLink,
+
       message:
-        body.action === "APPROVE"
+        body.action ===
+        "APPROVE"
           ? "Professionista approvato correttamente."
           : "Profilo rifiutato correttamente.",
     });
@@ -203,9 +663,13 @@ export async function PATCH(
     return NextResponse.json(
       {
         message:
-          "Il server non è riuscito a completare la verifica.",
+          error instanceof Error
+            ? error.message
+            : "Il server non è riuscito a completare la verifica.",
       },
-      { status: 500 }
+      {
+        status: 500,
+      }
     );
   }
 }

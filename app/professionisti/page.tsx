@@ -1,134 +1,116 @@
 import type { Metadata } from "next";
+
 import Link from "next/link";
 
-import ProfessionalCard from "@/components/professionals/ProfessionalCard";
-import ProfessionalsPagination from "@/components/professionals/ProfessionalsPagination";
+import ProfessionalCard, {
+  type ProfessionalCardData,
+} from "@/components/professionals/ProfessionalCard";
+
+import { CareGuidanceMarketplaceTracker } from "@/components/care-guidance/CareGuidanceMarketplaceTracker";
+
 import { createClient } from "@/lib/supabase/server";
-
-export const metadata: Metadata = {
-  title:
-    "Professionisti sanitari domiciliari | FG Home Care",
-  description:
-    "Trova infermieri, OSS, fisioterapisti e altri professionisti sanitari verificati disponibili per assistenza domiciliare e videoconsulti.",
-  alternates: {
-    canonical: "/professionisti",
-  },
-  openGraph: {
-    title:
-      "Professionisti sanitari domiciliari | FG Home Care",
-    description:
-      "Cerca professionisti sanitari verificati disponibili nella tua zona.",
-    type: "website",
-    siteName: "FG Home Care",
-  },
-  twitter: {
-    card: "summary",
-    title:
-      "Professionisti sanitari domiciliari | FG Home Care",
-    description:
-      "Trova professionisti sanitari verificati disponibili per assistenza domiciliare e videoconsulti.",
-  },
-};
-
+import { getSiteUrl } from "@/lib/site-url";
+import { getProfessionalSearchTerms, normalizeProfessionalSearch } from "@/lib/professional-search";
+import { getRecommendedScore } from "@/lib/professional-ranking";
+import type { ProfessionalPlan } from "@/lib/payments/config";
 type SearchParams = {
-  query?: string | string[];
-  profession?: string | string[];
-  city?: string | string[];
-  province?: string | string[];
-  service?: string | string[];
-  maxRate?: string | string[];
-  sort?: string | string[];
-  page?: string | string[];
+  profession?:
+    | string
+    | string[];
+
+  city?:
+    | string
+    | string[];
+
+  service?:
+    | string
+    | string[];
+
+  sort?:
+    | string
+    | string[];
+
+  source?:
+    | string
+    | string[];
 };
 
 type PageProps = {
-  searchParams: Promise<SearchParams>;
+  searchParams:
+    Promise<SearchParams>;
 };
 
-type PublicProfessionalRecord = {
+type PublicProfessional = {
   user_id: string;
-  first_name: string | null;
-  last_name: string | null;
 
-  profession: string;
-  specialization: string | null;
-  bio: string | null;
+  first_name:
+    | string
+    | null;
 
-  city: string | null;
-  province: string | null;
+  last_name:
+    | string
+    | null;
 
-  hourly_rate: number | null;
-  service_radius_km: number;
-
-  home_visits: boolean;
-  video_consultations: boolean;
-
-  available_weekdays: string[] | null;
-  avatar_path: string | null;
+  avatar_path:
+    | string
+    | null;
 
   updated_at: string;
-};
-
-type ProfessionalCardData = {
-  user_id: string;
-  first_name: string | null;
-  last_name: string | null;
 
   profession: string;
-  specialization: string | null;
-  bio: string | null;
 
-  city: string | null;
-  province: string | null;
+  specialization:
+    | string
+    | null;
 
-  hourly_rate: number | null;
-  service_radius_km: number;
+  city:
+    | string
+    | null;
+
+  province:
+    | string
+    | null;
+
+  hourly_rate:
+    | number
+    | null;
+
+  service_radius_km:
+    | number
+    | null;
 
   home_visits: boolean;
-  video_consultations: boolean;
 
-  available_weekdays: string[];
-  avatarUrl: string | null;
+  video_consultations:
+    boolean;
+
+  subscription_plan: ProfessionalPlan;
 };
 
-const PROFESSIONALS_PER_PAGE = 9;
+type ReviewStats = {
+  user_id: string;
 
-const serviceOptions = [
-  {
-    value: "",
-    label: "Tutti i servizi",
-  },
-  {
-    value: "HOME_VISIT",
-    label: "Assistenza domiciliare",
-  },
-  {
-    value: "VIDEO_CONSULTATION",
-    label: "Videoconsulto",
-  },
-];
+  review_count: number;
 
-const sortingOptions = [
-  {
-    value: "recent",
-    label: "Più recenti",
-  },
-  {
-    value: "price-asc",
-    label: "Tariffa crescente",
-  },
-  {
-    value: "price-desc",
-    label: "Tariffa decrescente",
-  },
-  {
-    value: "name-asc",
-    label: "Nome A–Z",
-  },
-];
+  average_rating:
+    | number
+    | string
+    | null;
+};
+
+export const metadata: Metadata = {
+  title:
+    "Professionisti sanitari | FG Home Care",
+
+  description:
+    "Trova professionisti sanitari verificati per assistenza domiciliare e videoconsulto con FG Home Care.",
+};
 
 function getSingleValue(
-  value: string | string[] | undefined
+  value:
+    | string
+    | string[]
+    | undefined
 ) {
   if (Array.isArray(value)) {
     return value[0] ?? "";
@@ -137,1122 +119,796 @@ function getSingleValue(
   return value ?? "";
 }
 
-function normalizeText(value: string) {
-  return value.trim();
-}
-
-function normalizePage(value: string) {
-  const parsedPage = Number.parseInt(value, 10);
-
-  if (
-    !Number.isFinite(parsedPage) ||
-    parsedPage < 1
-  ) {
-    return 1;
-  }
-
-  return parsedPage;
-}
-
-function normalizeMaximumRate(value: string) {
-  if (!value) {
-    return null;
-  }
-
-  const parsedRate = Number(value);
-
-  if (
-    !Number.isFinite(parsedRate) ||
-    parsedRate < 0
-  ) {
-    return null;
-  }
-
-  return parsedRate;
-}
-
-function sanitizeSearchTerm(value: string) {
+function normalizeSearch(
+  value: string
+) {
   return value
-    .replaceAll(",", " ")
-    .replaceAll("(", " ")
-    .replaceAll(")", " ")
-    .trim();
-}
-
-function createPageUrl(
-  currentParameters: URLSearchParams,
-  page: number
-) {
-  const parameters = new URLSearchParams(
-    currentParameters
-  );
-
-  if (page <= 1) {
-    parameters.delete("page");
-  } else {
-    parameters.set("page", String(page));
-  }
-
-  const queryString = parameters.toString();
-
-  return queryString
-    ? `/professionisti?${queryString}`
-    : "/professionisti";
-}
-
-function createRemoveFilterUrl(
-  currentParameters: URLSearchParams,
-  filterName: string
-) {
-  const parameters = new URLSearchParams(
-    currentParameters
-  );
-
-  parameters.delete(filterName);
-  parameters.delete("page");
-
-  const queryString = parameters.toString();
-
-  return queryString
-    ? `/professionisti?${queryString}`
-    : "/professionisti";
+    .trim()
+    .toLowerCase();
 }
 
 export default async function ProfessionalsPage({
   searchParams,
 }: PageProps) {
-  const parameters = await searchParams;
+  const params =
+    await searchParams;
 
-  const query = normalizeText(
-    getSingleValue(parameters.query)
-  );
+  const professionFilter =
+    getSingleValue(
+      params.profession
+    ).trim();
 
-  const profession = normalizeText(
-    getSingleValue(parameters.profession)
-  );
+  const cityFilter =
+    getSingleValue(
+      params.city
+    ).trim();
 
-  const city = normalizeText(
-    getSingleValue(parameters.city)
-  );
-
-  const province = normalizeText(
-    getSingleValue(parameters.province)
-  ).toUpperCase();
-
-  const service = getSingleValue(
-    parameters.service
-  );
-
-  const maximumRate = normalizeMaximumRate(
-    getSingleValue(parameters.maxRate)
-  );
+  const serviceFilter =
+    getSingleValue(
+      params.service
+    ).trim();
 
   const sort =
-    getSingleValue(parameters.sort) ||
-    "recent";
+    getSingleValue(
+      params.sort
+    ).trim();
 
-  const requestedPage = normalizePage(
-    getSingleValue(parameters.page)
-  );
+  const sourceFilter =
+    getSingleValue(
+      params.source
+    ).trim();
 
-  const currentUrlParameters =
-    new URLSearchParams();
+  const isCareGuidance =
+    sourceFilter === "care";
 
-  if (query) {
-    currentUrlParameters.set(
-      "query",
-      query
-    );
-  }
+  const supabase =
+    await createClient();
 
-  if (profession) {
-    currentUrlParameters.set(
-      "profession",
-      profession
-    );
-  }
-
-  if (city) {
-    currentUrlParameters.set(
-      "city",
-      city
-    );
-  }
-
-  if (province) {
-    currentUrlParameters.set(
-      "province",
-      province
-    );
-  }
-
-  if (service) {
-    currentUrlParameters.set(
-      "service",
-      service
-    );
-  }
-
-  if (maximumRate !== null) {
-    currentUrlParameters.set(
-      "maxRate",
-      String(maximumRate)
-    );
-  }
-
-  if (sort && sort !== "recent") {
-    currentUrlParameters.set(
-      "sort",
-      sort
-    );
-  }
-
-  const supabase = await createClient();
-
-  let professionalsQuery = supabase
-    .from("public_professionals")
+  /*
+   * PROFESSIONISTI PUBBLICI
+   */
+  const {
+    data: professionalsData,
+    error: professionalsError,
+  } = await supabase
+    .from(
+      "public_professionals"
+    )
     .select(
       `
         user_id,
+
         first_name,
         last_name,
+        avatar_path,
+        updated_at,
+
         profession,
         specialization,
-        bio,
+
         city,
         province,
+
         hourly_rate,
         service_radius_km,
+
         home_visits,
-        video_consultations,
-        available_weekdays,
-        avatar_path,
-        updated_at
-      `,
-      {
-        count: "exact",
-      }
+          video_consultations,
+          subscription_plan
+      `
     );
 
-  if (query) {
-    const sanitizedQuery =
-      sanitizeSearchTerm(query);
-
-    if (sanitizedQuery) {
-      professionalsQuery =
-        professionalsQuery.or(
-          [
-            `first_name.ilike.%${sanitizedQuery}%`,
-            `last_name.ilike.%${sanitizedQuery}%`,
-            `profession.ilike.%${sanitizedQuery}%`,
-            `specialization.ilike.%${sanitizedQuery}%`,
-            `bio.ilike.%${sanitizedQuery}%`,
-            `city.ilike.%${sanitizedQuery}%`,
-            `province.ilike.%${sanitizedQuery}%`,
-          ].join(",")
-        );
-    }
-  }
-
-  if (profession) {
-    professionalsQuery =
-      professionalsQuery.ilike(
-        "profession",
-        `%${profession}%`
-      );
-  }
-
-  if (city) {
-    professionalsQuery =
-      professionalsQuery.ilike(
-        "city",
-        `%${city}%`
-      );
-  }
-
-  if (province) {
-    professionalsQuery =
-      professionalsQuery.ilike(
-        "province",
-        province
-      );
-  }
-
-  if (service === "HOME_VISIT") {
-    professionalsQuery =
-      professionalsQuery.eq(
-        "home_visits",
-        true
-      );
-  }
-
-  if (
-    service === "VIDEO_CONSULTATION"
-  ) {
-    professionalsQuery =
-      professionalsQuery.eq(
-        "video_consultations",
-        true
-      );
-  }
-
-  if (maximumRate !== null) {
-    professionalsQuery =
-      professionalsQuery.lte(
-        "hourly_rate",
-        maximumRate
-      );
-  }
-
-  switch (sort) {
-    case "price-asc":
-      professionalsQuery =
-        professionalsQuery
-          .order("hourly_rate", {
-            ascending: true,
-            nullsFirst: false,
-          })
-          .order("user_id", {
-            ascending: true,
-          });
-      break;
-
-    case "price-desc":
-      professionalsQuery =
-        professionalsQuery
-          .order("hourly_rate", {
-            ascending: false,
-            nullsFirst: false,
-          })
-          .order("user_id", {
-            ascending: true,
-          });
-      break;
-
-    case "name-asc":
-      professionalsQuery =
-        professionalsQuery
-          .order("last_name", {
-            ascending: true,
-            nullsFirst: false,
-          })
-          .order("first_name", {
-            ascending: true,
-            nullsFirst: false,
-          })
-          .order("user_id", {
-            ascending: true,
-          });
-      break;
-
-    default:
-      professionalsQuery =
-        professionalsQuery
-          .order("updated_at", {
-            ascending: false,
-          })
-          .order("user_id", {
-            ascending: true,
-          });
-      break;
-  }
-
-  /*
-   * Eseguiamo inizialmente la query con la pagina
-   * richiesta. Se la pagina supera il totale,
-   * ripeteremo la lettura usando l’ultima pagina.
-   */
-  const requestedStart =
-    (requestedPage - 1) *
-    PROFESSIONALS_PER_PAGE;
-
-  const requestedEnd =
-    requestedStart +
-    PROFESSIONALS_PER_PAGE -
-    1;
-
-  const {
-    data: initialProfessionalsData,
-    count,
-    error: initialProfessionalsError,
-  } = await professionalsQuery.range(
-    requestedStart,
-    requestedEnd
-  );
-
-  if (initialProfessionalsError) {
+  if (professionalsError) {
     console.error(
-      "Errore caricamento professionisti:",
+      "Errore lettura marketplace:",
       {
         message:
-          initialProfessionalsError.message,
-        code: initialProfessionalsError.code,
+          professionalsError.message,
+
+        code:
+          professionalsError.code,
+
         details:
-          initialProfessionalsError.details,
-        hint: initialProfessionalsError.hint,
+          professionalsError.details,
+
+        hint:
+          professionalsError.hint,
       }
     );
   }
 
-  const totalProfessionals = count ?? 0;
-
-  const totalPages = Math.max(
-    1,
-    Math.ceil(
-      totalProfessionals /
-        PROFESSIONALS_PER_PAGE
-    )
-  );
-
-  const currentPage = Math.min(
-    requestedPage,
-    totalPages
-  );
-
-  let professionalsData =
-    initialProfessionalsData;
-
-  let professionalsError =
-    initialProfessionalsError;
+  const professionals =
+    (professionalsData ??
+      []) as PublicProfessional[];
 
   /*
-   * Se è stato richiesto un numero di pagina troppo
-   * alto, recuperiamo automaticamente l’ultima pagina.
+   * STATISTICHE RECENSIONI
    */
+  const professionalIds =
+    professionals.map(
+      (professional) =>
+        professional.user_id
+    );
+
+  let reviewStats:
+    ReviewStats[] = [];
+
   if (
-    !initialProfessionalsError &&
-    requestedPage > totalPages &&
-    totalProfessionals > 0
+    professionalIds.length > 0
   ) {
-    const lastPageStart =
-      (totalPages - 1) *
-      PROFESSIONALS_PER_PAGE;
+    const {
+      data:
+        reviewStatsData,
 
-    const lastPageEnd =
-      lastPageStart +
-      PROFESSIONALS_PER_PAGE -
-      1;
-
-    let lastPageQuery = supabase
-      .from("public_professionals")
+      error:
+        reviewStatsError,
+    } = await supabase
+      .from(
+        "professional_review_stats"
+      )
       .select(
         `
           user_id,
-          first_name,
-          last_name,
-          profession,
-          specialization,
-          bio,
-          city,
-          province,
-          hourly_rate,
-          service_radius_km,
-          home_visits,
-          video_consultations,
-          available_weekdays,
-          avatar_path,
-          updated_at
+          review_count,
+          average_rating
         `
+      )
+      .in(
+        "user_id",
+        professionalIds
       );
 
-    if (query) {
-      const sanitizedQuery =
-        sanitizeSearchTerm(query);
-
-      if (sanitizedQuery) {
-        lastPageQuery = lastPageQuery.or(
-          [
-            `first_name.ilike.%${sanitizedQuery}%`,
-            `last_name.ilike.%${sanitizedQuery}%`,
-            `profession.ilike.%${sanitizedQuery}%`,
-            `specialization.ilike.%${sanitizedQuery}%`,
-            `bio.ilike.%${sanitizedQuery}%`,
-            `city.ilike.%${sanitizedQuery}%`,
-            `province.ilike.%${sanitizedQuery}%`,
-          ].join(",")
-        );
-      }
-    }
-
-    if (profession) {
-      lastPageQuery =
-        lastPageQuery.ilike(
-          "profession",
-          `%${profession}%`
-        );
-    }
-
-    if (city) {
-      lastPageQuery =
-        lastPageQuery.ilike(
-          "city",
-          `%${city}%`
-        );
-    }
-
-    if (province) {
-      lastPageQuery =
-        lastPageQuery.ilike(
-          "province",
-          province
-        );
-    }
-
-    if (service === "HOME_VISIT") {
-      lastPageQuery = lastPageQuery.eq(
-        "home_visits",
-        true
-      );
-    }
-
-    if (
-      service === "VIDEO_CONSULTATION"
-    ) {
-      lastPageQuery = lastPageQuery.eq(
-        "video_consultations",
-        true
-      );
-    }
-
-    if (maximumRate !== null) {
-      lastPageQuery = lastPageQuery.lte(
-        "hourly_rate",
-        maximumRate
-      );
-    }
-
-    switch (sort) {
-      case "price-asc":
-        lastPageQuery = lastPageQuery
-          .order("hourly_rate", {
-            ascending: true,
-            nullsFirst: false,
-          })
-          .order("user_id", {
-            ascending: true,
-          });
-        break;
-
-      case "price-desc":
-        lastPageQuery = lastPageQuery
-          .order("hourly_rate", {
-            ascending: false,
-            nullsFirst: false,
-          })
-          .order("user_id", {
-            ascending: true,
-          });
-        break;
-
-      case "name-asc":
-        lastPageQuery = lastPageQuery
-          .order("last_name", {
-            ascending: true,
-            nullsFirst: false,
-          })
-          .order("first_name", {
-            ascending: true,
-            nullsFirst: false,
-          })
-          .order("user_id", {
-            ascending: true,
-          });
-        break;
-
-      default:
-        lastPageQuery = lastPageQuery
-          .order("updated_at", {
-            ascending: false,
-          })
-          .order("user_id", {
-            ascending: true,
-          });
-        break;
-    }
-
-    const {
-      data: lastPageData,
-      error: lastPageError,
-    } = await lastPageQuery.range(
-      lastPageStart,
-      lastPageEnd
-    );
-
-    professionalsData = lastPageData;
-    professionalsError = lastPageError;
-
-    if (lastPageError) {
+    if (reviewStatsError) {
       console.error(
-        "Errore caricamento ultima pagina:",
-        lastPageError
+        "Errore statistiche recensioni marketplace:",
+        {
+          message:
+            reviewStatsError.message,
+
+          code:
+            reviewStatsError.code,
+
+          details:
+            reviewStatsError.details,
+
+          hint:
+            reviewStatsError.hint,
+        }
       );
     }
+
+    reviewStats =
+      (reviewStatsData ??
+        []) as ReviewStats[];
   }
 
-  const professionalRecords =
-    (professionalsData ??
-      []) as PublicProfessionalRecord[];
+  const reviewStatsMap =
+    new Map(
+      reviewStats.map(
+        (stats) => [
+          stats.user_id,
+          stats,
+        ]
+      )
+    );
 
-  const professionals: ProfessionalCardData[] =
-    professionalRecords.map(
+  /*
+   * =====================================================
+   * MERGE PROFESSIONISTI + RECENSIONI + AVATAR
+   * =====================================================
+   */
+  let marketplaceProfessionals:
+    ProfessionalCardData[] =
+    professionals.map(
       (professional) => {
-        let avatarUrl: string | null =
+        const stats =
+          reviewStatsMap.get(
+            professional.user_id
+          );
+
+        let avatarUrl:
+          | string
+          | null =
           null;
 
-        if (professional.avatar_path) {
+        if (
+          professional.avatar_path
+        ) {
           const {
-            data: { publicUrl },
-          } = supabase.storage
-            .from("avatars")
-            .getPublicUrl(
-              professional.avatar_path
-            );
+            data:
+              avatarData,
+          } =
+            supabase.storage
+              .from(
+                "avatars"
+              )
+              .getPublicUrl(
+                professional.avatar_path
+              );
 
-          avatarUrl = publicUrl;
+          const separator =
+            avatarData.publicUrl.includes("?")
+              ? "&"
+              : "?";
+
+          avatarUrl =
+            `${avatarData.publicUrl}${separator}v=${encodeURIComponent(
+              professional.updated_at
+            )}`;
         }
 
         return {
-          user_id: professional.user_id,
+          user_id:
+            professional.user_id,
+
           first_name:
             professional.first_name,
+
           last_name:
             professional.last_name,
 
+          avatar_url:
+            avatarUrl,
+
           profession:
             professional.profession,
+
           specialization:
             professional.specialization,
-          bio: professional.bio,
 
-          city: professional.city,
+          city:
+            professional.city,
+
           province:
             professional.province,
 
           hourly_rate:
             professional.hourly_rate,
+
           service_radius_km:
             professional.service_radius_km,
 
           home_visits:
             professional.home_visits,
+
           video_consultations:
             professional.video_consultations,
 
-          available_weekdays:
-            professional.available_weekdays ??
-            [],
+          subscription_plan:
+            professional.subscription_plan,
 
-          avatarUrl,
+          average_rating:
+            stats
+              ?.average_rating !==
+                null &&
+            stats
+              ?.average_rating !==
+                undefined
+              ? Number(
+                  stats.average_rating
+                )
+              : null,
+
+          review_count:
+            Number(
+              stats
+                ?.review_count ??
+                0
+            ),
         };
       }
     );
 
-  const activeFiltersCount = [
-    query,
-    profession,
-    city,
-    province,
-    service,
-    maximumRate !== null
-      ? String(maximumRate)
-      : "",
-  ].filter(Boolean).length;
+  /*
+   * FILTRI
+   */
+  if (professionFilter) {
+    const searchTerms = getProfessionalSearchTerms(professionFilter);
 
-  const firstDisplayedResult =
-    totalProfessionals === 0
-      ? 0
-      : (currentPage - 1) *
-          PROFESSIONALS_PER_PAGE +
-        1;
+    marketplaceProfessionals = marketplaceProfessionals.filter(
+      (professional) => {
+        const profession = normalizeProfessionalSearch(
+          professional.profession
+        );
+        const specializationTerms = getProfessionalSearchTerms(
+          professional.specialization ?? ""
+        );
 
-  const lastDisplayedResult = Math.min(
-    currentPage *
-      PROFESSIONALS_PER_PAGE,
-    totalProfessionals
-  );
+        return searchTerms.some(
+          (term) =>
+            profession.includes(term) ||
+            specializationTerms.some(
+              (specializationTerm) =>
+                specializationTerm.includes(term) ||
+                term.includes(specializationTerm)
+            )
+        );      }
+    );
+  }
+
+  if (cityFilter) {
+    const search =
+      normalizeSearch(
+        cityFilter
+      );
+
+    marketplaceProfessionals =
+      marketplaceProfessionals.filter(
+        (professional) =>
+          professional.city
+            ?.toLowerCase()
+            .includes(
+              search
+            ) ||
+          professional.province
+            ?.toLowerCase()
+            .includes(
+              search
+            )
+      );
+  }
+
+  if (
+    serviceFilter ===
+    "home"
+  ) {
+    marketplaceProfessionals =
+      marketplaceProfessionals.filter(
+        (professional) =>
+          professional.home_visits
+      );
+  }
+
+  if (
+    serviceFilter ===
+    "video"
+  ) {
+    marketplaceProfessionals =
+      marketplaceProfessionals.filter(
+        (professional) =>
+          professional.video_consultations
+      );
+  }
+
+  /*
+   * ORDINAMENTO
+   */
+  if (
+    sort ===
+    "rating"
+  ) {
+    marketplaceProfessionals.sort(
+      (a, b) => {
+        const ratingDifference =
+          (b.average_rating ??
+            0) -
+          (a.average_rating ??
+            0);
+
+        if (
+          ratingDifference !==
+          0
+        ) {
+          return ratingDifference;
+        }
+
+        return (
+          b.review_count -
+          a.review_count
+        );
+      }
+    );
+  } else if (
+    sort ===
+    "reviews"
+  ) {
+    marketplaceProfessionals.sort(
+      (a, b) =>
+        b.review_count -
+        a.review_count
+    );
+  } else if (
+    sort ===
+    "price-asc"
+  ) {
+    marketplaceProfessionals.sort(
+      (a, b) => {
+        if (
+          a.hourly_rate ===
+          null
+        ) {
+          return 1;
+        }
+
+        if (
+          b.hourly_rate ===
+          null
+        ) {
+          return -1;
+        }
+
+        return (
+          Number(
+            a.hourly_rate
+          ) -
+          Number(
+            b.hourly_rate
+          )
+        );
+      }
+    );
+  } else if (
+    sort ===
+    "price-desc"
+  ) {
+    marketplaceProfessionals.sort(
+      (a, b) => {
+        if (
+          a.hourly_rate ===
+          null
+        ) {
+          return 1;
+        }
+
+        if (
+          b.hourly_rate ===
+          null
+        ) {
+          return -1;
+        }
+
+        return (
+          Number(
+            b.hourly_rate
+          ) -
+          Number(
+            a.hourly_rate
+          )
+        );
+      }
+    );
+  } else {
+    /*
+     * Ordinamento Consigliati.
+     *
+     * I filtri di pertinenza sono gia stati applicati.
+     * Premium ottiene maggiore visibilita tra i risultati
+     * compatibili con la ricerca del paziente.
+     */
+    marketplaceProfessionals.sort((a, b) => {
+      const scoreA = getRecommendedScore(a);
+      const scoreB = getRecommendedScore(b);
+
+      if (scoreA !== scoreB) {
+        return scoreB - scoreA;
+      }
+
+      return b.review_count - a.review_count;
+    });
+  }
+
+  const siteUrl =
+    getSiteUrl();
 
   return (
     <main className="min-h-screen bg-slate-50">
+      {/* HEADER */}
+
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <Link
-            href="/"
-            className="text-xl font-bold text-blue-900"
-          >
-            FG Home Care
+          <Link href="/">
+            <p className="text-sm font-semibold text-blue-700">
+              FG Home Care
+            </p>
+
+            <p className="text-xs text-slate-500">
+              La salute a casa tua
+            </p>
           </Link>
 
-          <nav className="flex flex-wrap items-center gap-4">
-            <Link
-              href="/"
-              className="text-sm font-semibold text-slate-600 hover:text-blue-700"
-            >
-              Home
-            </Link>
-
+          <div className="flex items-center gap-3">
             <Link
               href="/login"
-              className="text-sm font-semibold text-slate-600 hover:text-blue-700"
+              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
             >
               Accedi
             </Link>
 
             <Link
               href="/register"
-              className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
+              className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
             >
               Registrati
             </Link>
-          </nav>
+          </div>
         </div>
       </header>
 
-      <section className="border-b bg-gradient-to-br from-blue-50 via-white to-slate-50">
-        <div className="mx-auto max-w-7xl px-6 py-14">
-          <p className="text-sm font-semibold uppercase tracking-wide text-blue-700">
-            La salute a casa tua
+      {/* HERO */}
+
+      <section className="border-b bg-white">
+        <div className="mx-auto max-w-7xl px-6 py-12">
+          <p className="text-sm font-semibold text-blue-700">
+            Marketplace sanitario
           </p>
 
-          <h1 className="mt-3 max-w-4xl text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
-            Trova il professionista sanitario
-            adatto alle tue esigenze
+          <h1 className="mt-2 max-w-4xl text-4xl font-bold tracking-tight text-slate-900">
+            Trova il professionista
+            sanitario più adatto alle tue
+            esigenze
           </h1>
 
-          <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-600">
-            Cerca professionisti verificati
-            disponibili per assistenza
-            domiciliare e videoconsulti nella
-            tua zona.
+          <p className="mt-4 max-w-3xl text-lg leading-8 text-slate-600">
+            Cerca professionisti
+            verificati per assistenza
+            domiciliare o videoconsulto,
+            confronta disponibilità,
+            tariffe e recensioni dei
+            pazienti.
           </p>
-
-          <div className="mt-8 flex flex-wrap gap-3">
-            <span className="rounded-full border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700">
-              Professionisti verificati
-            </span>
-
-            <span className="rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700">
-              Prenotazione online
-            </span>
-
-            <span className="rounded-full border border-purple-200 bg-purple-50 px-4 py-2 text-sm font-semibold text-purple-700">
-              Assistenza e videoconsulto
-            </span>
-          </div>
         </div>
       </section>
 
-      <div className="mx-auto max-w-7xl px-6 py-10">
-        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <p className="text-sm font-semibold text-blue-700">
-                Ricerca avanzata
+        {isCareGuidance && (
+          <>
+            <CareGuidanceMarketplaceTracker />
+            <section className="mx-auto max-w-7xl px-6 pt-8">
+            <div className="rounded-2xl border border-blue-200 bg-blue-50 p-5">
+              <p className="font-semibold text-blue-900">
+                Professionisti suggeriti per la tua esigenza
               </p>
-
-              <h2 className="mt-1 text-2xl font-bold text-slate-900">
-                Filtra i professionisti
-              </h2>
+              <p className="mt-1 text-sm text-blue-800">
+                {professionFilter || "Professionisti sanitari"}
+                {cityFilter && <> nella zona di {cityFilter}</>}
+              </p>
             </div>
+            </section>
+          </>
+        )}
 
-            {activeFiltersCount > 0 && (
-              <Link
-                href="/professionisti"
-                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-              >
-                Azzera filtri
-              </Link>
-            )}
-          </div>
+      <div className="mx-auto max-w-7xl px-6 py-10">
+        {/* FILTRI */}
 
+        <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
           <form
+            method="GET"
             action="/professionisti"
-            method="get"
-            className="mt-6 space-y-5"
+            className="grid gap-5 md:grid-cols-2 xl:grid-cols-5"
           >
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              <div className="space-y-2 lg:col-span-2">
-                <label
-                  htmlFor="query"
-                  className="text-sm font-semibold text-slate-800"
-                >
-                  Nome, professione o
-                  specializzazione
-                </label>
+            {/* PROFESSIONE / SPECIALIZZAZIONE */}
 
-                <input
-                  id="query"
-                  name="query"
-                  type="search"
-                  defaultValue={query}
-                  placeholder="Es. infermiere, fisioterapista, Mario Rossi"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
+            <div>
+              <label
+                htmlFor="profession"
+                className="text-sm font-semibold text-slate-700"
+              >
+                Professione o specializzazione
+              </label>
 
-              <div className="space-y-2">
-                <label
-                  htmlFor="profession"
-                  className="text-sm font-semibold text-slate-800"
-                >
-                  Professione
-                </label>
-
-                <input
-                  id="profession"
-                  name="profession"
-                  type="text"
-                  defaultValue={profession}
-                  placeholder="Es. Infermiere"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="city"
-                  className="text-sm font-semibold text-slate-800"
-                >
-                  Città
-                </label>
-
-                <input
-                  id="city"
-                  name="city"
-                  type="text"
-                  defaultValue={city}
-                  placeholder="Es. Cosenza"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="province"
-                  className="text-sm font-semibold text-slate-800"
-                >
-                  Provincia
-                </label>
-
-                <input
-                  id="province"
-                  name="province"
-                  type="text"
-                  maxLength={2}
-                  defaultValue={province}
-                  placeholder="Es. CS"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm uppercase outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="service"
-                  className="text-sm font-semibold text-slate-800"
-                >
-                  Tipo di servizio
-                </label>
-
-                <select
-                  id="service"
-                  name="service"
-                  defaultValue={service}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                >
-                  {serviceOptions.map(
-                    (option) => (
-                      <option
-                        key={
-                          option.value ||
-                          "all"
-                        }
-                        value={option.value}
-                      >
-                        {option.label}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="maxRate"
-                  className="text-sm font-semibold text-slate-800"
-                >
-                  Tariffa massima oraria
-                </label>
-
-                <input
-                  id="maxRate"
-                  name="maxRate"
-                  type="number"
-                  min="0"
-                  step="1"
-                  defaultValue={
-                    maximumRate ?? ""
-                  }
-                  placeholder="Es. 50"
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <label
-                  htmlFor="sort"
-                  className="text-sm font-semibold text-slate-800"
-                >
-                  Ordina risultati
-                </label>
-
-                <select
-                  id="sort"
-                  name="sort"
-                  defaultValue={sort}
-                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none transition focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
-                >
-                  {sortingOptions.map(
-                    (option) => (
-                      <option
-                        key={option.value}
-                        value={option.value}
-                      >
-                        {option.label}
-                      </option>
-                    )
-                  )}
-                </select>
-              </div>
+              <input
+                id="profession"
+                name="profession"
+                type="search"
+                defaultValue={professionFilter}
+                placeholder="Es. Urologo, Infermiere, Fisioterapista"
+                autoComplete="off"
+                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+              />
             </div>
 
-            <div className="flex flex-wrap gap-3 border-t border-slate-200 pt-5">
+            {/* CITTÀ */}
+
+            <div>
+              <label
+                htmlFor="city"
+                className="text-sm font-semibold text-slate-700"
+              >
+                Città
+              </label>
+
+              <input
+                id="city"
+                name="city"
+                type="text"
+                defaultValue={
+                  cityFilter
+                }
+                placeholder="Es. Cosenza"
+                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+              />
+            </div>
+
+            {/* SERVIZIO */}
+
+            <div>
+              <label
+                htmlFor="service"
+                className="text-sm font-semibold text-slate-700"
+              >
+                Servizio
+              </label>
+
+              <select
+                id="service"
+                name="service"
+                defaultValue={
+                  serviceFilter
+                }
+                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+              >
+                <option value="">
+                  Tutti
+                </option>
+
+                <option value="home">
+                  Assistenza domiciliare
+                </option>
+
+                <option value="video">
+                  Videoconsulto
+                </option>
+              </select>
+            </div>
+
+            {/* ORDINAMENTO */}
+
+            <div>
+              <label
+                htmlFor="sort"
+                className="text-sm font-semibold text-slate-700"
+              >
+                Ordina
+              </label>
+
+              <select
+                id="sort"
+                name="sort"
+                defaultValue={
+                  sort
+                }
+                className="mt-2 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm text-slate-700"
+              >
+                <option value="">
+                  Consigliati
+                </option>
+
+                <option value="rating">
+                  Meglio valutati
+                </option>
+
+                <option value="reviews">
+                  Più recensiti
+                </option>
+
+                <option value="price-asc">
+                  Prezzo crescente
+                </option>
+
+                <option value="price-desc">
+                  Prezzo decrescente
+                </option>
+              </select>
+            </div>
+
+            {/* SUBMIT */}
+
+            <div className="flex items-end gap-2">
               <button
                 type="submit"
-                className="rounded-xl bg-blue-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+                className="flex-1 rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"
               >
-                Cerca professionisti
+                Cerca
               </button>
 
-              {activeFiltersCount > 0 && (
-                <Link
-                  href="/professionisti"
-                  className="rounded-xl border border-slate-300 bg-white px-6 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
-                >
-                  Cancella ricerca
-                </Link>
-              )}
+              <Link
+                href="/professionisti"
+                className="rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+              >
+                Reset
+              </Link>
             </div>
           </form>
         </section>
 
-        {activeFiltersCount > 0 && (
-          <section className="mt-6 flex flex-wrap items-center gap-2">
-            <p className="mr-1 text-sm font-semibold text-slate-600">
-              Filtri attivi:
-            </p>
+        {/* RISULTATI */}
 
-            {query && (
-              <Link
-                href={createRemoveFilterUrl(
-                  currentUrlParameters,
-                  "query"
-                )}
-                className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
-              >
-                Ricerca: {query} ×
-              </Link>
-            )}
-
-            {profession && (
-              <Link
-                href={createRemoveFilterUrl(
-                  currentUrlParameters,
-                  "profession"
-                )}
-                className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
-              >
-                Professione: {profession} ×
-              </Link>
-            )}
-
-            {city && (
-              <Link
-                href={createRemoveFilterUrl(
-                  currentUrlParameters,
-                  "city"
-                )}
-                className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
-              >
-                Città: {city} ×
-              </Link>
-            )}
-
-            {province && (
-              <Link
-                href={createRemoveFilterUrl(
-                  currentUrlParameters,
-                  "province"
-                )}
-                className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
-              >
-                Provincia: {province} ×
-              </Link>
-            )}
-
-            {service && (
-              <Link
-                href={createRemoveFilterUrl(
-                  currentUrlParameters,
-                  "service"
-                )}
-                className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
-              >
-                {service ===
-                "HOME_VISIT"
-                  ? "Assistenza domiciliare"
-                  : "Videoconsulto"}{" "}
-                ×
-              </Link>
-            )}
-
-            {maximumRate !== null && (
-              <Link
-                href={createRemoveFilterUrl(
-                  currentUrlParameters,
-                  "maxRate"
-                )}
-                className="rounded-full border border-blue-200 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700 hover:bg-blue-100"
-              >
-                Massimo {maximumRate} € ×
-              </Link>
-            )}
-          </section>
-        )}
-
-        <section className="mt-10">
+        <section className="mt-8">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <p className="text-sm font-semibold text-blue-700">
-                Professionisti disponibili
+                Risultati
               </p>
 
-              <h2 className="mt-1 text-3xl font-bold text-slate-900">
-                Risultati della ricerca
+              <h2 className="mt-1 text-2xl font-bold text-slate-900">
+                Professionisti disponibili
               </h2>
             </div>
 
-            {!professionalsError &&
-              totalProfessionals > 0 && (
-                <p className="text-sm text-slate-500">
-                  Visualizzati{" "}
-                  <strong>
-                    {firstDisplayedResult}–
-                    {lastDisplayedResult}
-                  </strong>{" "}
-                  di{" "}
-                  <strong>
-                    {totalProfessionals}
-                  </strong>
-                </p>
-              )}
+            <p className="text-sm font-semibold text-slate-500">
+              {
+                marketplaceProfessionals.length
+              }{" "}
+              {marketplaceProfessionals.length ===
+              1
+                ? "professionista"
+                : "professionisti"}
+            </p>
           </div>
 
           {professionalsError ? (
-            <div
-              role="alert"
-              className="mt-8 rounded-3xl border border-red-200 bg-red-50 p-8"
-            >
-              <h3 className="text-xl font-bold text-red-900">
-                Impossibile caricare i
-                professionisti
-              </h3>
-
-              <p className="mt-3 text-sm leading-6 text-red-700">
-                Si è verificato un problema
-                durante la lettura dei profili.
-                Controlla il terminale e le
-                policy della vista
-                public_professionals.
-              </p>
+            <div className="mt-6 rounded-2xl border border-red-300 bg-red-50 p-6 text-red-700">
+              Non è stato possibile
+              caricare i professionisti.
             </div>
-          ) : professionals.length === 0 ? (
-            <div className="mt-8 rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center">
+          ) : marketplaceProfessionals.length ===
+            0 ? (
+            <div className="mt-6 rounded-3xl border border-dashed border-slate-300 bg-white p-10 text-center">
               <div className="text-4xl">
                 🔎
               </div>
 
-              <h3 className="mt-4 text-2xl font-bold text-slate-900">
-                Nessun professionista trovato
+              <h3 className="mt-4 text-xl font-bold text-slate-900">
+                Nessun professionista
+                trovato
               </h3>
 
-              <p className="mx-auto mt-3 max-w-xl leading-7 text-slate-600">
-                Prova a modificare la città, la
-                professione, la tariffa oppure
-                il tipo di servizio selezionato.
+              <p className="mt-2 text-slate-600">
+                Prova a modificare i filtri
+                di ricerca.
               </p>
 
               <Link
                 href="/professionisti"
-                className="mt-6 inline-flex rounded-xl bg-blue-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+                className="mt-6 inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800"
               >
-                Visualizza tutti
+                Mostra tutti
               </Link>
             </div>
           ) : (
-            <>
-              <div className="mt-8 grid gap-7 md:grid-cols-2 xl:grid-cols-3">
-                {professionals.map(
-                  (professional) => (
-                    <ProfessionalCard
-                      key={
-                        professional.user_id
-                      }
-                      professional={
-                        professional
-                      }
-                    />
-                  )
-                )}
-              </div>
-
-              <ProfessionalsPagination
-                currentPage={currentPage}
-                totalPages={totalPages}
-                createPageUrl={(
-                  pageNumber
-                ) =>
-                  createPageUrl(
-                    currentUrlParameters,
-                    pageNumber
-                  )
-                }
-              />
-            </>
+            <div className="mt-6 grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {marketplaceProfessionals.map(
+                (
+                  professional
+                ) => (
+                  <ProfessionalCard
+                    key={
+                      professional.user_id
+                    }
+                    professional={
+                      professional
+                    }
+                    isCareGuidance={isCareGuidance}
+                  />
+                )
+              )}
+            </div>
           )}
         </section>
 
-        <section className="mt-14 rounded-3xl bg-blue-900 px-8 py-10 text-white">
-          <div className="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between">
-            <div>
-              <h2 className="text-2xl font-bold">
-                Sei un professionista
-                sanitario?
-              </h2>
+        {/* SEO */}
 
-              <p className="mt-3 max-w-2xl leading-7 text-blue-100">
-                Crea il tuo profilo, carica i
-                documenti professionali e
-                renditi disponibile per le
-                richieste degli utenti.
-              </p>
-            </div>
+        <section className="mt-12 rounded-3xl border border-slate-200 bg-white p-7">
+          <h2 className="text-xl font-bold text-slate-900">
+            Assistenza sanitaria
+            direttamente a casa
+          </h2>
 
-            <Link
-              href="/register"
-              className="inline-flex shrink-0 items-center justify-center rounded-xl bg-white px-6 py-3 font-semibold text-blue-900 transition hover:bg-blue-50"
-            >
-              Registrati come professionista
-            </Link>
-          </div>
+          <p className="mt-3 max-w-4xl text-sm leading-7 text-slate-600">
+            FG Home Care permette di
+            cercare professionisti
+            sanitari verificati,
+            confrontare i profili e
+            richiedere assistenza
+            domiciliare o videoconsulti.
+            Le recensioni pubblicate
+            derivano da prestazioni
+            realmente completate sulla
+            piattaforma.
+          </p>
+
+          <p className="mt-3 text-xs text-slate-400">
+            {siteUrl}
+          </p>
         </section>
       </div>
     </main>

@@ -4,6 +4,7 @@ import {
   } from "next/server";
   
   import { createClient } from "@/lib/supabase/server";
+  import { getSupabaseAdmin } from "@/lib/supabase/admin";
   import { calculatePaymentBreakdown } from "@/lib/payments/calculate-payment";
   
   type PreviewRequestBody = {
@@ -112,6 +113,41 @@ import {
         );
       }
   
+      const supabaseAdmin =
+        getSupabaseAdmin();
+
+      const {
+        data: professional,
+        error: professionalError,
+      } = await supabaseAdmin
+        .from("professional_profiles")
+        .select("subscription_plan")
+        .eq(
+          "user_id",
+          appointment.professional_id
+        )
+        .maybeSingle();
+
+      if (professionalError) {
+        return NextResponse.json(
+          {
+            message:
+              "Impossibile determinare il piano del professionista.",
+          },
+          { status: 500 }
+        );
+      }
+
+      if (!professional) {
+        return NextResponse.json(
+          {
+            message:
+              "Profilo professionista non trovato.",
+          },
+          { status: 404 }
+        );
+      }
+
       const breakdown =
         calculatePaymentBreakdown({
           hourlyRate: Number(
@@ -119,6 +155,11 @@ import {
           ),
           durationMinutes:
             appointment.duration_minutes,
+
+          plan:
+            professional.subscription_plan === "PREMIUM"
+              ? "PREMIUM"
+              : "BASIC",
         });
   
       return NextResponse.json({

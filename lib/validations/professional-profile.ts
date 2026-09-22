@@ -1,10 +1,12 @@
 import { z } from "zod";
+import { PROFESSIONS } from "@/lib/professions";
 
 export const professionalProfileSchema = z.object({
   profession: z
-    .string()
-    .trim()
-    .min(2, "Inserisci la professione."),
+    .union([z.enum(PROFESSIONS), z.literal("")])
+    .refine((value) => value !== "", {
+      message: "Seleziona una professione valida.",
+    }),
 
   specialization: z
     .string()

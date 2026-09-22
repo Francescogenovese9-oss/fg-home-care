@@ -3,10 +3,12 @@ import { redirect } from "next/navigation";
 
 import LogoutButton from "@/components/auth/LogoutButton";
 import StripeConnectButton from "@/components/payments/StripeConnectButton";
+import ProfessionalSubscriptionCard from "@/components/payments/ProfessionalSubscriptionCard";
 import { createClient } from "@/lib/supabase/server";
 
 type SearchParams = {
   stripe?: string | string[];
+  premium?: string | string[];
 };
 
 type PageProps = {
@@ -114,7 +116,14 @@ export default async function ProfessionalPaymentsPage({
         stripe_payouts_enabled,
         stripe_details_submitted,
 
-        stripe_account_updated_at
+        stripe_account_updated_at,
+
+        subscription_plan,
+        subscription_status,
+        subscription_current_period_end,
+        subscription_cancel_at_period_end,
+        stripe_customer_id,
+        stripe_subscription_id
       `
     )
     .eq("user_id", user.id)
@@ -139,6 +148,26 @@ export default async function ProfessionalPaymentsPage({
     getSingleValue(
       params.stripe
     );
+
+  const premiumResult =
+    getSingleValue(
+      params.premium
+    );
+
+  const subscriptionPlan =
+    professionalProfile.subscription_plan ===
+    "PREMIUM"
+      ? "PREMIUM"
+      : "BASIC";
+
+  const subscriptionActive =
+    professionalProfile.subscription_status ===
+    "active";
+
+  const subscriptionCancelAtPeriodEnd =
+    professionalProfile
+      .subscription_cancel_at_period_end ??
+    false;
 
   /*
    * Stato Stripe Connect.
@@ -324,6 +353,51 @@ export default async function ProfessionalPaymentsPage({
               la configurazione Stripe.
               Riprova oppure aggiorna lo stato
               dell'account.
+            </p>
+          </div>
+        )}
+
+        <ProfessionalSubscriptionCard
+          plan={subscriptionPlan}
+          status={
+            professionalProfile.subscription_status ??
+            "INACTIVE"
+          }
+          cancelAtPeriodEnd={
+            subscriptionCancelAtPeriodEnd
+          }
+          currentPeriodEnd={
+            professionalProfile
+              .subscription_current_period_end
+          }
+          verificationApproved={
+            verificationApproved
+          }
+        />
+
+        {premiumResult === "success" && (
+          <div className="mt-8 rounded-2xl border border-green-200 bg-green-50 p-5">
+            <p className="font-semibold text-green-900">
+              Pagamento Premium completato
+            </p>
+
+            <p className="mt-2 text-sm leading-6 text-green-800">
+              Stripe ha ricevuto la sottoscrizione.
+              Il piano Premium viene sincronizzato
+              automaticamente con FG Home Care.
+            </p>
+          </div>
+        )}
+
+        {premiumResult === "canceled" && (
+          <div className="mt-8 rounded-2xl border border-amber-200 bg-amber-50 p-5">
+            <p className="font-semibold text-amber-900">
+              Attivazione Premium annullata
+            </p>
+
+            <p className="mt-2 text-sm leading-6 text-amber-800">
+              Non è stao effettuato alcun nuovo
+              abbonamento Premium.
             </p>
           </div>
         )}

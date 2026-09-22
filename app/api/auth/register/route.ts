@@ -27,11 +27,12 @@ export async function POST(request: NextRequest) {
       email: values.email.trim().toLowerCase(),
       password: values.password,
       options: {
-        emailRedirectTo: `${request.nextUrl.origin}/login`,
         data: {
           first_name: values.firstName,
           last_name: values.lastName,
           role: values.role,
+            city: values.role === "PATIENT" ? values.city || null : null,
+            province: values.role === "PATIENT" ? values.province || null : null,
           profession:
             values.role === "PROFESSIONAL"
               ? values.profession || null
@@ -43,6 +44,10 @@ export async function POST(request: NextRequest) {
           vat_number:
             values.role === "PROFESSIONAL"
               ? values.vatNumber || null
+              : null,
+          subscription_plan:
+            values.role === "PROFESSIONAL"
+              ? values.subscriptionPlan || "BASIC"
               : null,
         },
       },

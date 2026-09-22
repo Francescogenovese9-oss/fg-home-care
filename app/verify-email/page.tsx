@@ -1,13 +1,15 @@
 import Link from "next/link";
 import { MailCheck } from "lucide-react";
+
+import { VerifyEmailForm } from "@/components/auth/VerifyEmailForm";
 import { buttonVariants } from "@/components/ui/button";
-import { cn } from "@/lib/utils";
 import {
   Card,
   CardContent,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
+import { cn } from "@/lib/utils";
 
 interface VerifyEmailPageProps {
   searchParams: Promise<{
@@ -19,6 +21,7 @@ export default async function VerifyEmailPage({
   searchParams,
 }: VerifyEmailPageProps) {
   const { email } = await searchParams;
+  const normalizedEmail = email?.trim().toLowerCase() ?? "";
 
   return (
     <main className="flex min-h-screen items-center justify-center bg-slate-50 px-5">
@@ -27,36 +30,42 @@ export default async function VerifyEmailPage({
           <MailCheck className="mx-auto h-14 w-14 text-blue-700" />
 
           <CardTitle className="mt-4 text-3xl">
-            Controlla la tua email
+            Conferma la tua email
           </CardTitle>
         </CardHeader>
 
         <CardContent className="space-y-6">
-          <p className="text-slate-600">
-            Abbiamo inviato un collegamento di conferma
-            {email ? (
-              <>
-                {" "}
-                all’indirizzo{" "}
+          {normalizedEmail ? (
+            <>
+              <p className="text-slate-600">
+                Abbiamo inviato un codice di verifica di 8 cifre a{" "}
                 <strong className="text-slate-900">
-                  {email}
+                  {normalizedEmail}
                 </strong>
-              </>
-            ) : null}
-            .
-          </p>
+                .
+              </p>
 
-          <p className="text-sm text-slate-500">
-            Apri il messaggio e conferma l’account prima di
-            effettuare l’accesso. Controlla anche la cartella spam.
-          </p>
+              <VerifyEmailForm email={normalizedEmail} />
+
+              <p className="text-sm text-slate-500">
+                Controlla anche la cartella spam se non trovi il messaggio.
+              </p>
+            </>
+          ) : (
+            <p className="text-red-600">
+              Indirizzo email mancante. Ripeti la registrazione.
+            </p>
+          )}
 
           <Link
-  href="/login"
-  className={cn(buttonVariants(), "w-full")}
->
-  Vai alla pagina di accesso
-</Link>
+            href="/login"
+            className={cn(
+              buttonVariants({ variant: "outline" }),
+              "w-full"
+            )}
+          >
+            Vai alla pagina di accesso
+          </Link>
         </CardContent>
       </Card>
     </main>

@@ -1,12 +1,37 @@
 import "server-only";
 
-import type { StripeV2Account } from "@/lib/stripe/accounts-v2";
-import { createClient } from "@/lib/supabase/server";
+import type {
+  StripeV2Account,
+} from "@/lib/stripe/accounts-v2";
+
+import {
+  getSupabaseAdmin,
+} from "@/lib/supabase/admin";
 
 export async function syncConnectedAccount(
   account: StripeV2Account
 ) {
-  const supabase = await createClient();
+  /*
+   * =====================================================
+   * SUPABASE ADMIN
+   * =====================================================
+   *
+   * Questa funzione sincronizza dati provenienti
+   * direttamente da Stripe.
+   *
+   * Nessun utente autenticato deve poter
+   * modificare direttamente questi campi.
+   * =====================================================
+   */
+
+  const supabaseAdmin =
+    getSupabaseAdmin();
+
+  /*
+   * =====================================================
+   * CAPABILITIES STRIPE
+   * =====================================================
+   */
 
   const balanceCapabilities =
     account.configuration
@@ -17,35 +42,66 @@ export async function syncConnectedAccount(
   const transfersEnabled =
     balanceCapabilities
       ?.stripe_transfers
-      ?.status === "active";
+      ?.status ===
+    "active";
 
   const payoutsEnabled =
     balanceCapabilities
       ?.payouts
-      ?.status === "active";
+      ?.status ===
+    "active";
+
+  /*
+   * =====================================================
+   * REQUIREMENTS
+   * =====================================================
+   */
 
   const requirements =
-    account.requirements?.entries ?? [];
+    account.requirements
+      ?.entries ??
+    [];
 
   const userRequirements =
     requirements.filter(
-      (requirement) =>
-        requirement.awaiting_action_from ===
+      (
+        requirement
+      ) =>
+        requirement
+          .awaiting_action_from ===
         "user"
     );
 
   const detailsSubmitted =
-    userRequirements.length === 0;
+    userRequirements.length ===
+    0;
 
   const onboardingCompleted =
     detailsSubmitted &&
     transfersEnabled &&
     payoutsEnabled;
 
-  const { error } = await supabase
-    .from("professional_profiles")
+  /*
+   * =====================================================
+   * SINCRONIZZAZIONE DATABASE
+   * =====================================================
+   *
+   * L'UPDATE viene eseguito con service role.
+   *
+   * I campi Stripe non sono modificabili
+   * direttamente dal professionista.
+   * =====================================================
+   */
+
+  const {
+    error,
+  } = await supabaseAdmin
+    .from(
+      "professional_profiles"
+    )
     .update({
-      stripe_account_created: true,
+      stripe_account_created:
+        true,
 
       stripe_transfers_enabled:
         transfersEnabled,
@@ -55,6 +111,7 @@ export async function syncConnectedAccount(
        * Lo manteniamo sincronizzato per
        * non rompere l'interfaccia esistente.
        */
+
       stripe_charges_enabled:
         transfersEnabled,
 
@@ -68,7 +125,8 @@ export async function syncConnectedAccount(
         onboardingCompleted,
 
       stripe_account_updated_at:
-        new Date().toISOString(),
+        new Date()
+          .toISOString(),
     })
     .eq(
       "stripe_account_id",
@@ -78,7 +136,22 @@ export async function syncConnectedAccount(
   if (error) {
     console.error(
       "Errore sincronizzazione Stripe v2:",
-      error
+      {
+        message:
+          error.message,
+
+        code:
+          error.code,
+
+        details:
+          error.details,
+
+        hint:
+          error.hint,
+
+        stripeAccountId:
+          account.id,
+      }
     );
 
     throw new Error(
@@ -86,11 +159,18 @@ export async function syncConnectedAccount(
     );
   }
 
+  /*
+   * =====================================================
+   * RISPOSTA
+   * =====================================================
+   */
+
   return {
     transfersEnabled,
     payoutsEnabled,
     detailsSubmitted,
     onboardingCompleted,
-    requirements: userRequirements,
+    requirements:
+      userRequirements,
   };
 }

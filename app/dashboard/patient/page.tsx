@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 
 import LogoutButton from "@/components/auth/LogoutButton";
+import CareGuidance from "@/components/home/CareGuidance";
 import NotificationBell, {
   type NotificationPreview,
 } from "@/components/notifications/NotificationBell";
@@ -335,6 +336,8 @@ export default async function PatientDashboardPage() {
           </div>
         </section>
 
+          <CareGuidance />
+
         <section className="mt-8 grid gap-6 md:grid-cols-3">
           <article className="rounded-2xl bg-white p-6 shadow-sm">
             <p className="text-sm font-semibold text-amber-700">
@@ -527,11 +530,12 @@ export default async function PatientDashboardPage() {
               </div>
             </dl>
 
-            <p className="mt-6 text-sm leading-6 text-slate-500">
-              La modifica dei dati personali
-              sarà aggiunta in uno sprint
-              successivo.
-            </p>
+              <Link
+                href="/dashboard/patient/profile"
+                className="mt-6 inline-flex rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+              >
+                Modifica profilo
+              </Link>
           </article>
         </section>
 

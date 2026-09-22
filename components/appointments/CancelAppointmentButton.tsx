@@ -18,6 +18,8 @@ export default function CancelAppointmentButton({
   const router = useRouter();
 
   const [error, setError] = useState("");
+  const [successMessage, setSuccessMessage] =
+    useState("");
   const [isSubmitting, setIsSubmitting] =
     useState(false);
 
@@ -31,6 +33,7 @@ export default function CancelAppointmentButton({
     }
 
     setError("");
+    setSuccessMessage("");
     setIsSubmitting(true);
 
     try {
@@ -52,6 +55,11 @@ export default function CancelAppointmentButton({
         return;
       }
 
+      setSuccessMessage(
+        result.message ||
+          "Richiesta annullata correttamente."
+      );
+
       router.refresh();
     } catch (requestError) {
       console.error(
@@ -69,18 +77,29 @@ export default function CancelAppointmentButton({
 
   return (
     <div>
-      <button
-        type="button"
-        onClick={() =>
-          void cancelAppointment()
-        }
-        disabled={isSubmitting}
-        className="rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
-      >
-        {isSubmitting
-          ? "Annullamento..."
-          : "Annulla richiesta"}
-      </button>
+      {!successMessage && (
+        <button
+          type="button"
+          onClick={() =>
+            void cancelAppointment()
+          }
+          disabled={isSubmitting}
+          className="rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 transition hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          {isSubmitting
+            ? "Annullamento..."
+            : "Annulla richiesta"}
+        </button>
+      )}
+
+      {successMessage && (
+        <p
+          role="status"
+          className="rounded-xl border border-green-200 bg-green-50 px-4 py-2 text-sm font-semibold text-green-700"
+        >
+          ✓ {successMessage}
+        </p>
+      )}
 
       {error && (
         <p

@@ -3,56 +3,65 @@ import Link from "next/link";
 
 export default function Header() {
   return (
-    <header className="w-full bg-white shadow-sm">
-      <div className="max-w-7xl mx-auto flex items-center justify-between px-6 py-4">
-
-        <Link href="/" className="flex items-center gap-3">
-
+    <header className="relative z-50 border-b border-slate-100 bg-white">
+      <div className="mx-auto flex min-h-[104px] max-w-7xl items-center justify-between gap-6 px-6">
+        <Link href="/" className="flex shrink-0 items-center">
           <Image
             src="/images/logo.png"
             alt="FG Home Care"
-            width={70}
-            height={70}
+            width={300}
+            height={110}
+            priority
+            className="h-auto w-[245px] object-contain lg:w-[275px]"
           />
+          </Link>
 
-          <div>
-            <h1 className="text-2xl font-bold text-blue-900">
-              FG Home Care
-            </h1>
+        <nav
+          className="hidden items-center gap-8 text-[17px] font-medium text-slate-700 lg:flex"
+          aria-label="Navigazione principale"
+        >
+          <Link href="/chi-siamo" className="transition hover:text-blue-700">
+            Chi siamo
+          </Link>
 
-            <p className="text-sm text-gray-500">
-              La salute a casa tua
-            </p>
-          </div>
+          <Link href="/servizi" className="transition hover:text-blue-700">
+            Servizi
+          </Link>
 
-        </Link>
+          <Link
+            href="/professionisti"
+            className="transition hover:text-blue-700"
+          >
+            Professionisti
+          </Link>
 
-        <nav className="hidden md:flex gap-8">
+          <Link
+            href="/videoconsulti"
+            className="transition hover:text-blue-700"
+          >
+            Videoconsulti
+          </Link>
 
-          <Link href="/">Chi siamo</Link>
-
-          <Link href="#">Servizi</Link>
-
-          <Link href="#">Professionisti</Link>
-
-          <Link href="#">Videoconsulti</Link>
-
-          <Link href="#">Contatti</Link>
-
+          <Link href="/contatti" className="transition hover:text-blue-700">
+            Contatti
+          </Link>
         </nav>
 
-        <div className="flex gap-3">
-
-          <button className="px-5 py-2 rounded-lg border">
+        <div className="flex items-center gap-3">
+          <Link
+            href="/login"
+            className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
+          >
             Accedi
-          </button>
+          </Link>
 
-          <button className="px-5 py-2 rounded-lg bg-blue-700 text-white">
+          <Link
+            href="/register"
+            className="rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+          >
             Registrati
-          </button>
-
+          </Link>
         </div>
-
       </div>
     </header>
   );

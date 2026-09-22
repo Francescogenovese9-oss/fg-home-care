@@ -1,55 +1,89 @@
 import type { Metadata } from "next";
-import Image from "next/image";
+
 import Link from "next/link";
 import { notFound } from "next/navigation";
 
-import { getSiteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
-
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { getSiteUrl } from "@/lib/site-url";
 type PageProps = {
   params: Promise<{
     userId: string;
   }>;
+  searchParams: Promise<{
+    source?: string | string[];
+  }>;
 };
 
-type PublicProfessional = {
+type Professional = {
   user_id: string;
+
   first_name: string | null;
   last_name: string | null;
 
+  avatar_path: string | null;
+  updated_at: string | null;
+
   profession: string;
   specialization: string | null;
+
   bio: string | null;
 
   city: string | null;
   province: string | null;
   postal_code: string | null;
 
-  service_radius_km: number;
+  service_radius_km: number | null;
+
   hourly_rate: number | null;
 
   available_weekdays: string[] | null;
+
   available_from: string | null;
   available_to: string | null;
 
   home_visits: boolean;
   video_consultations: boolean;
+};
 
-  avatar_path: string | null;
+type Review = {
+  id: string;
 
-  verification_status: "APPROVED";
-  published: boolean;
+  patient_id: string;
+
+  rating: number;
+
+  comment: string | null;
+
+  moderation_status:
+    | "PUBLISHED"
+    | "HIDDEN";
+
+  created_at: string;
+};
+
+type ReviewReply = {
+  id: string;
+
+  review_id: string;
+
+  professional_id: string;
+
+  reply: string;
 
   created_at: string;
   updated_at: string;
 };
 
-type PublicProfessionalWithAvatar =
-  PublicProfessional & {
-    avatarUrl: string | null;
-  };
+type UserRole =
+  | "PATIENT"
+  | "PROFESSIONAL"
+  | "ADMIN";
 
-const weekdayLabels: Record<string, string> = {
+const weekdayLabels: Record<
+  string,
+  string
+> = {
   MONDAY: "Lunedì",
   TUESDAY: "Martedì",
   WEDNESDAY: "Mercoledì",
@@ -57,291 +91,811 @@ const weekdayLabels: Record<string, string> = {
   FRIDAY: "Venerdì",
   SATURDAY: "Sabato",
   SUNDAY: "Domenica",
+
+  monday: "Lunedì",
+  tuesday: "Martedì",
+  wednesday: "Mercoledì",
+  thursday: "Giovedì",
+  friday: "Venerdì",
+  saturday: "Sabato",
+  sunday: "Domenica",
 };
 
 function getFullName(
-  firstName: string | null,
-  lastName: string | null
+  professional: Pick<
+    Professional,
+    "first_name" | "last_name"
+  >
 ) {
   return (
-    [firstName, lastName]
+    [
+      professional.first_name,
+      professional.last_name,
+    ]
       .filter(Boolean)
-      .join(" ") || "Professionista sanitario"
+      .join(" ") ||
+    "Professionista sanitario"
   );
 }
 
-function formatTime(value: string | null) {
-  return value?.slice(0, 5) || "Non indicato";
-}
-
-function formatLocation(
-  city: string | null,
-  province: string | null,
-  postalCode?: string | null
+function getLocation(
+  professional: Pick<
+    Professional,
+    "city" | "province"
+  >
 ) {
   return (
-    [city, province, postalCode]
+    [
+      professional.city,
+      professional.province,
+    ]
       .filter(Boolean)
-      .join(", ") || "Località non indicata"
+      .join(", ") ||
+    "Località non indicata"
   );
 }
 
-function buildDescription(
-  professional: PublicProfessionalWithAvatar
+function formatHourlyRate(
+  value: number | null
 ) {
-  const fullName = getFullName(
-    professional.first_name,
-    professional.last_name
-  );
-
-  const location = formatLocation(
-    professional.city,
-    professional.province
-  );
-
-  const customDescription =
-    professional.bio
-      ?.trim()
-      .replace(/\s+/g, " ")
-      .slice(0, 155);
-
-  if (customDescription) {
-    return customDescription;
+  if (value === null) {
+    return "Da concordare";
   }
 
-  return `${fullName}, ${professional.profession} disponibile a ${location} per assistenza domiciliare e servizi sanitari tramite FG Home Care.`;
+  return new Intl.NumberFormat(
+    "it-IT",
+    {
+      style: "currency",
+      currency: "EUR",
+    }
+  ).format(
+    Number(value)
+  );
+}
+
+function formatTime(
+  value: string | null
+) {
+  if (!value) {
+    return null;
+  }
+
+  return value.slice(
+    0,
+    5
+  );
+}
+
+function formatReviewDate(
+  value: string
+) {
+  return new Intl.DateTimeFormat(
+    "it-IT",
+    {
+      day: "2-digit",
+      month: "long",
+      year: "numeric",
+    }
+  ).format(
+    new Date(value)
+  );
 }
 
 async function getProfessional(
   userId: string
-): Promise<PublicProfessionalWithAvatar | null> {
-  const supabase = await createClient();
+): Promise<
+  Professional | null
+> {
 
-  const { data, error } = await supabase
-    .from("public_professionals")
+
+  const supabase =
+    await createClient();
+
+  const {
+    data,
+    error,
+  } = await supabase
+    .from(
+      "public_professionals"
+    )
     .select(
       `
         user_id,
+
         first_name,
         last_name,
+        avatar_path,
+        updated_at,
+
         profession,
         specialization,
+
         bio,
+
         city,
         province,
         postal_code,
+
         service_radius_km,
+
         hourly_rate,
+
         available_weekdays,
         available_from,
         available_to,
+
         home_visits,
-        video_consultations,
-        avatar_path,
-        verification_status,
-        published,
-        created_at,
-        updated_at
+        video_consultations
       `
     )
-    .eq("user_id", userId)
+    .eq(
+      "user_id",
+      userId
+    )
     .maybeSingle();
 
   if (error) {
     console.error(
       "Errore lettura professionista pubblico:",
       {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint,
+        message:
+          error.message,
+
+        code:
+          error.code,
+
+        details:
+          error.details,
+
+        hint:
+          error.hint,
       }
     );
 
     return null;
   }
 
-  if (!data) {
-    return null;
-  }
-
-  const professional =
-    data as PublicProfessional;
-
-  let avatarUrl: string | null = null;
-
-  if (professional.avatar_path) {
-    const {
-      data: { publicUrl },
-    } = supabase.storage
-      .from("avatars")
-      .getPublicUrl(
-        professional.avatar_path
-      );
-
-    avatarUrl = publicUrl;
-  }
-
-  return {
-    ...professional,
-    avatarUrl,
-  };
+  return data as
+    | Professional
+    | null;
 }
 
 export async function generateMetadata({
   params,
 }: PageProps): Promise<Metadata> {
-  const { userId } = await params;
+  const {
+    userId,
+  } = await params;
+
 
   const professional =
-    await getProfessional(userId);
+    await getProfessional(
+      userId
+    );
 
   if (!professional) {
     return {
       title:
         "Professionista non trovato | FG Home Care",
+
       description:
         "Il profilo professionale richiesto non è disponibile.",
-      robots: {
-        index: false,
-        follow: false,
-      },
     };
   }
 
-  const fullName = getFullName(
-    professional.first_name,
-    professional.last_name
-  );
+  const fullName =
+    getFullName(
+      professional
+    );
+
+  const location =
+    getLocation(
+      professional
+    );
 
   const description =
-    buildDescription(professional);
+    professional.bio?.trim() ||
+    `${fullName}, ${professional.profession} disponibile tramite FG Home Care a ${location}.`;
 
-  const siteUrl = getSiteUrl();
+  const siteUrl =
+    getSiteUrl();
 
   const profileUrl =
     `${siteUrl}/professionisti/${professional.user_id}`;
 
-  const metadataTitle =
-    `${fullName} – ${professional.profession}`;
-
   return {
-    title: `${metadataTitle} | FG Home Care`,
+    title:
+      `${fullName} – ${professional.profession} | FG Home Care`,
+
     description,
 
     alternates: {
-      canonical: profileUrl,
+      canonical:
+        profileUrl,
     },
 
     openGraph: {
-      title: metadataTitle,
+      title:
+        `${fullName} – ${professional.profession}`,
+
       description,
-      url: profileUrl,
-      siteName: "FG Home Care",
-      type: "profile",
-      locale: "it_IT",
-      images: professional.avatarUrl
-        ? [
-            {
-              url: professional.avatarUrl,
-              width: 800,
-              height: 800,
-              alt: `Foto professionale di ${fullName}`,
-            },
-          ]
-        : undefined,
+
+      url:
+        profileUrl,
+
+      siteName:
+        "FG Home Care",
+
+      type:
+        "profile",
     },
 
     twitter: {
-      card: "summary",
-      title: metadataTitle,
-      description,
-      images: professional.avatarUrl
-        ? [professional.avatarUrl]
-        : undefined,
-    },
+      card:
+        "summary",
 
-    robots: {
-      index: true,
-      follow: true,
-      googleBot: {
-        index: true,
-        follow: true,
-        "max-image-preview": "large",
-        "max-snippet": -1,
-        "max-video-preview": -1,
-      },
+      title:
+        `${fullName} – ${professional.profession}`,
+
+      description,
     },
   };
 }
 
 export default async function ProfessionalPublicPage({
   params,
+  searchParams,
 }: PageProps) {
-  const { userId } = await params;
+  const {
+    userId,
+  } = await params;
 
-  const professional =
-    await getProfessional(userId);
 
-  if (!professional) {
+  const search = await searchParams;
+  const source = Array.isArray(search.source) ? search.source[0] : search.source;
+  const isCareGuidance = source === "care";
+
+  const supabase =
+    await createClient();
+
+  /*
+   * =====================================================
+   * PROFESSIONISTA
+   * =====================================================
+   */
+
+  const {
+    data:
+      professionalData,
+
+    error:
+      professionalError,
+  } = await supabase
+    .from(
+      "public_professionals"
+    )
+    .select(
+      `
+        user_id,
+
+        first_name,
+        last_name,
+        avatar_path,
+        updated_at,
+
+        profession,
+        specialization,
+
+        bio,
+
+        city,
+        province,
+        postal_code,
+
+        service_radius_km,
+
+        hourly_rate,
+
+        available_weekdays,
+        available_from,
+        available_to,
+
+        home_visits,
+        video_consultations
+      `
+    )
+    .eq(
+      "user_id",
+      userId
+    )
+    .maybeSingle();
+
+  if (professionalError) {
+    console.error(
+      "Errore lettura profilo pubblico:",
+      {
+        message:
+          professionalError.message,
+
+        code:
+          professionalError.code,
+
+        details:
+          professionalError.details,
+
+        hint:
+          professionalError.hint,
+      }
+    );
+  }
+
+  if (
+    professionalError ||
+    !professionalData
+  ) {
     notFound();
   }
 
-  const fullName = getFullName(
-    professional.first_name,
-    professional.last_name
-  );
+  const professional =
+    professionalData as Professional;
 
-  const location = formatLocation(
-    professional.city,
-    professional.province,
-    professional.postal_code
-  );
+  let publicCvUrl: string | null = null;
 
-  const availableDays =
-    professional.available_weekdays ?? [];
+  const supabaseAdmin = getSupabaseAdmin();
+  const {
+    data: publicCvDocument,
+    error: publicCvError,
+  } = await supabaseAdmin
+    .from("professional_documents")
+    .select("storage_path")
+    .eq("professional_id", professional.user_id)
+    .eq("document_type", "cv")
+    .eq("verification_status", "APPROVED")
+    .eq("is_public", true)
+    .maybeSingle();
 
-  const bookingUrl =
-    `/professionisti/${professional.user_id}/prenota`;
+  if (publicCvError) {
+    console.error(
+      "Errore lettura CV pubblico:",
+      publicCvError
+    );
+  }
+
+  if (publicCvDocument?.storage_path) {
+    const { data, error } = await supabaseAdmin.storage
+      .from("professional-documents")
+      .createSignedUrl(
+        publicCvDocument.storage_path,
+        60 * 15
+      );
+
+    if (error) {
+      console.error(
+        "Errore URL firmato CV pubblico:",
+        error
+      );
+    } else {
+      publicCvUrl = data.signedUrl;
+    }
+  }
+  /*
+   * =====================================================
+   * SESSIONE UTENTE
+   * =====================================================
+   */
+
+  const {
+    data: {
+      user,
+    },
+    error:
+      userError,
+  } =
+    await supabase.auth.getUser();
+
+  if (userError) {
+    console.error(
+      "Errore lettura sessione profilo pubblico:",
+      userError
+    );
+  }
+
+  let currentRole:
+    | UserRole
+    | null = null;
+
+  if (user) {
+    const {
+      data:
+        currentProfile,
+
+      error:
+        currentProfileError,
+    } = await supabase
+      .from("profiles")
+      .select(
+        "role"
+      )
+      .eq(
+        "id",
+        user.id
+      )
+      .maybeSingle();
+
+    if (
+      currentProfileError
+    ) {
+      console.error(
+        "Errore lettura ruolo utente:",
+        currentProfileError
+      );
+    }
+
+    currentRole =
+      (currentProfile?.role as
+        | UserRole
+        | undefined) ??
+      null;
+  }
+
+  /*
+   * =====================================================
+   * LINK PRENOTAZIONE
+   * 
+   * CORREZIONE:
+   * il paziente autenticato deve essere
+   * inviato alla vera pagina /prenota.
+   * =====================================================
+   */
+
+  const bookingPath =
+    `/professionisti/${professional.user_id}/prenota${isCareGuidance ? "?source=care" : ""}`;
+
+  let bookingHref =
+    `/login?redirect=${encodeURIComponent(
+      bookingPath
+    )}`;
+
+  let bookingLabel =
+    "Accedi per prenotare";
+
+  if (
+    user &&
+    currentRole ===
+      "PATIENT"
+  ) {
+    bookingHref =
+      bookingPath;
+
+    bookingLabel =
+      "Richiedi assistenza";
+  }
+
+  if (
+    user &&
+    currentRole ===
+      "PROFESSIONAL"
+  ) {
+    bookingHref =
+      "/dashboard/professional";
+
+    bookingLabel =
+      "Torna alla dashboard";
+  }
+
+  if (
+    user &&
+    currentRole ===
+      "ADMIN"
+  ) {
+    bookingHref =
+      "/dashboard/admin";
+
+    bookingLabel =
+      "Torna alla dashboard Admin";
+  }
+
+  /*
+   * =====================================================
+   * RECENSIONI PUBBLICHE
+   * =====================================================
+   */
+
+  const {
+    data:
+      reviewsData,
+
+    error:
+      reviewsError,
+  } = await supabase
+    .from("reviews")
+    .select(
+      `
+        id,
+        patient_id,
+        rating,
+        comment,
+        moderation_status,
+        created_at
+      `
+    )
+    .eq(
+      "professional_id",
+      professional.user_id
+    )
+    .eq(
+      "moderation_status",
+      "PUBLISHED"
+    )
+    .order(
+      "created_at",
+      {
+        ascending:
+          false,
+      }
+    );
+
+  if (reviewsError) {
+    console.error(
+      "Errore lettura recensioni pubbliche:",
+      {
+        message:
+          reviewsError.message,
+
+        code:
+          reviewsError.code,
+
+        details:
+          reviewsError.details,
+
+        hint:
+          reviewsError.hint,
+      }
+    );
+  }
+
+  const reviews =
+    (reviewsData ??
+      []) as Review[];
+
+  /*
+   * =====================================================
+   * RISPOSTE RECENSIONI
+   * =====================================================
+   */
+
+  const reviewIds =
+    reviews.map(
+      (
+        review
+      ) =>
+        review.id
+    );
+
+  let reviewReplies:
+    ReviewReply[] = [];
+
+  if (
+    reviewIds.length >
+    0
+  ) {
+    const {
+      data:
+        repliesData,
+
+      error:
+        repliesError,
+    } = await supabase
+      .from(
+        "review_replies"
+      )
+      .select(
+        `
+          id,
+          review_id,
+          professional_id,
+          reply,
+          created_at,
+          updated_at
+        `
+      )
+      .in(
+        "review_id",
+        reviewIds
+      )
+      .eq(
+        "professional_id",
+        professional.user_id
+      );
+
+    if (repliesError) {
+      console.error(
+        "Errore lettura risposte pubbliche:",
+        {
+          message:
+            repliesError.message,
+
+          code:
+            repliesError.code,
+
+          details:
+            repliesError.details,
+
+          hint:
+            repliesError.hint,
+        }
+      );
+    }
+
+    reviewReplies =
+      (repliesData ??
+        []) as ReviewReply[];
+  }
+
+  const repliesMap =
+    new Map(
+      reviewReplies.map(
+        (
+          reply
+        ) => [
+          reply.review_id,
+          reply,
+        ]
+      )
+    );
+
+  /*
+   * =====================================================
+   * RATING
+   * =====================================================
+   */
+
+  const reviewCount =
+    reviews.length;
+
+  const averageRating =
+    reviewCount > 0
+      ? reviews.reduce(
+          (
+            total,
+            review
+          ) =>
+            total +
+            Number(
+              review.rating
+            ),
+          0
+        ) /
+        reviewCount
+      : 0;
+
+  /*
+   * =====================================================
+   * DISPLAY
+   * =====================================================
+   */
+
+  const fullName =
+    getFullName(
+      professional
+    );
+
+  const location =
+    getLocation(
+      professional
+    );
+
+  const hourlyRate =
+    formatHourlyRate(
+      professional.hourly_rate
+    );
+
+  const availableFrom =
+    formatTime(
+      professional.available_from
+    );
+
+  const availableTo =
+    formatTime(
+      professional.available_to
+    );
+
+  const availableWeekdays =
+    professional
+      .available_weekdays ??
+    [];
+
+  const initial =
+    fullName
+      .charAt(0)
+      .toUpperCase();
+
+  let avatarUrl:
+    | string
+    | null = null;
+
+  if (professional.avatar_path) {
+    const {
+      data: avatarData,
+    } = supabase.storage
+      .from("avatars")
+      .getPublicUrl(
+        professional.avatar_path
+      );
+
+    const version =
+      professional.updated_at
+        ? encodeURIComponent(
+            professional.updated_at
+          )
+        : Date.now().toString();
+
+    avatarUrl =
+      `${avatarData.publicUrl}?v=${version}`;
+  }
 
   return (
     <main className="min-h-screen bg-slate-50">
+      {/* =================================================
+          HEADER
+          ================================================= */}
+
       <header className="border-b bg-white">
         <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
           <Link
             href="/"
-            className="text-xl font-bold text-blue-900"
+            className="group"
           >
-            FG Home Care
+            <p className="text-sm font-semibold text-blue-700">
+              FG Home Care
+            </p>
+
+            <p className="text-xs text-slate-500">
+              La salute a casa tua
+            </p>
           </Link>
 
           <nav className="flex flex-wrap items-center gap-4">
             <Link
               href="/professionisti"
-              className="text-sm font-semibold text-slate-700 hover:text-blue-700"
+              className="text-sm font-semibold text-slate-600 transition hover:text-blue-700"
             >
               Professionisti
             </Link>
 
-            <Link
-              href="/login"
-              className="text-sm font-semibold text-slate-700 hover:text-blue-700"
-            >
-              Accedi
-            </Link>
-
-            <Link
-              href="/register"
-              className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white transition hover:bg-blue-800"
-            >
-              Registrati
-            </Link>
+            {user ? (
+              <Link
+                href={
+                  currentRole ===
+                  "PATIENT"
+                    ? "/dashboard/patient"
+                    : currentRole ===
+                        "PROFESSIONAL"
+                      ? "/dashboard/professional"
+                      : "/dashboard/admin"
+                }
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                Dashboard
+              </Link>
+            ) : (
+              <Link
+                href="/login"
+                className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-slate-100"
+              >
+                Accedi
+              </Link>
+            )}
           </nav>
         </div>
       </header>
 
-      <section className="border-b bg-gradient-to-br from-blue-50 via-white to-slate-50">
-        <div className="mx-auto max-w-7xl px-6 py-14">
+      {/* =================================================
+          HERO
+          ================================================= */}
+
+      <section className="border-b bg-white">
+        <div className="mx-auto max-w-7xl px-6 py-12">
           <Link
             href="/professionisti"
             className="text-sm font-semibold text-blue-700 hover:underline"
@@ -349,86 +903,107 @@ export default async function ProfessionalPublicPage({
             ← Torna ai professionisti
           </Link>
 
-          <div className="mt-8 flex flex-col gap-8 lg:flex-row lg:items-center">
-            <div className="shrink-0">
-              {professional.avatarUrl ? (
-                <div className="relative h-40 w-40 overflow-hidden rounded-3xl border-4 border-white shadow-lg">
-                  <Image
-                    src={professional.avatarUrl}
+          <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_340px]">
+            <div className="flex flex-col gap-7 sm:flex-row">
+              <div className="h-36 w-36 shrink-0 overflow-hidden rounded-3xl border-4 border-white bg-blue-100 shadow-lg">
+                {avatarUrl ? (
+                  <img
+                    src={avatarUrl}
                     alt={`Foto profilo di ${fullName}`}
-                    fill
-                    priority
-                    sizes="160px"
-                    className="object-cover"
+                    className="h-full w-full object-cover"
                   />
-                </div>
-              ) : (
-                <div className="flex h-40 w-40 items-center justify-center rounded-3xl border-4 border-white bg-blue-100 text-5xl font-bold text-blue-800 shadow-lg">
-                  {fullName
-                    .charAt(0)
-                    .toUpperCase()}
-                </div>
-              )}
-            </div>
-
-            <div className="flex-1">
-              <div className="flex flex-wrap items-center gap-3">
-                <h1 className="text-4xl font-bold tracking-tight text-slate-900 md:text-5xl">
-                  {fullName}
-                </h1>
-
-                <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
-                  <span aria-hidden="true">
-                    ✓
-                  </span>
-
-                  Professionista verificato
-                </span>
+                ) : (
+                  <div className="flex h-full w-full items-center justify-center text-5xl font-bold text-blue-800">
+                    {initial}
+                  </div>
+                )}
               </div>
 
-              <p className="mt-4 text-2xl font-semibold text-blue-700">
-                {professional.profession}
-              </p>
+              <div className="min-w-0">
+                <div className="flex flex-wrap items-center gap-3">
+                  <h1 className="text-4xl font-bold tracking-tight text-slate-900">
+                    {fullName}
+                  </h1>
 
-              {professional.specialization && (
-                <p className="mt-2 text-lg text-slate-600">
+                  <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                    ✓ Professionista
+                    verificato
+                  </span>
+                </div>
+
+                <p className="mt-3 text-xl font-semibold text-blue-700">
                   {
-                    professional.specialization
+                    professional.profession
                   }
                 </p>
-              )}
 
-              <p className="mt-4 text-slate-600">
-                {location}
-              </p>
-
-              <div className="mt-6 flex flex-wrap gap-3">
-                {professional.home_visits && (
-                  <span className="rounded-full bg-green-100 px-4 py-2 text-sm font-semibold text-green-800">
-                    Assistenza domiciliare
-                  </span>
+                {professional.specialization && (
+                  <p className="mt-2 text-base text-slate-600">
+                    {
+                      professional.specialization
+                    }
+                  </p>
                 )}
 
-                {professional.video_consultations && (
-                  <span className="rounded-full bg-purple-100 px-4 py-2 text-sm font-semibold text-purple-800">
-                    Videoconsulto
+                <p className="mt-4 text-sm font-medium text-slate-600">
+                  📍 {location}
+                </p>
+
+
+                  {publicCvUrl && (
+                    <a
+                      href={publicCvUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="mt-5 inline-flex items-center rounded-xl border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 transition hover:bg-blue-100"
+                    >
+                      Visualizza Curriculum Vitae
+                    </a>
+                  )}                <div className="mt-5 flex flex-wrap items-center gap-3">
+                  <span className="text-2xl text-amber-500">
+                    ★
                   </span>
-                )}
+
+                  {reviewCount > 0 ? (
+                    <>
+                      <strong className="text-xl text-slate-900">
+                        {averageRating.toFixed(
+                          1
+                        )}
+                      </strong>
+
+                      <span className="text-sm text-slate-500">
+                        (
+                        {
+                          reviewCount
+                        }{" "}
+                        {reviewCount ===
+                        1
+                          ? "recensione"
+                          : "recensioni"}
+                        )
+                      </span>
+                    </>
+                  ) : (
+                    <span className="text-sm text-slate-500">
+                      Nessuna recensione
+                    </span>
+                  )}
+                </div>
               </div>
             </div>
 
-            <aside className="w-full rounded-3xl border border-slate-200 bg-white p-6 shadow-sm lg:max-w-sm">
-              <p className="text-sm font-semibold text-slate-500">
+            {/* =================================================
+          CARD PRENOTAZIONE
+          ================================================= */}
+
+            <aside className="rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-6 shadow-sm">
+              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
                 Tariffa indicativa
               </p>
 
               <p className="mt-2 text-3xl font-bold text-slate-900">
-                {professional.hourly_rate !==
-                null
-                  ? `${Number(
-                      professional.hourly_rate
-                    ).toFixed(2)} €`
-                  : "Da concordare"}
+                {hourlyRate}
               </p>
 
               {professional.hourly_rate !==
@@ -438,278 +1013,494 @@ export default async function ProfessionalPublicPage({
                 </p>
               )}
 
-              <Link
-                href={bookingUrl}
-                className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-blue-700 px-5 py-3 font-semibold text-white transition hover:bg-blue-800"
-              >
-                Richiedi assistenza
-              </Link>
+              <div className="mt-6 space-y-3">
+                {professional.home_visits && (
+                  <div className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-700">
+                    🏠 Assistenza
+                    domiciliare
+                  </div>
+                )}
 
-              <p className="mt-3 text-center text-xs leading-5 text-slate-500">
-                Accedi o registrati per inviare
-                una richiesta al professionista.
-              </p>
+                {professional.video_consultations && (
+                  <div className="rounded-xl bg-white px-4 py-3 text-sm font-semibold text-slate-700">
+                    💻 Videoconsulto
+                  </div>
+                )}
+              </div>
+
+              <Link
+                href={
+                  bookingHref
+                }
+                className="mt-6 inline-flex w-full items-center justify-center rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+              >
+                {
+                  bookingLabel
+                }
+              </Link>
             </aside>
           </div>
         </div>
       </section>
 
-      <div className="mx-auto grid max-w-7xl gap-8 px-6 py-10 lg:grid-cols-[1.5fr_0.8fr]">
+      {/* =================================================
+          CONTENUTO
+          ================================================= */}
+
+      <div className="mx-auto grid max-w-7xl gap-8 px-6 py-10 lg:grid-cols-[1.4fr_0.7fr]">
         <div className="space-y-8">
-          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <h2 className="text-2xl font-bold text-slate-900">
-              Presentazione professionale
-            </h2>
+          {/* PRESENTAZIONE */}
 
-            <p className="mt-5 whitespace-pre-line leading-8 text-slate-600">
-              {professional.bio ||
-                "Il professionista non ha ancora inserito una descrizione dettagliata."}
+          <section className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+            <p className="text-sm font-semibold text-blue-700">
+              Profilo professionale
             </p>
-          </section>
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <h2 className="text-2xl font-bold text-slate-900">
-              Servizi disponibili
+            <h2 className="mt-1 text-2xl font-bold text-slate-900">
+              Presentazione
             </h2>
 
-            <div className="mt-6 grid gap-5 md:grid-cols-2">
-              <article
-                className={
-                  professional.home_visits
-                    ? "rounded-2xl border border-green-200 bg-green-50 p-6"
-                    : "rounded-2xl border border-slate-200 bg-slate-50 p-6 opacity-60"
+            {professional.bio ? (
+              <p className="mt-5 whitespace-pre-line text-base leading-8 text-slate-700">
+                {
+                  professional.bio
                 }
-              >
-                <h3 className="text-lg font-bold text-slate-900">
-                  Assistenza domiciliare
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {professional.home_visits
-                    ? "Disponibile per prestazioni e assistenza direttamente al domicilio dell’utente."
-                    : "Il professionista non offre attualmente assistenza domiciliare."}
-                </p>
-              </article>
-
-              <article
-                className={
-                  professional.video_consultations
-                    ? "rounded-2xl border border-purple-200 bg-purple-50 p-6"
-                    : "rounded-2xl border border-slate-200 bg-slate-50 p-6 opacity-60"
-                }
-              >
-                <h3 className="text-lg font-bold text-slate-900">
-                  Videoconsulto
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  {professional.video_consultations
-                    ? "Disponibile per consulenze e valutazioni professionali a distanza."
-                    : "Il professionista non offre attualmente videoconsulti."}
-                </p>
-              </article>
-            </div>
-          </section>
-
-          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <h2 className="text-2xl font-bold text-slate-900">
-              Disponibilità settimanale
-            </h2>
-
-            {availableDays.length > 0 ? (
-              <div className="mt-6 flex flex-wrap gap-3">
-                {availableDays.map((day) => (
-                  <span
-                    key={day}
-                    className="rounded-full bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700"
-                  >
-                    {weekdayLabels[day] ??
-                      day}
-                  </span>
-                ))}
-              </div>
+              </p>
             ) : (
-              <p className="mt-5 text-slate-600">
-                Nessun giorno specificato.
+              <p className="mt-5 text-sm leading-7 text-slate-500">
+                Il professionista non
+                ha ancora inserito una
+                descrizione dettagliata.
               </p>
             )}
+          </section>
 
-            <div className="mt-6 rounded-2xl bg-slate-50 p-5">
-              <p className="text-sm font-semibold text-slate-500">
-                Fascia oraria indicativa
-              </p>
+          {/* SERVIZI */}
 
-              <p className="mt-2 text-lg font-bold text-slate-900">
-                {formatTime(
-                  professional.available_from
-                )}{" "}
-                –{" "}
-                {formatTime(
-                  professional.available_to
+          <section className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+            <p className="text-sm font-semibold text-blue-700">
+              Servizi
+            </p>
+
+            <h2 className="mt-1 text-2xl font-bold text-slate-900">
+              Modalità di assistenza
+            </h2>
+
+            <div className="mt-6 grid gap-4 sm:grid-cols-2">
+              {professional.home_visits && (
+                <article className="rounded-2xl border border-green-200 bg-green-50 p-5">
+                  <div className="text-3xl">
+                    🏠
+                  </div>
+
+                  <h3 className="mt-3 font-bold text-green-900">
+                    Assistenza
+                    domiciliare
+                  </h3>
+
+                  <p className="mt-2 text-sm leading-6 text-green-800">
+                    Prestazioni disponibili
+                    presso il domicilio del
+                    paziente.
+                  </p>
+                </article>
+              )}
+
+              {professional.video_consultations && (
+                <article className="rounded-2xl border border-purple-200 bg-purple-50 p-5">
+                  <div className="text-3xl">
+                    💻
+                  </div>
+
+                  <h3 className="mt-3 font-bold text-purple-900">
+                    Videoconsulto
+                  </h3>
+
+                  <p className="mt-2 text-sm leading-6 text-purple-800">
+                    Consulto a distanza
+                    quando compatibile
+                    con la prestazione.
+                  </p>
+                </article>
+              )}
+
+              {!professional.home_visits &&
+                !professional.video_consultations && (
+                  <div className="sm:col-span-2 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-6 text-sm text-slate-600">
+                    Le modalità di
+                    assistenza non sono
+                    ancora specificate.
+                  </div>
                 )}
-              </p>
             </div>
           </section>
 
-          <section className="rounded-3xl border border-slate-200 bg-white p-8 shadow-sm">
-            <h2 className="text-2xl font-bold text-slate-900">
-              Come funziona la richiesta
-            </h2>
+          {/* =================================================
+          RECENSIONI
+          ================================================= */}
 
-            <div className="mt-6 grid gap-5 md:grid-cols-3">
-              <article className="rounded-2xl bg-slate-50 p-5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-800">
-                  1
-                </div>
-
-                <h3 className="mt-4 font-bold text-slate-900">
-                  Scegli il servizio
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Seleziona assistenza domiciliare
-                  o videoconsulto in base ai
-                  servizi disponibili.
+          <section className="rounded-3xl border border-slate-200 bg-white p-7 shadow-sm">
+            <div className="flex flex-wrap items-end justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-blue-700">
+                  Esperienze dei pazienti
                 </p>
-              </article>
 
-              <article className="rounded-2xl bg-slate-50 p-5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-800">
-                  2
-                </div>
+                <h2 className="mt-1 text-2xl font-bold text-slate-900">
+                  Recensioni
+                </h2>
 
-                <h3 className="mt-4 font-bold text-slate-900">
-                  Indica data e orario
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  Scegli una data e un orario
-                  compatibili con la disponibilità
-                  del professionista.
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                  Le recensioni vengono
+                  pubblicate dopo
+                  prestazioni completate
+                  e verificate tramite
+                  FG Home Care.
                 </p>
-              </article>
+              </div>
 
-              <article className="rounded-2xl bg-slate-50 p-5">
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 font-bold text-blue-800">
-                  3
+              {reviewCount > 0 && (
+                <div className="rounded-2xl bg-amber-50 px-5 py-4 text-right">
+                  <div className="flex items-center justify-end gap-2">
+                    <span className="text-2xl text-amber-500">
+                      ★
+                    </span>
+
+                    <p className="text-3xl font-bold text-slate-900">
+                      {averageRating.toFixed(
+                        1
+                      )}
+                    </p>
+                  </div>
+
+                  <p className="mt-1 text-sm text-slate-500">
+                    su 5
+                  </p>
+
+                  <p className="mt-1 text-xs font-semibold text-slate-500">
+                    {
+                      reviewCount
+                    }{" "}
+                    {reviewCount ===
+                    1
+                      ? "recensione"
+                      : "recensioni"}
+                  </p>
                 </div>
-
-                <h3 className="mt-4 font-bold text-slate-900">
-                  Attendi la conferma
-                </h3>
-
-                <p className="mt-2 text-sm leading-6 text-slate-600">
-                  La richiesta sarà confermata
-                  dopo l’accettazione da parte
-                  del professionista.
-                </p>
-              </article>
+              )}
             </div>
 
-            <Link
-              href={bookingUrl}
-              className="mt-7 inline-flex rounded-xl bg-blue-700 px-6 py-3 font-semibold text-white transition hover:bg-blue-800"
-            >
-              Inizia la richiesta
-            </Link>
+            {reviews.length ===
+            0 ? (
+              <div className="mt-7 rounded-2xl border border-dashed border-slate-300 bg-slate-50 p-8 text-center">
+                <div className="text-4xl">
+                  ☆
+                </div>
+
+                <h3 className="mt-4 text-lg font-bold text-slate-900">
+                  Nessuna recensione
+                </h3>
+
+                <p className="mt-2 text-sm leading-6 text-slate-600">
+                  Questo professionista
+                  non ha ancora
+                  recensioni pubblicate.
+                </p>
+              </div>
+            ) : (
+              <div className="mt-7 space-y-5">
+                {reviews.map(
+                  (
+                    review
+                  ) => {
+                    const reply =
+                      repliesMap.get(
+                        review.id
+                      );
+
+                    return (
+                      <article
+                        key={
+                          review.id
+                        }
+                        className="rounded-2xl border border-slate-200 bg-white p-5 transition hover:border-blue-200 hover:shadow-sm"
+                      >
+                        <div className="flex flex-wrap items-start justify-between gap-4">
+                          <div>
+                            <div
+                              className="flex gap-1 text-xl text-amber-500"
+                              aria-label={`${review.rating} stelle su 5`}
+                            >
+                              {Array.from(
+                                {
+                                  length:
+                                    5,
+                                }
+                              ).map(
+                                (
+                                  _,
+                                  index
+                                ) => (
+                                  <span
+                                    key={
+                                      index
+                                    }
+                                    aria-hidden="true"
+                                  >
+                                    {index <
+                                    review.rating
+                                      ? "★"
+                                      : "☆"}
+                                  </span>
+                                )
+                              )}
+                            </div>
+
+                            <p className="mt-2 text-sm font-semibold text-slate-900">
+                              {
+                                review.rating
+                              }
+                              /5
+                            </p>
+                          </div>
+
+                          <span className="inline-flex items-center gap-1 rounded-full border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                            ✓ Recensione
+                            verificata
+                          </span>
+                        </div>
+
+                        {review.comment ? (
+                          <p className="mt-4 whitespace-pre-line text-sm leading-7 text-slate-700">
+                            {
+                              review.comment
+                            }
+                          </p>
+                        ) : (
+                          <p className="mt-4 text-sm italic text-slate-500">
+                            Il paziente ha
+                            lasciato una
+                            valutazione
+                            senza commento.
+                          </p>
+                        )}
+
+                        <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t border-slate-100 pt-4">
+                          <p className="text-xs font-semibold text-slate-500">
+                            Paziente FG
+                            Home Care
+                          </p>
+
+                          <time
+                            dateTime={
+                              review.created_at
+                            }
+                            className="text-xs text-slate-400"
+                          >
+                            {formatReviewDate(
+                              review.created_at
+                            )}
+                          </time>
+                        </div>
+
+                        {reply && (
+                          <div className="mt-5 rounded-2xl border border-blue-200 bg-blue-50 p-5">
+                            <div className="flex flex-wrap items-center justify-between gap-3">
+                              <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                                Risposta del
+                                professionista
+                              </p>
+
+                              <time
+                                dateTime={
+                                  reply.updated_at
+                                }
+                                className="text-xs text-blue-500"
+                              >
+                                {formatReviewDate(
+                                  reply.updated_at
+                                )}
+                              </time>
+                            </div>
+
+                            <p className="mt-3 whitespace-pre-line text-sm leading-7 text-blue-950">
+                              {
+                                reply.reply
+                              }
+                            </p>
+                          </div>
+                        )}
+                      </article>
+                    );
+                  }
+                )}
+              </div>
+            )}
+          </section>
+
+          {/* =================================================
+          PRENOTAZIONE FINALE
+          ================================================= */}
+
+          <section className="rounded-3xl border border-blue-200 bg-gradient-to-br from-blue-50 to-white p-7 shadow-sm">
+            <p className="text-sm font-semibold text-blue-700">
+              Richiesta di assistenza
+            </p>
+
+            <h2 className="mt-1 text-2xl font-bold text-slate-900">
+              Prenota con {fullName}
+            </h2>
+
+            <p className="mt-3 max-w-2xl text-sm leading-7 text-slate-600">
+              Scegli il servizio, la
+              data e l&apos;orario e
+              invia una richiesta
+              direttamente al
+              professionista.
+            </p>
+
+            <div className="mt-6">
+              <Link
+                href={
+                  bookingHref
+                }
+                className="inline-flex rounded-xl bg-blue-700 px-6 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
+              >
+                {
+                  bookingLabel
+                }
+              </Link>
+            </div>
           </section>
         </div>
 
+        {/* =================================================
+          SIDEBAR
+          ================================================= */}
+
         <aside className="space-y-6">
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-slate-900">
-              Area di intervento
+            <p className="text-sm font-semibold text-blue-700">
+              Disponibilità
+            </p>
+
+            <h2 className="mt-1 text-xl font-bold text-slate-900">
+              Giorni disponibili
             </h2>
 
-            <dl className="mt-5 space-y-5">
-              <div>
-                <dt className="text-sm font-semibold text-slate-500">
-                  Località principale
-                </dt>
-
-                <dd className="mt-1 font-semibold text-slate-900">
-                  {location}
-                </dd>
+            {availableWeekdays.length >
+            0 ? (
+              <div className="mt-5 flex flex-wrap gap-2">
+                {availableWeekdays.map(
+                  (
+                    day
+                  ) => (
+                    <span
+                      key={
+                        day
+                      }
+                      className="rounded-full border border-blue-100 bg-blue-50 px-3 py-1.5 text-xs font-semibold text-blue-700"
+                    >
+                      {weekdayLabels[
+                        day
+                      ] ??
+                        day}
+                    </span>
+                  )
+                )}
               </div>
+            ) : (
+              <p className="mt-4 text-sm text-slate-500">
+                Giorni non ancora
+                specificati.
+              </p>
+            )}
 
-              <div>
-                <dt className="text-sm font-semibold text-slate-500">
+            {(availableFrom ||
+              availableTo) && (
+              <div className="mt-6 rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                  Fascia indicativa
+                </p>
+
+                <p className="mt-2 font-semibold text-slate-900">
+                  {availableFrom ??
+                    "--:--"}{" "}
+                  –{" "}
+                  {availableTo ??
+                    "--:--"}
+                </p>
+              </div>
+            )}
+          </section>
+
+          <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-blue-700">
+              Area di intervento
+            </p>
+
+            <h2 className="mt-1 text-xl font-bold text-slate-900">
+              {location}
+            </h2>
+
+            {professional.postal_code && (
+              <p className="mt-2 text-sm text-slate-500">
+                CAP{" "}
+                {
+                  professional.postal_code
+                }
+              </p>
+            )}
+
+            {professional.service_radius_km !==
+              null && (
+              <div className="mt-5 rounded-2xl bg-slate-50 p-4">
+                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                   Raggio massimo
-                </dt>
+                </p>
 
-                <dd className="mt-1 font-semibold text-slate-900">
+                <p className="mt-2 text-xl font-bold text-slate-900">
                   {
                     professional.service_radius_km
                   }{" "}
                   km
-                </dd>
+                </p>
               </div>
-            </dl>
+            )}
           </section>
 
           <section className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="text-xl font-bold text-slate-900">
-              Dettagli economici
-            </h2>
-
-            <dl className="mt-5 space-y-5">
-              <div>
-                <dt className="text-sm font-semibold text-slate-500">
-                  Tariffa oraria
-                </dt>
-
-                <dd className="mt-1 text-xl font-bold text-slate-900">
-                  {professional.hourly_rate !==
-                  null
-                    ? `${Number(
-                        professional.hourly_rate
-                      ).toFixed(2)} €`
-                    : "Da concordare"}
-                </dd>
-              </div>
-            </dl>
-
-            <p className="mt-5 text-xs leading-5 text-slate-500">
-              La tariffa mostrata è indicativa.
-              Eventuali costi aggiuntivi dovranno
-              essere comunicati prima della
-              conferma della prestazione.
+            <p className="text-sm font-semibold text-blue-700">
+              Tariffa
             </p>
+
+            <p className="mt-2 text-3xl font-bold text-slate-900">
+              {hourlyRate}
+            </p>
+
+            {professional.hourly_rate !==
+              null && (
+              <p className="mt-1 text-sm text-slate-500">
+                tariffa oraria
+                indicativa
+              </p>
+            )}
           </section>
 
           <section className="rounded-3xl border border-green-200 bg-green-50 p-6">
-            <h2 className="text-lg font-bold text-green-900">
+            <p className="font-bold text-green-900">
               Profilo verificato
-            </h2>
-
-            <p className="mt-3 text-sm leading-6 text-green-800">
-              FG Home Care ha controllato i dati
-              e i documenti professionali
-              caricati dall’operatore.
-            </p>
-          </section>
-
-          <section className="rounded-3xl border border-blue-200 bg-blue-50 p-6">
-            <h2 className="text-lg font-bold text-blue-900">
-              Hai bisogno di assistenza?
-            </h2>
-
-            <p className="mt-3 text-sm leading-6 text-blue-800">
-              Invia una richiesta indicando il
-              servizio, la data, l’orario e una
-              breve descrizione delle tue
-              esigenze.
             </p>
 
-            <Link
-              href={bookingUrl}
-              className="mt-5 inline-flex w-full items-center justify-center rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white transition hover:bg-blue-800"
-            >
-              Invia una richiesta
-            </Link>
+            <p className="mt-2 text-sm leading-6 text-green-800">
+              FG Home Care verifica i
+              professionisti prima della
+              pubblicazione del profilo
+              sul marketplace.
+            </p>
           </section>
         </aside>
       </div>
     </main>
   );
-}
+}                                   

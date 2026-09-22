@@ -1,9 +1,11 @@
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
+import ProfessionalDocumentReviewActions from "@/components/admin/ProfessionalDocumentReviewActions";
 import ProfessionalReviewActions from "@/components/admin/ProfessionalReviewActions";
 import LogoutButton from "@/components/auth/LogoutButton";
 import { createClient } from "@/lib/supabase/server";
+import { getProfessionCategory, isProfession } from "@/lib/professions";
 
 type VerificationStatus =
   | "PENDING"
@@ -56,10 +58,34 @@ type ProfessionalProfile = {
   updated_at: string;
 };
 
+type ProfessionalDocument = {
+  id: string;
+  document_type: "identity" | "registration" | "vat" | "cv";
+  storage_path: string;
+  original_filename: string | null;
+  mime_type: string | null;
+  file_size: number | null;
+  is_public: boolean;  verification_status: VerificationStatus;
+  rejection_reason: string | null;
+  expires_at: string | null;
+  uploaded_at: string;
+  verified_at: string | null;
+  verified_by: string | null;
+  updated_at: string;
+};
+
 type DocumentLink = {
+  documentId: string | null;
+  documentType: "identity" | "registration" | "vat" | "cv" | null;
   label: string;
   path: string;
   url: string | null;
+  originalFilename: string | null;
+  fileSize: number | null;
+  verificationStatus: VerificationStatus | null;
+  rejectionReason: string | null;
+  uploadedAt: string | null;
+  isPublic: boolean | null;
 };
 
 const weekdayLabels: Record<string, string> = {
@@ -167,13 +193,40 @@ export default async function ProfessionalReviewPage({
     .eq("user_id", userId)
     .maybeSingle();
 
+  const {
+    data: professionalDocumentsData,
+    error: professionalDocumentsError,
+  } = await supabase
+    .from("professional_documents")
+    .select(
+      `
+        id,
+        document_type,
+        storage_path,
+        original_filename,
+        mime_type,
+        file_size,
+        verification_status,
+          is_public,        rejection_reason,
+        expires_at,
+        uploaded_at,
+        verified_at,
+        verified_by,
+        updated_at
+      `
+    )
+    .eq("professional_id", userId)
+    .order("uploaded_at", { ascending: false });
+
   if (
     accountProfileError ||
-    professionalProfileError
+    professionalProfileError ||
+      professionalDocumentsError
   ) {
     console.error("Errore lettura revisione:", {
       accountProfileError,
       professionalProfileError,
+        professionalDocumentsError,
     });
   }
 
@@ -190,9 +243,31 @@ export default async function ProfessionalReviewPage({
   const professionalProfile =
     professionalProfileData as ProfessionalProfile;
 
+  const professionalDocuments =
+    (professionalDocumentsData ?? []) as ProfessionalDocument[];
+
+  const professionCategory = isProfession(professionalProfile.profession)
+    ? getProfessionCategory(professionalProfile.profession)
+    : null;
+
+  const registrationDocumentLabel =
+    professionCategory === "HEALTH_OPERATOR"
+      ? "Attestato / qualifica OSS"
+      : professionCategory === "CARE_ASSISTANCE"
+        ? "Attestati o documentazione professionale"
+        : "Documento iscrizione all'Ordine/albo";
+
+  const registrationNumberLabel =
+    professionCategory === "HEALTH_OPERATOR"
+      ? "Numero qualifica / attestato OSS"
+      : professionCategory === "CARE_ASSISTANCE"
+        ? "Iscrizione professionale"
+        : "Numero iscrizione albo";
+
   async function createDocumentLink(
     label: string,
-    path: string | null
+    path: string | null,
+    document: ProfessionalDocument | null = null
   ): Promise<DocumentLink | null> {
     if (!path) {
       return null;
@@ -210,29 +285,61 @@ export default async function ProfessionalReviewPage({
     }
 
     return {
+      documentId: document?.id ?? null,
+      documentType: document?.document_type ?? null,
       label,
       path,
       url: data?.signedUrl ?? null,
-    };
-  }
+      originalFilename: document?.original_filename ?? null,
+      fileSize: document?.file_size ?? null,
+      verificationStatus: document?.verification_status ?? null,
+      rejectionReason: document?.rejection_reason ?? null,
+      uploadedAt: document?.uploaded_at ?? null,
+      isPublic: document?.is_public ?? null,
+    };  }
 
+  const identityDocument = professionalDocuments.find(
+    (document) => document.document_type === "identity"
+  ) ?? null;
+
+  const registrationDocument = professionalDocuments.find(
+    (document) => document.document_type === "registration"
+  ) ?? null;
+
+  const vatDocument = professionalDocuments.find(
+    (document) => document.document_type === "vat"
+  ) ?? null;
+
+  const cvDocument = professionalDocuments.find(
+    (document) => document.document_type === "cv"
+  ) ?? null;
   const documentLinks = (
     await Promise.all([
       createDocumentLink(
         "Documento di identità",
-        professionalProfile.identity_document_path
+        identityDocument?.storage_path ??
+          professionalProfile.identity_document_path,
+        identityDocument
       ),
       createDocumentLink(
-        "Iscrizione all’albo",
-        professionalProfile.registration_document_path
+        registrationDocumentLabel,
+        registrationDocument?.storage_path ??
+          professionalProfile.registration_document_path,
+        registrationDocument
       ),
-      createDocumentLink(
-        "Documento Partita IVA",
-        professionalProfile.vat_document_path
-      ),
-    ])
-  ).filter(
-    (document): document is DocumentLink =>
+        createDocumentLink(
+          "Documento Partita IVA",
+          vatDocument?.storage_path ??
+            professionalProfile.vat_document_path,
+          vatDocument
+        ),
+        createDocumentLink(
+          "Curriculum Vitae",
+          cvDocument?.storage_path ?? null,
+          cvDocument
+        ),
+      ])
+    ).filter(    (document): document is DocumentLink =>
       document !== null
   );
 
@@ -247,7 +354,15 @@ export default async function ProfessionalReviewPage({
         professionalProfile.avatar_path
       );
 
-    avatarUrl = publicUrl;
+    const version =
+      professionalProfile.updated_at
+        ? encodeURIComponent(
+            professionalProfile.updated_at
+          )
+        : Date.now().toString();
+
+    avatarUrl =
+      `${publicUrl}?v=${version}`;
   }
 
   const fullName =
@@ -344,7 +459,7 @@ export default async function ProfessionalReviewPage({
             <dl className="mt-6 space-y-5">
               <div>
                 <dt className="text-sm font-semibold text-slate-500">
-                  Numero iscrizione albo
+                  {registrationNumberLabel}
                 </dt>
 
                 <dd className="mt-1 text-slate-900">
@@ -517,9 +632,61 @@ export default async function ProfessionalReviewPage({
                   key={document.path}
                   className="rounded-xl border border-slate-200 p-5"
                 >
-                  <h3 className="font-bold text-slate-900">
-                    {document.label}
-                  </h3>
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="font-bold text-slate-900">
+                      {document.label}
+                    </h3>
+
+                      {document.verificationStatus && (
+                        <span
+                          className={`rounded-full border px-3 py-1 text-xs font-semibold ${getStatusClass(
+                            document.verificationStatus
+                          )}`}
+                        >
+                          {getStatusLabel(
+                            document.verificationStatus
+                          )}
+                        </span>
+                      )}
+                    </div>
+
+                    {document.documentType === "cv" && (
+                      <p className="mt-2 text-xs font-semibold text-slate-600">
+                        Visibilità:{" "}
+                        <span
+                          className={
+                            document.isPublic
+                              ? "text-green-700"
+                              : "text-slate-500"
+                          }
+                        >
+                         {document.isPublic ? "Pubblico" : "Privato"}
+                        </span>
+                      </p>
+                    )}                  {document.originalFilename && (
+                    <p className="mt-3 break-all text-sm text-slate-600">
+                      File: {document.originalFilename}
+                    </p>
+                  )}
+
+                  {document.uploadedAt && (
+                    <p className="mt-1 text-sm text-slate-600">
+                      Caricato: {formatDate(document.uploadedAt)}
+                    </p>
+                  )}
+
+                  {document.fileSize !== null && (
+                    <p className="mt-1 text-sm text-slate-600">
+                      Dimensione:{" "}
+                      {(document.fileSize / 1024 / 1024).toFixed(2)} MB
+                    </p>
+                  )}
+
+                  {document.rejectionReason && (
+                    <div className="mt-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                      Motivo del rifiuto: {document.rejectionReason}
+                    </div>
+                  )}
 
                   {document.url ? (
                     <a
@@ -534,6 +701,19 @@ export default async function ProfessionalReviewPage({
                     <p className="mt-4 text-sm text-red-600">
                       Link temporaneo non disponibile.
                     </p>
+                  )}
+
+                  {document.documentId && document.verificationStatus ? (
+                    <ProfessionalDocumentReviewActions
+                      userId={professionalProfile.user_id}
+                      documentId={document.documentId}
+                      currentStatus={document.verificationStatus}
+                      currentRejectionReason={document.rejectionReason}
+                    />
+                  ) : (
+                    <div className="mt-4 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+                      Documento legacy: deve essere ricaricato dal professionista prima della verifica individuale.
+                    </div>
                   )}
                 </article>
               ))}

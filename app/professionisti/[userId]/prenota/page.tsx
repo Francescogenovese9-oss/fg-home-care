@@ -11,12 +11,22 @@ type PageProps = {
   params: Promise<{
     userId: string;
   }>;
+  searchParams: Promise<{
+    source?: string | string[];
+  }>;
 };
 
 export default async function BookProfessionalPage({
   params,
+  searchParams,
 }: PageProps) {
   const { userId } = await params;
+
+  const search = await searchParams;
+  const source = Array.isArray(search.source) ? search.source[0] : search.source;
+  const isCareGuidance = source === "care";
+
+  const bookingPath = `/professionisti/${userId}/prenota${isCareGuidance ? "?source=care" : ""}`;
 
   const supabase = await createClient();
 
@@ -26,7 +36,7 @@ export default async function BookProfessionalPage({
 
   if (!user) {
     redirect(
-      `/login?redirect=/professionisti/${userId}/prenota`
+      `/login?redirect=${encodeURIComponent(bookingPath)}`
     );
   }
 
@@ -107,6 +117,17 @@ export default async function BookProfessionalPage({
       </header>
 
       <div className="mx-auto max-w-3xl px-6 py-10">
+        {isCareGuidance && (
+          <div className="mb-6 rounded-2xl border border-blue-200 bg-blue-50 p-5">
+            <p className="font-semibold text-blue-900">
+              Assistenza personalizzata
+            </p>
+            <p className="mt-1 text-sm text-blue-800">
+              Hai scelto questo professionista tra quelli suggeriti da FG Home Care per la tua esigenza.
+            </p>
+          </div>
+        )}
+
         <section className="mb-8">
           <p className="text-sm font-semibold text-blue-700">
             Richiesta di assistenza
@@ -133,6 +154,7 @@ export default async function BookProfessionalPage({
 
         <AppointmentRequestForm
           professionalId={data.user_id}
+          bookingSource={isCareGuidance ? "CARE_GUIDANCE" : "DIRECT"}
           professionalName={
             professionalName
           }

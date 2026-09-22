@@ -4,15 +4,8 @@ import { redirect } from "next/navigation";
 import LogoutButton from "@/components/auth/LogoutButton";
 import MarkAllNotificationsReadButton from "@/components/notifications/MarkAllNotificationsReadButton";
 import NotificationLink from "@/components/notifications/NotificationLink";
+import type { NotificationType } from "@/lib/notifications/types";
 import { createClient } from "@/lib/supabase/server";
-
-type NotificationType =
-  | "APPOINTMENT_CREATED"
-  | "APPOINTMENT_ACCEPTED"
-  | "APPOINTMENT_REJECTED"
-  | "APPOINTMENT_CANCELLED"
-  | "APPOINTMENT_COMPLETED"
-  | "MESSAGE_RECEIVED";
 
 type NotificationRecord = {
   id: string;
@@ -30,6 +23,9 @@ function getNotificationIcon(
   type: NotificationType
 ) {
   switch (type) {
+    case "APPOINTMENT_CREATED":
+    case "APPOINTMENT_REQUESTED":
+      return "📅";
     case "APPOINTMENT_ACCEPTED":
       return "✅";
 
@@ -42,9 +38,39 @@ function getNotificationIcon(
     case "APPOINTMENT_COMPLETED":
       return "🏁";
 
+    case "APPOINTMENT_PAYMENT_RECEIVED":
+      return "💳";
+
+    case "APPOINTMENT_REFUND_CONFIRMED":
+    case "APPOINTMENT_REFUND_RECEIVED":
+      return "↩️";
     case "MESSAGE_RECEIVED":
       return "💬";
 
+    case "REVIEW_RECEIVED":
+      return "⭐";
+    case "REVIEW_REPLY_RECEIVED":
+      return "💬";
+    case "REVIEW_REPLY_UPDATED":
+      return "✏️";
+    case "REVIEW_REPORT_OPENED":
+      return "🚩";
+    case "REVIEW_REPORT_RESOLVED_HIDDEN":
+      return "🙈";
+    case "REVIEW_REPORT_RESTORED":
+      return "♻️";
+    case "REVIEW_REPORT_DISMISSED":
+      return "✅";
+    case "PROFESSIONAL_PROFILE_UPDATED":
+      return "👤";
+    case "PROFESSIONAL_AVATAR_UPDATED":
+      return "📷";
+    case "PROFESSIONAL_DOCUMENT_UPLOADED":
+      return "📄";
+    case "PROFESSIONAL_PROFILE_APPROVED":
+      return "✅";
+    case "PROFESSIONAL_PROFILE_REJECTED":
+      return "⚠️";
     default:
       return "📅";
   }
@@ -54,6 +80,9 @@ function getNotificationLabel(
   type: NotificationType
 ) {
   switch (type) {
+    case "APPOINTMENT_CREATED":
+    case "APPOINTMENT_REQUESTED":
+      return "Nuova richiesta";
     case "APPOINTMENT_ACCEPTED":
       return "Richiesta accettata";
 
@@ -66,9 +95,41 @@ function getNotificationLabel(
     case "APPOINTMENT_COMPLETED":
       return "Prestazione completata";
 
+    case "APPOINTMENT_PAYMENT_RECEIVED":
+      return "Pagamento ricevuto";
+
+    case "APPOINTMENT_REFUND_CONFIRMED":
+      return "Rimborso confermato";
+
+    case "APPOINTMENT_REFUND_RECEIVED":
+      return "Prenotazione rimborsata";
     case "MESSAGE_RECEIVED":
       return "Nuovo messaggio";
 
+    case "REVIEW_RECEIVED":
+      return "Nuova recensione";
+    case "REVIEW_REPLY_RECEIVED":
+      return "Nuova risposta alla recensione";
+    case "REVIEW_REPLY_UPDATED":
+      return "Risposta alla recensione aggiornata";
+    case "REVIEW_REPORT_OPENED":
+      return "Recensione segnalata";
+    case "REVIEW_REPORT_RESOLVED_HIDDEN":
+      return "Recensione nascosta";
+    case "REVIEW_REPORT_RESTORED":
+      return "Recensione ripristinata";
+    case "REVIEW_REPORT_DISMISSED":
+      return "Segnalazione archiviata";
+    case "PROFESSIONAL_PROFILE_UPDATED":
+      return "Profilo professionale aggiornato";
+    case "PROFESSIONAL_AVATAR_UPDATED":
+      return "Foto profilo aggiornata";
+    case "PROFESSIONAL_DOCUMENT_UPLOADED":
+      return "Documento professionale caricato";
+    case "PROFESSIONAL_PROFILE_APPROVED":
+      return "Profilo professionale approvato";
+    case "PROFESSIONAL_PROFILE_REJECTED":
+      return "Profilo professionale non approvato";
     default:
       return "Nuova richiesta";
   }

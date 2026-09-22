@@ -1,5 +1,6 @@
 import Header from "@/components/layout/Header";
 import Hero from "@/components/home/Hero";
+import CareGuidance from "@/components/home/CareGuidance";
 import Services from "@/components/home/Services";
 import HowItWorks from "@/components/home/HowItWorks";
 import Footer from "@/components/layout/Footer";
@@ -12,11 +13,10 @@ export default function Home() {
       <>
   <Header />
 
-  <Hero />
-
-  <Services />
-
-  <HowItWorks />
+    <Hero />
+    <CareGuidance />
+    <HowItWorks />
+    <Services />
 
   <WhyChooseUs />
 

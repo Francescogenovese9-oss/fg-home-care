@@ -30,6 +30,8 @@ type AppointmentChatProps = {
 type SendMessageResponse = {
   success?: boolean;
   message?: ChatMessage | string;
+  code?: string;
+  detectedTypes?: string[];
 };
 
 function formatMessageTime(value: string) {
@@ -69,6 +71,11 @@ export default function AppointmentChat({
     useState("");
 
   const [error, setError] = useState("");
+
+  const [
+    offPlatformWarning,
+    setOffPlatformWarning,
+  ] = useState("");
 
   const [isSubmitting, setIsSubmitting] =
     useState(false);
@@ -207,6 +214,7 @@ export default function AppointmentChat({
     }
 
     setError("");
+    setOffPlatformWarning("");
     setIsSubmitting(true);
 
     try {
@@ -228,11 +236,25 @@ export default function AppointmentChat({
         (await response.json()) as SendMessageResponse;
 
       if (!response.ok) {
+        if (
+          result.code ===
+          "OFF_PLATFORM_CONTACT_BLOCKED"
+        ) {
+          setOffPlatformWarning(
+            typeof result.message === "string"
+              ? result.message
+              : "I contatti personali possono essere condivisi solo dopo il pagamento della prenotazione."
+          );
+
+          return;
+        }
+
         setError(
           typeof result.message === "string"
             ? result.message
             : "Invio del messaggio non riuscito."
         );
+
         return;
       }
 
@@ -443,6 +465,21 @@ export default function AppointmentChat({
                   : "Invia messaggio"}
               </button>
             </div>
+
+            {offPlatformWarning && (
+              <div
+                role="alert"
+                className="rounded-xl border border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800"
+              >
+                <p className="font-semibold">
+                  Protezione FG Home Care
+                </p>
+
+                <p className="mt-1">
+                  {offPlatformWarning}
+                </p>
+              </div>
+            )}
 
             {error && (
               <div

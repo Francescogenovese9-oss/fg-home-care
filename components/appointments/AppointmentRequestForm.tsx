@@ -32,6 +32,7 @@ type AppointmentResponse = {
 
 type AppointmentRequestFormProps = {
   professionalId: string;
+  bookingSource: "DIRECT" | "CARE_GUIDANCE";
   professionalName: string;
   homeVisits: boolean;
   videoConsultations: boolean;
@@ -41,19 +42,18 @@ type AppointmentRequestFormProps = {
 };
 
 function getMinimumDate() {
-  const tomorrow = new Date();
+  const today = new Date();
 
-  tomorrow.setDate(
-    tomorrow.getDate() + 1
-  );
+  const year = today.getFullYear();
+  const month = String(today.getMonth() + 1).padStart(2, "0");
+  const day = String(today.getDate()).padStart(2, "0");
 
-  return tomorrow
-    .toISOString()
-    .slice(0, 10);
+  return `${year}-${month}-${day}`;
 }
 
 export default function AppointmentRequestForm({
   professionalId,
+  bookingSource,
   professionalName,
   homeVisits,
   videoConsultations,
@@ -82,6 +82,7 @@ export default function AppointmentRequestForm({
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<
     AppointmentInput,
@@ -93,6 +94,7 @@ export default function AppointmentRequestForm({
     ),
     defaultValues: {
       professionalId,
+      bookingSource,
       serviceType:
         defaultServiceType,
       appointmentDate: "",
@@ -100,9 +102,16 @@ export default function AppointmentRequestForm({
         availableFrom?.slice(0, 5) ??
         "09:00",
       durationMinutes: 60,
+      serviceStreetAddress: "",
+      serviceCity: "",
+      serviceProvince: "",
+      servicePostalCode: "",
+      serviceAccessNotes: "",
       patientNotes: "",
     },
   });
+
+  const selectedServiceType = watch("serviceType");
 
   async function onSubmit(
     values: AppointmentValues
@@ -147,14 +156,20 @@ export default function AppointmentRequestForm({
 
       reset({
         professionalId,
+        bookingSource,
         serviceType:
           defaultServiceType,
         appointmentDate: "",
         appointmentTime:
           availableFrom?.slice(0, 5) ??
           "09:00",
-        durationMinutes: 60,
-        patientNotes: "",
+          durationMinutes: 60,
+        serviceStreetAddress: "",
+        serviceCity: "",
+        serviceProvince: "",
+        servicePostalCode: "",
+        serviceAccessNotes: "",
+      patientNotes: "",
       });
     } catch (error) {
       console.error(
@@ -332,6 +347,123 @@ export default function AppointmentRequestForm({
               )}
             </div>
           </div>
+          {selectedServiceType === "HOME_VISIT" && (
+            <>
+            <div className="space-y-2">
+              <Label htmlFor="serviceStreetAddress">
+                Indirizzo e numero civico
+              </Label>
+
+              <Input
+                id="serviceStreetAddress"
+                type="text"
+                autoComplete="street-address"
+                placeholder="Es. Via Roma 25"
+                {...register("serviceStreetAddress")}
+              />
+
+              {errors.serviceStreetAddress && (
+                <p className="text-sm text-red-600">
+                  {errors.serviceStreetAddress.message}
+                </p>
+              )}
+            </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="serviceCity">
+                  Comune
+                </Label>
+
+                <Input
+                  id="serviceCity"
+                  type="text"
+                  autoComplete="address-level2"
+                  placeholder="Es. Cosenza"
+                  {...register("serviceCity")}
+                />
+
+                {errors.serviceCity && (
+                  <p className="text-sm text-red-600">
+                    {errors.serviceCity.message}
+                  </p>
+                )}
+              </div>
+
+              <div className="grid gap-4 md:grid-cols-2">
+                <div className="space-y-2">
+                  <Label htmlFor="serviceProvince">
+                    Provincia
+                  </Label>
+
+                  <Input
+                    id="serviceProvince"
+                    type="text"
+                    autoComplete="address-level1"
+                    placeholder="CS"
+                    maxLength={2}
+                    className="uppercase"
+                    {...register("serviceProvince")}
+                  />
+
+                  {errors.serviceProvince && (
+                    <p className="text-sm text-red-600">
+                      {errors.serviceProvince.message}
+                    </p>
+                  )}
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="servicePostalCode">
+                    CAP
+                  </Label>
+
+                  <Input
+                    id="servicePostalCode"
+                    type="text"
+                    inputMode="numeric"
+                    autoComplete="postal-code"
+                    placeholder="87100"
+                    maxLength={5}
+                    {...register("servicePostalCode")}
+                  />
+
+                  {errors.servicePostalCode && (
+                    <p className="text-sm text-red-600">
+                      {errors.servicePostalCode.message}
+                    </p>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="serviceAccessNotes">
+                  Indicazioni per l'accesso
+                  <span className="ml-1 font-normal text-slate-500">
+                    (facoltative)
+                  </span>
+                </Label>
+
+                <textarea
+                  id="serviceAccessNotes"
+                  rows={3}
+                  maxLength={500}
+                  placeholder="Es. citofono Rossi, secondo piano, ascensore presente."
+                  className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
+                  {...register("serviceAccessNotes")}
+                />
+
+                {errors.serviceAccessNotes && (
+                  <p className="text-sm text-red-600">
+                    {errors.serviceAccessNotes.message}
+                  </p>
+                )}
+
+                <p className="text-xs text-slate-500">
+                  Inserisci solo indicazioni logistiche utili al professionista.
+                </p>
+              </div>
+            </>          )}
+
 
           <div className="space-y-2">
             <Label htmlFor="durationMinutes">

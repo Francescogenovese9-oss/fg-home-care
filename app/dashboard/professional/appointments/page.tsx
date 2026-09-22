@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import ProfessionalAppointmentActions from "@/components/appointments/ProfessionalAppointmentActions";
 import LogoutButton from "@/components/auth/LogoutButton";
 import ChatLink from "@/components/chat/ChatLink";
+import VideoConsultationButton from "@/components/appointments/VideoConsultationButton";
 import { createClient } from "@/lib/supabase/server";
 
 type AppointmentStatus =
@@ -25,9 +26,15 @@ type Appointment = {
   appointment_time: string;
   duration_minutes: number;
   hourly_rate: number | null;
+  service_street_address: string | null;
+  service_city: string | null;
+  service_province: string | null;
+  service_postal_code: string | null;
+  service_access_notes: string | null;
   patient_notes: string | null;
   professional_notes: string | null;
   status: AppointmentStatus;
+  payment_status: string;
   created_at: string;
   updated_at: string;
 };
@@ -211,9 +218,15 @@ export default async function ProfessionalAppointmentsPage({
         appointment_time,
         duration_minutes,
         hourly_rate,
+        service_street_address,
+        service_city,
+        service_province,
+        service_postal_code,
+        service_access_notes,
         patient_notes,
         professional_notes,
         status,
+        payment_status,
         created_at,
         updated_at
       `
@@ -592,6 +605,38 @@ export default async function ProfessionalAppointmentsPage({
                     </div>
                   </dl>
 
+                  {appointment.service_type === "HOME_VISIT" &&
+                    appointment.service_street_address && (
+                      <div className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-5">
+                        <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                          Indirizzo della prestazione
+                        </p>
+
+                        <p className="mt-2 font-semibold text-slate-900">
+                          {appointment.service_street_address}
+                        </p>
+
+                        <p className="mt-1 text-sm text-slate-700">
+                          {appointment.service_postal_code}{" "}
+                          {appointment.service_city}
+                          {appointment.service_province
+                            ? ` (${appointment.service_province})`
+                            : ""}
+                        </p>
+
+                        {appointment.service_access_notes && (
+                          <div className="mt-4 border-t border-slate-200 pt-4">
+                            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
+                              Indicazioni per l&apos;accesso
+                            </p>
+
+                            <p className="mt-2 whitespace-pre-line text-sm leading-6 text-slate-700">
+                              {appointment.service_access_notes}
+                            </p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   {appointment.patient_notes && (
                     <div className="mt-6 rounded-2xl bg-slate-50 p-5">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
@@ -641,6 +686,16 @@ export default async function ProfessionalAppointmentsPage({
                       </span>
                     )}
                   </div>
+
+                    {appointment.service_type === "VIDEO_CONSULTATION" &&
+                      appointment.status === "ACCEPTED" &&
+                      appointment.payment_status === "PAID" && (
+                        <div className="mt-3">
+                          <VideoConsultationButton
+                            appointmentId={appointment.id}
+                          />
+                        </div>
+                      )}
 
                   <ProfessionalAppointmentActions
                     appointmentId={
