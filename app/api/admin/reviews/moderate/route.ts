@@ -976,9 +976,7 @@ import {
       return NextResponse.json(
         {
           message:
-            error instanceof Error
-              ? error.message
-              : "Impossibile completare la moderazione.",
+            "Impossibile completare la moderazione.",
         },
         {
           status: 500,

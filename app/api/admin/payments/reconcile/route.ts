@@ -261,9 +261,7 @@ export async function POST(
     return NextResponse.json(
       {
         message:
-          error instanceof Error
-            ? error.message
-            : "Non è stato possibile riconciliare il pagamento.",
+          "Non è stato possibile riconciliare il pagamento.",
       },
       {
        status: 500,

@@ -516,7 +516,6 @@ export async function PATCH(
       return NextResponse.json(
         {
           message:
-            error.message ||
             "Impossibile aggiornare la verifica.",
         },
         {
@@ -663,9 +662,7 @@ export async function PATCH(
     return NextResponse.json(
       {
         message:
-          error instanceof Error
-            ? error.message
-            : "Il server non è riuscito a completare la verifica.",
+          "Il server non è riuscito a completare la verifica.",
       },
       {
         status: 500,

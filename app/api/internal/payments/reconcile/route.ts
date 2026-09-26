@@ -20,12 +20,12 @@ export const dynamic =
 function getCronSecret() {
   const secret =
     process.env
-      .INTERNAL_CRON_SECRET
+      .CRON_SECRET
       ?.trim();
 
   if (!secret) {
     throw new Error(
-      "INTERNAL_CRON_SECRET non configurato."
+      "CRON_SECRET non configurato."
     );
   }
 
@@ -220,9 +220,7 @@ async function runReconciliation(
           false,
 
         message:
-          error instanceof Error
-            ? error.message
-            : "Errore durante la reconciliation automatica.",
+          "Errore durante la reconciliation automatica.",
       },
       {
         status: 500,

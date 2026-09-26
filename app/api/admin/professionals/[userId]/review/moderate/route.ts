@@ -80,10 +80,21 @@ function getNotificationContent(
   }
 }
 
+type RouteContext = {
+  params: Promise<{
+    userId: string;
+  }>;
+};
+
 export async function POST(
-  request: NextRequest
+  request: NextRequest,
+  context: RouteContext
 ) {
   try {
+    const {
+      userId,
+    } = await context.params;
+
     /*
      * =====================================================
      * BODY
@@ -342,6 +353,21 @@ export async function POST(
         },
         {
           status: 404,
+        }
+      );
+    }
+
+    if (
+      review.professional_id !==
+      userId
+    ) {
+      return NextResponse.json(
+        {
+          message:
+            "La recensione non appartiene al professionista indicato.",
+        },
+        {
+          status: 409,
         }
       );
     }
