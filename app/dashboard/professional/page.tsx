@@ -937,7 +937,7 @@ export default async function ProfessionalDashboardPage() {
                 </h3>
 
                 <p className="mt-2 text-sm text-slate-600">
-                  19,90 &euro;/mese - commissione 8% per prestazione.
+                  19,90 &euro;/mese - commissione base 8%, riducibile fino al 5% con la continuità assistenziale.
                 </p>
               </div>
 
@@ -963,13 +963,13 @@ export default async function ProfessionalDashboardPage() {
                 </div>
 
                 <h3 className="mt-3 text-2xl font-bold text-slate-900">
-                  Commissione Basic: 15%
+                  Commissione Basic: dal 15% fino all\u00278%
                 </h3>
 
                 <p className="mt-3 text-sm leading-6 text-slate-600">
                   Con il piano Basic non e previsto alcun canone mensile.
-                  FG Home Care applica una commissione del 15% sulle
-                  prestazioni gestite tramite la piattaforma.
+                  FG Home Care applica una commissione iniziale del 15% sulle
+                  prestazioni, che si riduce fino all\u00278% con lo stesso paziente.
                 </p>
 
                 <div className="mt-5 rounded-2xl bg-blue-50 p-4">
@@ -978,7 +978,7 @@ export default async function ProfessionalDashboardPage() {
                   </p>
 
                   <p className="mt-1 text-sm leading-6 text-blue-900">
-                    19,90 &euro; al mese con commissione dell&apos;8%.
+                    19,90 &euro; al mese con commissione iniziale dell&apos;8%, riducibile fino al 5%.
                     Include inoltre maggiore visibilita nei risultati,
                     badge Premium, statistiche avanzate e supporto prioritario.
                   </p>

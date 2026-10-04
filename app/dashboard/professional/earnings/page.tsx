@@ -9,6 +9,7 @@ import {
 } from "@/lib/payments/payment-status";
 
 import { createClient } from "@/lib/supabase/server";
+import { getStripe } from "@/lib/stripe/server";
 
 type AppointmentStatus =
   | "PENDING"
@@ -38,9 +39,13 @@ type EconomicAppointment = {
 
   subtotal_amount: number | null;
   platform_fee_amount: number | null;
+  commission_percent: number | null;
   professional_amount: number | null;
 
   paid_at: string | null;
+
+  refund_amount: number | null;
+  refund_percent: number | null;
   refunded_at: string | null;
 
   stripe_payment_intent_id: string | null;
@@ -50,6 +55,15 @@ type PatientProfile = {
   id: string;
   first_name: string | null;
   last_name: string | null;
+};
+
+type StripePayout = {
+  id: string;
+  amount: number;
+  currency: string;
+  status: string;
+  arrivalDate: string | null;
+  createdAt: string;
 };
 
 function formatMoney(
@@ -194,8 +208,11 @@ export default async function ProfessionalEarningsPage() {
         currency,
         subtotal_amount,
         platform_fee_amount,
+        commission_percent,
         professional_amount,
         paid_at,
+        refund_amount,
+        refund_percent,
         refunded_at,
         stripe_payment_intent_id
       `
@@ -294,6 +311,115 @@ export default async function ProfessionalEarningsPage() {
     );
 
   /*
+   * SALDO STRIPE CONNECT
+   */
+
+  let stripeAvailable = 0;
+  let stripePending = 0;
+  let stripeConnected = false;
+  let stripePayoutsEnabled = false;
+
+  let stripePayouts: StripePayout[] = [];
+
+  try {
+    const {
+      data: professionalStripe,
+      error: professionalStripeError,
+    } = await supabase
+      .from("professional_profiles")
+      .select(
+        `
+          stripe_account_id,
+          stripe_payouts_enabled
+        `
+      )
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (professionalStripeError) {
+      console.error(
+        "Errore lettura profilo Stripe:",
+        professionalStripeError
+      );
+    } else if (
+      professionalStripe?.stripe_account_id
+    ) {
+      const stripe = getStripe();
+
+      const balance =
+        await stripe.balance.retrieve(
+          {},
+          {
+            stripeAccount:
+              professionalStripe.stripe_account_id,
+          }
+        );
+
+      stripeAvailable =
+        balance.available.find(
+          (item) =>
+            item.currency === "eur"
+        )?.amount ?? 0;
+
+      stripePending =
+        balance.pending.find(
+          (item) =>
+            item.currency === "eur"
+        )?.amount ?? 0;
+
+      stripeConnected = true;
+
+      stripePayoutsEnabled =
+        professionalStripe.stripe_payouts_enabled ??
+        false;
+
+      const payouts =
+        await stripe.payouts.list(
+          {
+            limit: 10,
+          },
+          {
+            stripeAccount:
+              professionalStripe.stripe_account_id,
+          }
+        );
+
+      stripePayouts =
+        payouts.data.map(
+          (payout) => ({
+            id: payout.id,
+
+            amount:
+              payout.amount,
+
+            currency:
+              payout.currency,
+
+            status:
+              payout.status,
+
+            arrivalDate:
+              payout.arrival_date
+                ? new Date(
+                    payout.arrival_date * 1000
+                  ).toISOString()
+                : null,
+
+            createdAt:
+              new Date(
+                payout.created * 1000
+              ).toISOString(),
+          })
+        );
+    }
+  } catch (stripeBalanceError) {
+    console.error(
+      "Errore recupero saldo Stripe:",
+      stripeBalanceError
+    );
+  }
+
+  /*
    * TOTALI
    */
 
@@ -369,7 +495,7 @@ export default async function ProfessionalEarningsPage() {
     refundedAppointments.reduce(
       (total, appointment) =>
         total +
-        (appointment.subtotal_amount ??
+        (appointment.refund_amount ??
           0),
       0
     );
@@ -457,7 +583,7 @@ export default async function ProfessionalEarningsPage() {
 
           <article className="rounded-2xl border border-green-200 bg-green-50 p-6 shadow-sm">
             <p className="text-xs font-semibold uppercase tracking-wide text-green-700">
-              Quota professionista
+              Guadagni da prestazioni
             </p>
 
             <p className="mt-3 text-3xl font-bold text-green-900">
@@ -467,8 +593,10 @@ export default async function ProfessionalEarningsPage() {
             </p>
 
             <p className="mt-2 text-sm text-green-700">
-              Importo maturato al netto della
-              commissione FG Home Care.
+              Quota economica maturata sulle
+              prestazioni, al netto della commissione.
+              Il saldo effettivamente disponibile è
+              indicato nella sezione Stripe.
             </p>
           </article>
 
@@ -505,6 +633,221 @@ export default async function ProfessionalEarningsPage() {
               rimborsate.
             </p>
           </article>
+        </section>
+
+        {/* SALDO STRIPE */}
+
+        <section className="mt-8">
+          <div>
+            <p className="text-sm font-semibold text-blue-700">
+              Accrediti
+            </p>
+
+            <h3 className="mt-1 text-2xl font-bold text-slate-900">
+              Saldo Stripe
+            </h3>
+
+            <p className="mt-2 text-sm text-slate-600">
+              Denaro effettivamente presente sul
+              conto Stripe Connect: disponibile oppure
+              ancora in elaborazione.
+            </p>
+          </div>
+
+          {stripeConnected ? (
+            <div className="mt-5 grid gap-5 md:grid-cols-3">
+              <article className="rounded-2xl border border-blue-200 bg-blue-50 p-6 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
+                  Totale su Stripe
+                </p>
+
+                <p className="mt-3 text-3xl font-bold text-blue-900">
+                  {formatMoney(
+                    stripeAvailable +
+                      stripePending
+                  )}
+                </p>
+
+                <p className="mt-2 text-sm text-blue-700">
+                  Somma del saldo disponibile e
+                  degli importi ancora in arrivo.
+                </p>
+              </article>
+              <article className="rounded-2xl border border-green-200 bg-green-50 p-6 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-green-700">
+                  Disponibile
+                </p>
+
+                <p className="mt-3 text-3xl font-bold text-green-900">
+                  {formatMoney(stripeAvailable)}
+                </p>
+
+                <p className="mt-2 text-sm text-green-700">
+                  Importo attualmente disponibile
+                  sul conto Stripe.
+                </p>
+              </article>
+
+              <article className="rounded-2xl border border-amber-200 bg-amber-50 p-6 shadow-sm">
+                <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">
+                  In arrivo
+                </p>
+
+                <p className="mt-3 text-3xl font-bold text-amber-900">
+                  {formatMoney(stripePending)}
+                </p>
+
+                <p className="mt-2 text-sm text-amber-700">
+                  Importo ancora in elaborazione
+                  prima di diventare disponibile.
+                </p>
+              </article>
+
+              {!stripePayoutsEnabled && (
+                <div className="md:col-span-3 rounded-2xl border border-amber-300 bg-amber-50 p-5 text-sm text-amber-800">
+                  Gli accrediti bancari Stripe non
+                  risultano ancora abilitati per
+                  questo account.
+                </div>
+              )}
+            </div>
+          ) : (
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
+              Collega e completa la configurazione
+              Stripe per visualizzare saldo e
+              accrediti.
+            </div>
+          )}
+        </section>
+
+        {/* ACCREDITI BANCARI */}
+
+        <section className="mt-8">
+          <div>
+            <p className="text-sm font-semibold text-blue-700">
+              Trasferimenti
+            </p>
+
+            <h3 className="mt-1 text-2xl font-bold text-slate-900">
+              Ultimi accrediti bancari
+            </h3>
+
+            <p className="mt-2 text-sm text-slate-600">
+              Ultimi trasferimenti effettuati da Stripe
+              verso il conto bancario.
+            </p>
+          </div>
+
+          {!stripeConnected ? (
+            <div className="mt-5 rounded-2xl border border-slate-200 bg-white p-6 text-slate-600 shadow-sm">
+              Collega Stripe per visualizzare
+              gli accrediti bancari.
+            </div>
+          ) : stripePayouts.length === 0 ? (
+            <div className="mt-5 rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center">
+              <div className="text-3xl">
+                🏦
+            </div>
+
+              <p className="mt-3 font-semibold text-slate-900">
+                Nessun accredito bancario
+              </p>
+
+              <p className="mt-1 text-sm text-slate-500">
+                I trasferimenti effettuati da Stripe
+                compariranno qui.
+              </p>
+            </div>
+          ) : (
+            <div className="mt-5 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+              <div className="overflow-x-auto">
+                <table className="min-w-full">
+                  <thead className="bg-slate-50">
+                    <tr>
+                      <th className="px-5 py-4 text-left text-xs font-semibold uppercase text-slate-500">
+                        Data
+                      </th>
+
+                      <th className="px-5 py-4 text-left text-xs font-semibold uppercase text-slate-500">
+                        Arrivo previsto
+                      </th>
+
+                      <th className="px-5 py-4 text-right text-xs font-semibold uppercase text-slate-500">
+                        Importo
+                      </th>
+
+                      <th className="px-5 py-4 text-left text-xs font-semibold uppercase text-slate-500">
+                        Stato
+                      </th>
+                    </tr>
+                  </thead>
+
+                  <tbody className="divide-y divide-slate-100">
+                    {stripePayouts.map((payout) => (
+                      <tr
+                        key={payout.id}
+                        className="hover:bg-slate-50"
+                      >
+                        <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-700">
+                          {new Intl.DateTimeFormat(
+                            "it-IT"
+                          ).format(
+                            new Date(
+                              payout.createdAt
+                            )
+                          )}
+                        </td>
+
+                        <td className="whitespace-nowrap px-5 py-4 text-sm text-slate-700">
+                          {payout.arrivalDate
+                            ? new Intl.DateTimeFormat(
+                                "it-IT"
+                              ).format(
+                                new Date(
+                                  payout.arrivalDate
+                                )
+                              )
+                            : "—"}
+                        </td>
+
+                        <td className="whitespace-nowrap px-5 py-4 text-right text-sm font-bold text-slate-900">
+                        {formatMoney(
+                            payout.amount,
+                            payout.currency
+                          )}
+                        </td>
+
+                        <td className="px-5 py-4">
+                          <span
+                            className={`inline-flex rounded-full border px-3 py-1 text-xs font-semibold ${
+                              payout.status === "paid"
+                                ? "border-green-200 bg-green-50 text-green-700"
+                                : payout.status === "failed" ||
+                                    payout.status === "canceled"
+                                  ? "border-red-200 bg-red-50 text-red-700"
+                                  : "border-amber-200 bg-amber-50 text-amber-700"
+                            }`}
+                          >
+                            {payout.status === "paid"
+                              ? "Accreditato"
+                              : payout.status === "pending"
+                                ? "In elaborazione"
+                                : payout.status === "in_transit"
+                                  ? "In trasferimento"
+                                  : payout.status === "failed"
+                                    ? "Fallito"
+                                    : payout.status === "canceled"
+                                      ? "Annullato"
+                                      : payout.status}
+                          </span>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
         </section>
 
         {/* NUMERI */}
@@ -646,6 +989,50 @@ export default async function ProfessionalEarningsPage() {
                           appointment.currency ??
                           "eur";
 
+                        /*
+                         * Importi economici effettivi
+                         * dopo un eventuale rimborso.
+                         */
+                        const subtotal =
+                          appointment.subtotal_amount ??
+                          0;
+
+                        const refund =
+                          appointment.refund_amount ??
+                          0;
+
+                        const remainingRatio =
+                          subtotal > 0
+                            ? Math.max(
+                                0,
+                                Math.min(
+                                  1,
+                                  (subtotal - refund) /
+                                    subtotal
+                                )
+                              )
+                            : 0;
+
+                        const effectiveTotal =
+                          Math.max(
+                            0,
+                                 subtotal - refund
+                          );
+
+                        const effectivePlatformFee =
+                          Math.round(
+                            (appointment.platform_fee_amount ??
+                              0) *
+                              remainingRatio
+                          );
+
+                        const effectiveProfessionalAmount =
+                          Math.round(
+                            (appointment.professional_amount ??
+                              0) *
+                              remainingRatio
+                          );
+
                         return (
                           <tr
                             key={
@@ -679,25 +1066,59 @@ export default async function ProfessionalEarningsPage() {
                             </td>
 
                             <td className="whitespace-nowrap px-5 py-5 text-right text-sm font-semibold text-slate-900">
-                              {formatMoney(
-                                appointment.subtotal_amount ??
-                                  0,
-                                currency
+                              {refund > 0 ? (
+                                <div>
+                                  <div className="text-xs font-normal text-slate-400 line-through">
+                                    {formatMoney(
+                                      subtotal,
+                                      currency
+                                    )}
+                                  </div>
+
+                                  <div>
+                                    {formatMoney(
+                                      effectiveTotal,
+                                      currency
+                                    )}
+                                  </div>
+
+                                  <div className="mt-1 text-xs font-normal text-red-600">
+                                    Rimborso{" "}
+                                    {formatMoney(
+                                      refund,
+                                      currency
+                                    )}
+                                    {appointment.refund_percent != null
+                                      ? ` (${appointment.refund_percent}%)`
+                                      : ""}
+                                  </div>
+                                </div>
+                              ) : (
+                                formatMoney(
+                                  effectiveTotal,
+                                  currency
+                                )
                               )}
                             </td>
 
                             <td className="whitespace-nowrap px-5 py-5 text-right text-sm text-blue-700">
-                              {formatMoney(
-                                appointment.platform_fee_amount ??
-                                  0,
-                                currency
+                              <div className="font-semibold">
+                                {formatMoney(
+                                  effectivePlatformFee,
+                                  currency
+                                )}
+                              </div>
+
+                              {appointment.commission_percent != null && (
+                                <div className="mt-1 text-xs font-normal text-slate-500">
+                                  {appointment.commission_percent}%
+                                </div>
                               )}
                             </td>
 
                             <td className="whitespace-nowrap px-5 py-5 text-right text-sm font-bold text-green-700">
                               {formatMoney(
-                                appointment.professional_amount ??
-                                  0,
+                                effectiveProfessionalAmount,
                                 currency
                               )}
                             </td>

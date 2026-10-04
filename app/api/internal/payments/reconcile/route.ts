@@ -11,6 +11,10 @@ import {
   reconcilePendingRefunds,
 } from "@/lib/payments/reconcile-pending-refunds";
 
+import {
+  remindAppointmentsToComplete,
+} from "@/lib/appointments/remind-completion";
+
 export const runtime =
   "nodejs";
 
@@ -111,6 +115,26 @@ async function runReconciliation(
 
     /*
      * =====================================================
+     * REMINDER COMPLETAMENTO PRESTAZIONI
+     * =====================================================
+     *
+     * Per le prestazioni:
+     * - ACCEPTED
+     * - PAID
+     * - con orario di fine già trascorso
+     *
+     * viene creata una notifia al professionista
+     * per ricordare la conferma del completamento.
+     * =====================================================
+     */
+
+    const completionReminders =
+      await remindAppointmentsToComplete(
+        100
+      );
+
+    /*
+     * =====================================================
      * REPORT COMPLESSIVO
      * ====================================================
      */
@@ -203,6 +227,8 @@ async function runReconciliation(
         payments,
 
         refunds,
+
+        completionReminders,
       },
       {
         status: 200,

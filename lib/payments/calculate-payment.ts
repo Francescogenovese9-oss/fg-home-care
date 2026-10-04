@@ -10,6 +10,15 @@ type CalculatePaymentInput = {
   hourlyRate: number;
   durationMinutes: number;
   plan: ProfessionalPlan;
+
+  /*
+   * Commissione effettiva opzionale.
+   *
+   * Se non viene specificata continuiamo
+   * a utilizzare la commissione standard
+   * BASIC / PREMIUM.
+   */
+  commissionPercent?: number;
 };
 
 export type PaymentBreakdown = {
@@ -54,6 +63,7 @@ export function calculatePaymentBreakdown({
   hourlyRate,
   durationMinutes,
   plan,
+  commissionPercent: customCommissionPercent,
 }: CalculatePaymentInput): PaymentBreakdown {
   if (
     !Number.isFinite(hourlyRate) ||
@@ -75,7 +85,18 @@ export function calculatePaymentBreakdown({
   }
 
   const commissionPercent =
+    customCommissionPercent ??
     getPlatformCommissionPercent(plan);
+
+  if (
+    !Number.isFinite(commissionPercent) ||
+    commissionPercent < 0 ||
+    commissionPercent > 100
+  ) {
+    throw new Error(
+      "Percentuale commissione non valida."
+    );
+  }
 
   const subtotalEuros =
     hourlyRate *

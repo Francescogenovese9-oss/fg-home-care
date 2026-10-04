@@ -14,6 +14,10 @@ type ProfessionalAppointmentActionsProps = {
   appointmentId: string;
   currentStatus: AppointmentStatus;
   currentNotes?: string | null;
+  paymentStatus: string;
+  appointmentDate: string;
+  appointmentTime: string;
+  durationMinutes: number;
 };
 
 type UpdateResponse = {
@@ -25,6 +29,10 @@ export default function ProfessionalAppointmentActions({
   appointmentId,
   currentStatus,
   currentNotes,
+  paymentStatus,
+  appointmentDate,
+  appointmentTime,
+  durationMinutes,
 }: ProfessionalAppointmentActionsProps) {
   const router = useRouter();
 
@@ -117,6 +125,29 @@ export default function ProfessionalAppointmentActions({
     return null;
   }
 
+  const appointmentStart =
+    new Date(
+      `${appointmentDate}T${appointmentTime}`
+    );
+
+  const appointmentEnd =
+    new Date(
+      appointmentStart.getTime() +
+        durationMinutes * 60 * 1000
+    );
+
+  const paymentAllowsCompletion =
+    paymentStatus === "PAID" ||
+    paymentStatus === "NOT_REQUIRED";
+
+  const canComplete =
+    currentStatus === "ACCEPTED" &&
+    paymentAllowsCompletion &&
+    Number.isInteger(durationMinutes) &&
+    durationMinutes > 0 &&
+    !Number.isNaN(appointmentEnd.getTime()) &&
+    Date.now() >= appointmentEnd.getTime();
+
   return (
     <section className="mt-6 border-t border-slate-200 pt-6">
       <div className="space-y-2">
@@ -192,20 +223,36 @@ export default function ProfessionalAppointmentActions({
           </>
         )}
 
-        {currentStatus === "ACCEPTED" && (
-          <button
-            type="button"
-            onClick={() =>
-              void updateAppointment("COMPLETE")
-            }
-            disabled={isSubmitting}
-            className="rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            {isSubmitting
-              ? "Aggiornamento..."
-              : "Segna come completata"}
-          </button>
-        )}
+        {currentStatus === "ACCEPTED" &&
+          canComplete && (
+            <button
+              type="button"
+              onClick={() =>
+                void updateAppointment("COMPLETE")
+              }
+              disabled={isSubmitting}
+              className="rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {isSubmitting
+                ? "Aggiornamento..."
+                : "Segna come completata"}
+            </button>
+          )}
+
+        {currentStatus === "ACCEPTED" &&
+          !paymentAllowsCompletion && (
+            <p className="text-sm text-amber-700">
+              Il completamento sarà disponibile dopo il pagamento.
+            </p>
+          )}
+
+        {currentStatus === "ACCEPTED" &&
+          paymentAllowsCompletion &&
+          !canComplete && (
+            <p className="text-sm text-slate-500">
+              Il completamento sarà disponibile al termine della prestazione.
+            </p>
+          )}
       </div>
     </section>
   );

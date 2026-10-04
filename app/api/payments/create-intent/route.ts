@@ -4,6 +4,7 @@ import {
 } from "next/server";
 
 import { calculatePaymentBreakdown } from "@/lib/payments/calculate-payment";
+import { getRelationshipCommission } from "@/lib/payments/relationship-commission";
 import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { createClient } from "@/lib/supabase/server";
 import { getStripe } from "@/lib/stripe/server";
@@ -410,7 +411,39 @@ export async function POST(
     }
 
     /*
-     * Calcolo economico lato server.
+     * Piano del professionista.
+     */
+    const plan =
+      professional.subscription_plan === "PREMIUM"
+        ? "PREMIUM"
+        : "BASIC";
+
+    /*
+     * Commissione loyalty.
+     *
+     * IMPORTANTE:
+     * viene calcolata esclusivamente sulla
+     * stessa coppia paziente-professionista.
+     *
+     * Contano soltanto le precedenti
+     * prestazioni COMPLETED + PAID.
+     */
+    const relationship =
+      await getRelationshipCommission({
+        patientId:
+          appointment.patient_id,
+
+        professionalId:
+          appointment.professional_id,
+
+        plan,
+
+        excludeAppointmentId:
+          appointment.id,
+      });
+
+    /*
+     * Calcolo economico definitivo.
      */
     const payment =
       calculatePaymentBreakdown({
@@ -421,10 +454,10 @@ export async function POST(
         durationMinutes:
           appointment.duration_minutes,
 
-        plan:
-          professional.subscription_plan === "PREMIUM"
-            ? "PREMIUM"
-            : "BASIC",
+        plan,
+
+        commissionPercent:
+          relationship.commissionPercent,
       });
 
     if (
@@ -652,6 +685,14 @@ export async function POST(
               String(
                 payment.professionalAmount
               ),
+
+            fg_home_care_commission_percent:
+              String(
+                payment.commissionPercent
+              ),
+
+            fg_home_care_subscription_plan:
+              plan,
           },
 
           description:
@@ -702,6 +743,9 @@ export async function POST(
         platform_fee_amount:
           payment.platformFeeAmount,
 
+        commission_percent:
+          payment.commissionPercent,
+
         professional_amount:
           payment.professionalAmount,
 
@@ -750,19 +794,10 @@ export async function POST(
       .maybeSingle();
 
     if (updateError) {
-      console.error(
-        "Errore salvataggio PaymentIntent:",
-        {
-          message:
-            updateError.message,
-          code:
-            updateError.code,
-          details:
-            updateError.details,
-          hint:
-            updateError.hint,
-        }
-      );
+      console.error("PAYMENT_UPDATE_ERROR_MESSAGE:", updateError.message);
+      console.error("PAYMENT_UPDATE_ERROR_CODE:", updateError.code);
+      console.error("PAYMENT_UPDATE_ERROR_DETAILS:", updateError.details);
+      console.error("PAYMENT_UPDATE_ERROR_HINT:", updateError.hint);
 
       return NextResponse.json(
         {

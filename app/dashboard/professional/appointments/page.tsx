@@ -707,6 +707,18 @@ export default async function ProfessionalAppointmentsPage({
                     currentNotes={
                       appointment.professional_notes
                     }
+                    paymentStatus={
+                      appointment.payment_status
+                    }
+                    appointmentDate={
+                      appointment.appointment_date
+                    }
+                    appointmentTime={
+                      appointment.appointment_time
+                    }
+                    durationMinutes={
+                      appointment.duration_minutes
+                    }
                   />
                 </article>
               );

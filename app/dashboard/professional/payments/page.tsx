@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import LogoutButton from "@/components/auth/LogoutButton";
 import StripeConnectButton from "@/components/payments/StripeConnectButton";
 import ProfessionalSubscriptionCard from "@/components/payments/ProfessionalSubscriptionCard";
+import ProfessionalStripeWallet from "@/components/payments/ProfessionalStripeWallet";
 import { createClient } from "@/lib/supabase/server";
 
 type SearchParams = {
@@ -677,6 +678,12 @@ export default async function ProfessionalPaymentsPage({
             </div>
           </article>
         </section>
+
+        {/* WALLET PROFESSIONISTA */}
+
+        {connected && onboardingCompleted && (
+          <ProfessionalStripeWallet />
+        )}
 
         {/* ARCHITETTURA PAGAMENTO */}
 

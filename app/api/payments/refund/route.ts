@@ -354,7 +354,7 @@ export async function POST(
       appointment.payment_status ===
         "REFUNDED" ||
       appointment.payment_status ===
-        "PRTIALLY_REFUNDED"
+        "PARTIALLY_REFUNDED"
     ) {
       return NextResponse.json(
         {

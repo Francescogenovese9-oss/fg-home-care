@@ -6,6 +6,7 @@ import {
   import { createClient } from "@/lib/supabase/server";
   import { getSupabaseAdmin } from "@/lib/supabase/admin";
   import { calculatePaymentBreakdown } from "@/lib/payments/calculate-payment";
+  import { getRelationshipCommission } from "@/lib/payments/relationship-commission";
   
   type PreviewRequestBody = {
     appointmentId?: string;
@@ -148,18 +149,43 @@ import {
         );
       }
 
+      const plan =
+        professional.subscription_plan === "PREMIUM"
+          ? "PREMIUM"
+          : "BASIC";
+
+      /*
+       * Commissione loyalty:
+       * viene calcolata esclusivamente sulla
+       * stessa coppia paziente-professionista.
+       */
+      const relationship =
+        await getRelationshipCommission({
+          patientId:
+            appointment.patient_id,
+
+          professionalId:
+            appointment.professional_id,
+
+          plan,
+
+          excludeAppointmentId:
+            appointment.id,
+        });
+
       const breakdown =
         calculatePaymentBreakdown({
           hourlyRate: Number(
             appointment.hourly_rate
           ),
+
           durationMinutes:
             appointment.duration_minutes,
 
-          plan:
-            professional.subscription_plan === "PREMIUM"
-              ? "PREMIUM"
-              : "BASIC",
+          plan,
+
+          commissionPercent:
+            relationship.commissionPercent,
         });
   
       return NextResponse.json({
@@ -169,6 +195,23 @@ import {
         appointmentStatus:
           appointment.status,
         payment: breakdown,
+
+        relationship: {
+          completedAppointments:
+            relationship.completedRelationshipAppointments,
+
+          bookingNumber:
+            relationship.relationshipBookingNumber,
+
+          baseCommissionPercent:
+            relationship.baseCommissionPercent,
+
+          commissionPercent:
+            relationship.commissionPercent,
+
+          loyaltyApplied:
+            relationship.loyaltyApplied,
+        },
       });
     } catch (error) {
       console.error(
