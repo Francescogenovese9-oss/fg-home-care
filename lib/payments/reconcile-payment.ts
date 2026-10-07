@@ -463,6 +463,74 @@ export async function reconcileAppointmentPayment(
       paymentIntent.status
     )
   ) {
+    const previousPaymentStatus =
+      currentAppointment.payment_status;
+
+    const needsRepair =
+      previousPaymentStatus !==
+      "REQUIRES_PAYMENT";
+
+    if (needsRepair) {
+      const now =
+        new Date().toISOString();
+
+      const {
+        error:
+          pendingPaymentUpdateError,
+      } = await supabase
+        .from(
+          "appointments"
+        )
+        .update({
+          payment_status:
+            "REQUIRES_PAYMENT",
+
+          payment_updated_at:
+            now,
+
+          updated_at:
+            now,
+        })
+        .eq(
+          "id",
+          appointmentId
+        )
+        .eq(
+          "stripe_payment_intent_id",
+          paymentIntentId
+        );
+
+      if (
+        pendingPaymentUpdateError
+      ) {
+        console.error(
+          "Errore reconciliation pagamento da completare:",
+          {
+            appointmentId,
+
+            paymentIntentId,
+
+            stripeStatus:
+              paymentIntent.status,
+
+            message:
+              pendingPaymentUpdateError.message,
+
+            code:
+              pendingPaymentUpdateError.code,
+
+            details:
+              pendingPaymentUpdateError.details,
+
+            hint:
+              pendingPaymentUpdateError.hint,
+          }
+        );
+
+        throw pendingPaymentUpdateError;
+      }
+    }
+
     return {
       appointmentId,
 
@@ -471,25 +539,24 @@ export async function reconcileAppointmentPayment(
       stripeStatus:
         paymentIntent.status,
 
-      previousPaymentStatus:
-        currentAppointment
-          .payment_status,
+      previousPaymentStatus,
 
       currentPaymentStatus:
-        currentAppointment
-          .payment_status,
+        "REQUIRES_PAYMENT",
 
       action:
         "LEFT_PENDING_PAYMENT",
 
       repaired:
-        false,
+        needsRepair,
 
       anomaly:
         false,
 
       message:
-        `Il pagamento non è ancora completato su Stripe (${paymentIntent.status}).`,
+        needsRepair
+          ? `Pagamento riallineato a REQUIRES_PAYMENT perché Stripe riporta ${paymentIntent.status}.`
+          : `Il pagamento non è ancora completato su Stripe (${paymentIntent.status}).`,
     };
   }
 
