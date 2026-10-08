@@ -49,8 +49,6 @@ type Professional = {
 type Review = {
   id: string;
 
-  patient_id: string;
-
   rating: number;
 
   comment: string | null;
@@ -608,33 +606,9 @@ export default async function ProfessionalPublicPage({
     error:
       reviewsError,
   } = await supabase
-    .from("reviews")
-    .select(
-      `
-        id,
-        patient_id,
-        rating,
-        comment,
-        moderation_status,
-        created_at
-      `
-    )
-    .eq(
-      "professional_id",
-      professional.user_id
-    )
-    .eq(
-      "moderation_status",
-      "PUBLISHED"
-    )
-    .order(
-      "created_at",
-      {
-        ascending:
-          false,
-      }
-    );
-
+    .rpc("get_public_reviews", {
+      p_professional_id: professional.user_id,
+    });
   if (reviewsError) {
     console.error(
       "Errore lettura recensioni pubbliche:",

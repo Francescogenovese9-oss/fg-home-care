@@ -243,21 +243,8 @@ export default async function ProfessionalsPage({
       error:
         reviewStatsError,
     } = await supabase
-      .from(
-        "professional_review_stats"
-      )
-      .select(
-        `
-          user_id,
-          review_count,
-          average_rating
-        `
-      )
-      .in(
-        "user_id",
-        professionalIds
-      );
-
+      .rpc("get_public_review_stats")
+      .in("user_id", professionalIds);
     if (reviewStatsError) {
       console.error(
         "Errore statistiche recensioni marketplace:",
