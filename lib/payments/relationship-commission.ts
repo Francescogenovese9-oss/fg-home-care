@@ -46,17 +46,10 @@ function getLoyaltyCommissionPercent(
   }
 
   /*
-   * BASIC
+   * BASIC: commissione fissa del 15% su ogni prestazione.
+   * Le riduzioni per continuità assistenziale sono solo PREMIUM.
    */
-  if (completedAppointments === 1) {
-    return 12;
-  }
-
-  if (completedAppointments === 2) {
-    return 10;
-  }
-
-  return 8;
+  return getPlatformCommissionPercent(plan);
 }
 
 export async function getRelationshipCommission({
