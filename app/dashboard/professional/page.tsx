@@ -963,13 +963,13 @@ export default async function ProfessionalDashboardPage() {
                 </div>
 
                 <h3 className="mt-3 text-2xl font-bold text-slate-900">
-                  Commissione Basic: dal 15% fino all\u00278%
+                  Commissione Basic: 15% fisso
                 </h3>
 
                 <p className="mt-3 text-sm leading-6 text-slate-600">
-                  Con il piano Basic non e previsto alcun canone mensile.
-                  FG Home Care applica una commissione iniziale del 15% sulle
-                  prestazioni, che si riduce fino all\u00278% con lo stesso paziente.
+                  Con il piano Basic non è previsto alcun canone mensile.
+                  FG Home Care applica una commissione fissa del 15% su ogni
+                  prestazione, senza riduzioni per prenotazioni ripetute.
                 </p>
 
                 <div className="mt-5 rounded-2xl bg-blue-50 p-4">
