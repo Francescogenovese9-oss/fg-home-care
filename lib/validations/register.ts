@@ -25,6 +25,7 @@ export const registerSchema = z
     confirmPassword: z.string(),
 
     role: z.enum(["PATIENT", "PROFESSIONAL"]),
+    acceptTerms: z.boolean().refine(value => value === true, "Devi accettare i Termini e Condizioni."),
 
       city: z.string().trim().optional(),
       province: z.string().trim().optional(),
