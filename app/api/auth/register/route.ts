@@ -28,6 +28,9 @@ export async function POST(request: NextRequest) {
       password: values.password,
       options: {
         data: {
+          terms_accepted: true,
+          terms_accepted_at: new Date().toISOString(),
+          terms_version: "bozza-2026-10-11",
           first_name: values.firstName,
           last_name: values.lastName,
           role: values.role,
