@@ -431,6 +431,25 @@ export default function RegisterForm() {
             </div>
           )}
 
+          <section aria-labelledby="registration-documents" className="rounded-2xl border border-blue-200 bg-blue-50/70 p-5">
+            <h3 id="registration-documents" className="text-base font-bold text-blue-950">
+              Documenti e trasparenza
+            </h3>
+            <p className="mt-2 text-sm leading-6 text-slate-700">
+              Prima di registrarti puoi consultare i documenti che descrivono il funzionamento
+              della piattaforma e il trattamento dei dati personali.
+            </p>
+            <ul className="mt-4 space-y-3 text-sm font-semibold">
+              <li><Link href="/termini-e-condizioni" target="_blank" rel="noopener noreferrer" className="text-blue-700 underline underline-offset-4 hover:text-blue-900">Termini e Condizioni ↗</Link></li>
+              <li><Link href="/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-700 underline underline-offset-4 hover:text-blue-900">Informativa Privacy ↗</Link></li>
+              <li><Link href="/carta-dei-servizi" target="_blank" rel="noopener noreferrer" className="text-blue-700 underline underline-offset-4 hover:text-blue-900">Carta dei Servizi ↗</Link></li>
+            </ul>
+            <p className="mt-4 text-xs leading-5 text-amber-900">
+              Termini e Informativa Privacy sono attualmente bozze in completamento.
+              Le dichiarazioni di accettazione saranno attivate dopo la finalizzazione dei documenti.
+            </p>
+          </section>
+
           {serverError && (
             <div
               role="alert"
