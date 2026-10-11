@@ -219,181 +219,25 @@ export async function PATCH(
       );
     }
 
-    const now =
-      new Date().toISOString();
+    // Il database aggiorna documento e profilo nella stessa transazione.
+    const { data: reviewResult, error: reviewError } = await supabaseAdmin
+      .rpc("admin_review_professional_document_atomic", {
+        p_professional_id: userId,
+        p_document_id: documentId,
+        p_admin_id: adminUser.id,
+        p_action: body.action,
+        p_rejection_reason: rejectionReason,
+      });
 
-    const verificationStatus =
-      body.action === "APPROVE"
-        ? "APPROVED"
-        : "REJECTED";
-
-    const {
-      data: updatedDocument,
-      error: updateError,
-    } = await supabaseAdmin
-      .from("professional_documents")
-      .update({
-        verification_status:
-          verificationStatus,
-        rejection_reason:
-          body.action === "REJECT"
-            ? rejectionReason
-            : null,
-        verified_at:
-          now,
-        verified_by:
-          adminUser.id,
-        updated_at:
-          now,
-      })
-      .eq("id", documentId)
-      .eq("professional_id", userId)
-      .select(
-        `
-          id,
-          document_type,
-          verification_status,
-          rejection_reason,
-          verified_at,
-          verified_by,
-          updated_at
-        `
-      )
-      .single();
-
-    if (updateError) {
-      console.error(
-        "Errore aggiornamento documento professionale:",
-        updateError
-      );
-
+    if (reviewError) {
+      console.error("Errore revisione atomica documento:", reviewError);
       return NextResponse.json(
-        {
-          message:
-            "Impossibile aggiornare la verifica del documento.",
-        },
-        {
-          status: 500,
-        }
+        { message: "Impossibile completare la verifica del documento." },
+        { status: 500 }
       );
     }
 
-    let profileAutoApproved = false;
-
-    const { data: professionalProfile } = await supabaseAdmin
-      .from("professional_profiles")
-      .select("profession, profile_completed, documents_submitted")
-      .eq("user_id", userId)
-      .maybeSingle();
-
-    const { data: documents } = await supabaseAdmin
-      .from("professional_documents")
-      .select("document_type, verification_status")
-      .eq("professional_id", userId);
-
-    const professionCategory =
-      professionalProfile && isProfession(professionalProfile.profession)
-        ? getProfessionCategory(professionalProfile.profession)
-        : null;
-
-    const identityApproved =
-      documents?.some(
-        (document) =>
-          document.document_type === "identity" &&
-          document.verification_status === "APPROVED"
-      ) ?? false;
-
-    const registrationRequired =
-      professionCategory !== "CARE_ASSISTANCE";
-
-      const registrationApproved =
-        documents?.some(
-          (document) =>
-            document.document_type === "registration" &&
-            document.verification_status === "APPROVED"
-        ) ?? false;
-
-      const cvApproved =
-        documents?.some(
-          (document) =>
-            document.document_type === "cv" &&
-            document.verification_status === "APPROVED"
-        ) ?? false;
-
-      const canAutoApprove =
-        Boolean(professionalProfile?.profile_completed) &&
-        Boolean(professionalProfile?.documents_submitted) &&
-        identityApproved &&
-        (!registrationRequired || registrationApproved) &&
-        cvApproved;
-
-      const mustRevokeApproval =
-        body.action === "REJECT" &&
-        (
-          updatedDocument.document_type === "identity" ||
-          updatedDocument.document_type === "cv" ||
-          (
-            registrationRequired &&
-            updatedDocument.document_type === "registration"
-          )
-        );
-    if (mustRevokeApproval) {
-      const { error: revokeError } = await supabaseAdmin
-        .from("professional_profiles")
-        .update({
-          verification_status: "REJECTED",
-          verified: false,
-          published: false,
-          verification_notes:
-            rejectionReason || "Documento obbligatorio rifiutato.",
-          verified_at: now,
-          verified_by: adminUser.id,
-          updated_at: now,
-        })
-        .eq("user_id", userId);
-
-      if (revokeError) {
-        console.error(
-          "Errore revoca automatica approvazione profilo:",
-          revokeError
-        );
-      }
-    }
-
-    if (body.action === "APPROVE" && canAutoApprove) {
-      const { error: profileUpdateError } = await supabaseAdmin
-        .from("professional_profiles")
-        .update({
-          verification_status: "APPROVED",
-          verification_notes: null,
-          verified_at: now,
-          verified_by: adminUser.id,
-          verified: true,
-          published: true,
-          updated_at: now,
-        })
-        .eq("user_id", userId);
-
-      if (profileUpdateError) {
-        console.error(
-          "Errore approvazione automatica profilo:",
-          profileUpdateError
-        );
-      } else {
-        profileAutoApproved = true;
-      }
-    }
-
-    return NextResponse.json(
-      {
-        success: true,
-        document: updatedDocument,
-        profileAutoApproved,
-      },
-      {
-        status: 200,
-      }
-    );
+    return NextResponse.json(reviewResult, { status: 200 });
   } catch (error) {
     console.error(
       "Errore inatteso verifica documento professionale:",
