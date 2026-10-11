@@ -339,7 +339,7 @@ export default function RegisterForm() {
                   <div className="px-4 py-3">
                     <p className="font-semibold text-blue-950">Tabella delle commissioni</p>
                     <p className="mt-1 text-xs text-slate-600">
-                      La progressione Premium si calcola separatamente per ogni coppia paziente-professionista, sulle prenotazioni completate e pagate.
+                      Se lo stesso paziente prenota più volte con lo stesso specialista tramite FG Home Care, la commissione Premium diminuisce progressivamente: 8% sulla prima prestazione, 7% sulla seconda, 6% sulla terza e 5% dalla quarta in poi. Il conteggio riguarda le prestazioni completate e pagate sulla piattaforma, per ciascuna coppia paziente-professionista.
                     </p>
                   </div>
                   <div className="overflow-x-auto">
