@@ -51,6 +51,7 @@ export default function RegisterForm() {
       password: "",
       confirmPassword: "",
       role: "PATIENT",
+      acceptTerms: false,
       city: "",
       province: "",
       profession: "",
@@ -446,9 +447,20 @@ export default function RegisterForm() {
             </ul>
             <p className="mt-4 text-xs leading-5 text-amber-900">
               Termini e Informativa Privacy sono attualmente bozze in completamento.
-              Le dichiarazioni di accettazione saranno attivate dopo la finalizzazione dei documenti.
+              I documenti sono ancora bozze e saranno completati prima del lancio commerciale.
             </p>
           </section>
+
+          <div className="rounded-xl border border-blue-200 bg-white p-4">
+            <label htmlFor="acceptTerms" className="flex cursor-pointer items-start gap-3 text-sm leading-6 text-slate-800">
+              <input id="acceptTerms" type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-blue-700" {...register("acceptTerms")} />
+              <span>Ho letto e accetto i{" "}
+                <Link href="/termini-e-condizioni" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 underline underline-offset-4">Termini e Condizioni</Link>
+                {" "}di FG Home Care. *
+              </span>
+            </label>
+            {errors.acceptTerms && <p role="alert" className="mt-2 text-sm text-red-600">{errors.acceptTerms.message}</p>}
+          </div>
 
           {serverError && (
             <div
