@@ -241,7 +241,7 @@ export default function RegisterForm() {
                     Piani per professionisti
                   </p>
                   <p className="mt-1 text-sm text-slate-600">
-                    Il piano Basic non prevede canone mensile e applica una commissione del 15% sulle prestazioni. Il piano Premium prevede un canone mensile e una commissione dell&apos;8%.
+                    Confronta i piani e le commissioni. Con Premium attivo, le commissioni diminuiscono sulle prestazioni successive completate e pagate con lo stesso paziente.
                   </p>
                 </div>
 
@@ -318,21 +318,50 @@ export default function RegisterForm() {
                     </div>
 
                     <p className="mt-1 font-semibold text-blue-100">
-                      8% per prestazione
+                      Dall&apos;8% al 5% per paziente
                     </p>
 
                     <p className="mt-4 text-sm leading-6 text-blue-50">
-                      Il piano Premium prevede un canone di 19,90 &euro; al mese e una commissione dell&apos;8% sulle prestazioni.
+                      Il piano Premium prevede un canone di 19,90 &euro; al mese e commissioni progressive dall&apos;8% al 5% sulle prestazioni completate e pagate con lo stesso paziente.
                     </p>
 
                     <ul className="mt-4 space-y-2 text-sm text-blue-50">
                       <li>✓ Tutto ciò che include Basic</li>
-                      <li>Commissione ridotta all&apos;8%</li>
+                      <li>✓ Commissioni progressive dall&apos;8% al 5%</li>
                       <li>✓ Maggiore visibilità nei risultati</li>
                       <li>✓ Badge Premium e statistiche avanzate</li>
                  <li>✓ Supporto prioritario</li>
                     </ul>
                   </button>
+                </div>
+
+                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+                  <div className="px-4 py-3">
+                    <p className="font-semibold text-blue-950">Tabella delle commissioni</p>
+                    <p className="mt-1 text-xs text-slate-600">
+                      La progressione Premium si calcola separatamente per ogni coppia paziente-professionista, sulle prenotazioni completate e pagate.
+                    </p>
+                  </div>
+                  <div className="overflow-x-auto">
+                    <table className="w-full min-w-[360px] text-left text-sm">
+                      <thead className="bg-slate-100 text-slate-700">
+                        <tr>
+                          <th scope="col" className="px-4 py-3">Prestazione con lo stesso paziente</th>
+                          <th scope="col" className="px-4 py-3">Basic</th>
+                          <th scope="col" className="px-4 py-3">Premium</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-slate-100 text-slate-800">
+                        <tr><th scope="row" className="px-4 py-3 font-medium">Prima</th><td className="px-4 py-3">15%</td><td className="px-4 py-3 font-semibold">8%</td></tr>
+                        <tr><th scope="row" className="px-4 py-3 font-medium">Seconda</th><td className="px-4 py-3">15%</td><td className="px-4 py-3 font-semibold">7%</td></tr>
+                        <tr><th scope="row" className="px-4 py-3 font-medium">Terza</th><td className="px-4 py-3">15%</td><td className="px-4 py-3 font-semibold">6%</td></tr>
+                        <tr><th scope="row" className="px-4 py-3 font-medium">Dalla quarta</th><td className="px-4 py-3">15%</td><td className="px-4 py-3 font-semibold">5%</td></tr>
+                      </tbody>
+                    </table>
+                  </div>
+                  <p className="border-t border-slate-100 px-4 py-3 text-xs text-slate-600">
+                    Canone mensile: Basic 0 €; Premium 19,90 €. Le tariffe Premium agevolate si applicano soltanto con abbonamento attivo. Il paziente non paga abbonamenti per utilizzare FG Home Care.
+                  </p>
                 </div>
 
                 {errors.subscriptionPlan && (
