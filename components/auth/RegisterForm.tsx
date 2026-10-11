@@ -432,22 +432,37 @@ export default function RegisterForm() {
             </div>
           )}
 
-          <section aria-labelledby="registration-documents" className="rounded-2xl border border-blue-200 bg-blue-50/70 p-5">
-            <h3 id="registration-documents" className="text-base font-bold text-blue-950">
-              Documenti e trasparenza
-            </h3>
-            <p className="mt-2 text-sm leading-6 text-slate-700">
-              Prima di registrarti puoi consultare i documenti che descrivono il funzionamento
-              della piattaforma e il trattamento dei dati personali.
+          <section aria-labelledby="registration-documents" className="rounded-2xl border border-blue-100 bg-gradient-to-br from-blue-50 to-white p-5 sm:p-6">
+            <div className="flex items-center gap-3">
+              <span aria-hidden="true" className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" className="h-5 w-5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M8 3.5h6l4 4V20H8a2 2 0 0 1-2-2V5.5a2 2 0 0 1 2-2Z M14 3.5V8h4 M9 12h6 M9 16h6" />
+                </svg>
+              </span>
+              <h3 id="registration-documents" className="text-base font-bold text-blue-950">Documenti e trasparenza</h3>
+            </div>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              Consulta le informazioni sul funzionamento della piattaforma e sulla tutela dei tuoi dati.
             </p>
-            <ul className="mt-4 space-y-3 text-sm font-semibold">
-              <li><Link href="/termini-e-condizioni" target="_blank" rel="noopener noreferrer" className="text-blue-700 underline underline-offset-4 hover:text-blue-900">Termini e Condizioni ↗</Link></li>
-              <li><Link href="/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-700 underline underline-offset-4 hover:text-blue-900">Informativa Privacy ↗</Link></li>
-              <li><Link href="/carta-dei-servizi" target="_blank" rel="noopener noreferrer" className="text-blue-700 underline underline-offset-4 hover:text-blue-900">Carta dei Servizi ↗</Link></li>
-            </ul>
-            <p className="mt-4 text-xs leading-5 text-amber-900">
-              Termini e Informativa Privacy sono attualmente bozze in completamento.
-              I documenti sono ancora bozze e saranno completati prima del lancio commerciale.
+            <div className="mt-4 grid gap-3 sm:grid-cols-3">
+              {[
+                { href: "/termini-e-condizioni", label: "Termini e Condizioni" },
+                { href: "/privacy", label: "Informativa Privacy" },
+                { href: "/carta-dei-servizi", label: "Carta dei Servizi" },
+              ].map((document) => (
+                <Link
+                  key={document.href}
+                  href={document.href}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex min-h-16 items-center justify-center rounded-xl border border-blue-200 bg-white px-4 py-3 text-center text-sm font-semibold text-blue-800 shadow-sm transition hover:border-blue-400 hover:bg-blue-50 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-600"
+                >
+                  {document.label}
+                </Link>
+              ))}
+            </div>
+            <p className="mt-4 text-xs leading-5 text-slate-500">
+              Termini e Informativa Privacy sono bozze da completare prima del lancio commerciale.
             </p>
           </section>
 
