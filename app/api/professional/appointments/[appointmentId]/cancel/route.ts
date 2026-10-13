@@ -8,6 +8,30 @@ import { parseRomeDateTime } from "@/lib/payments/cancellation-policy";
 type Context = { params: Promise<{ appointmentId: string }> };
 type ClaimRow = { claimed: boolean; payment_status: string | null };
 
+async function notifyPatient(appointmentId: string, patientId: string, reason: string) {
+  try {
+    const admin = getSupabaseAdmin();
+    const { data: existing, error: lookupError } = await admin.from("notifications")
+      .select("id").eq("user_id", patientId).eq("appointment_id", appointmentId)
+      .eq("type", "APPOINTMENT_CANCELLED").maybeSingle();
+    if (lookupError) throw lookupError;
+    if (existing) return;
+    const { error } = await admin.from("notifications").insert({
+      user_id: patientId,
+      appointment_id: appointmentId,
+      review_report_id: null,
+      type: "APPOINTMENT_CANCELLED",
+      title: "Prestazione annullata dal professionista",
+      message: "Il professionista ha annullato la prenotazione. Motivazione: " + reason + ". Se hai pagato, riceverai il rimborso integrale.",
+      link: "/dashboard/patient/appointments?appointmentId=" + encodeURIComponent(appointmentId),
+      read: false,
+    });
+    if (error && error.code !== "23505") throw error;
+  } catch (error) {
+    console.error("Errore notifica annullamento professionista:", error);
+  }
+}
+
 export async function POST(request: NextRequest, context: Context) {
   try {
     const { appointmentId } = await context.params;
@@ -49,6 +73,7 @@ export async function POST(request: NextRequest, context: Context) {
         .in("payment_status", ["REQUIRES_PAYMENT", "PAYMENT_FAILED"]).select("id").maybeSingle();
       if (cancelError) throw cancelError;
       if (!cancelled) return NextResponse.json({ message: "La prenotazione è già stata modificata." }, { status: 409 });
+      await notifyPatient(appointment.id, appointment.patient_id, reason);
       return NextResponse.json({ success: true, message: "Prenotazione annullata. Nessun pagamento da rimborsare." });
     }
 
@@ -92,8 +117,10 @@ export async function POST(request: NextRequest, context: Context) {
       }, { idempotencyKey: `fg-home-care-professional-cancellation-${appointment.id}-100` });
     } catch (stripeError) {
       console.error("Rimborso professionista Stripe in attesa di verifica:", stripeError);
+      await notifyPatient(appointment.id, appointment.patient_id, reason);
       return NextResponse.json({ success: true, message: "Annullamento acquisito. Rimborso in verifica; riceverai aggiornamenti dopo la sincronizzazione." }, { status: 202 });
     }
+    await notifyPatient(appointment.id, appointment.patient_id, reason);
     if (refund.status !== "succeeded") {
       return NextResponse.json({ success: true, message: "Annullamento acquisito. Rimborso integrale in elaborazione." }, { status: 202 });
     }
