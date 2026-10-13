@@ -4,9 +4,44 @@ import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getStripe } from "@/lib/stripe/server";
 import { syncRefund } from "@/lib/payments/sync-refund";
 import { parseRomeDateTime } from "@/lib/payments/cancellation-policy";
+import { sendIdempotentTransactionalEmail } from "@/lib/email/send-idempotent-transactional-email";
 
 type Context = { params: Promise<{ appointmentId: string }> };
 type ClaimRow = { claimed: boolean; payment_status: string | null };
+
+async function emailPatient(appointmentId: string, patientId: string, reason: string) {
+  try {
+    const admin = getSupabaseAdmin();
+    const { data: patient, error } = await admin.from("profiles")
+      .select("email,first_name,last_name").eq("id", patientId).maybeSingle();
+    if (error) throw error;
+    if (!patient?.email) {
+      console.error("Email annullamento non inviata: indirizzo paziente mancante", appointmentId);
+      return;
+    }
+    const patientName = [patient.first_name, patient.last_name].filter(Boolean).join(" ") || "paziente";
+    const { data: appointment } = await admin.from("appointments")
+      .select("appointment_date,appointment_time").eq("id", appointmentId).maybeSingle();
+    const date = appointment?.appointment_date || "da verificare";
+    const time = appointment?.appointment_time || "da verificare";
+    const textContent = "Ciao " + patientName + ",\\n\\nIl professionista ha annullato la tua prenotazione del " + date + " alle " + time + ".\\nMotivazione: " + reason + "\\n\\nSe hai gia pagato, e previsto il rimborso integrale. Riceverai una comunicazione separata alla conferma del rimborso.\\n\\nFG Home Care";
+    const escapeHtml = (value: string) => value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll('"', "&quot;").replaceAll("'", "&#039;");
+    const htmlContent = "<div style='font-family:Arial,sans-serif;max-width:600px;margin:auto;padding:24px'><h2>Prestazione annullata</h2><p>Ciao " + escapeHtml(patientName) + ",</p><p>Il professionista ha annullato la prenotazione del " + escapeHtml(date) + " alle " + escapeHtml(time) + ".</p><p><strong>Motivazione:</strong> " + escapeHtml(reason) + "</p><p>Se hai già pagato, è previsto il rimborso integrale. Riceverai una comunicazione separata alla conferma del rimborso.</p><p>FG Home Care</p></div>";
+    const result = await sendIdempotentTransactionalEmail({
+      eventKey: "appointment:" + appointmentId + ":cancelled-by-professional:patient",
+      eventType: "APPOINTMENT_CANCELLED",
+      to: [{ email: patient.email, name: patientName }],
+      subject: "Prestazione annullata dal professionista - FG Home Care",
+      htmlContent,
+      textContent,
+      recipientUserId: patientId,
+      appointmentId,
+    });
+    if (!result.success) console.error("Email annullamento professionista non inviata:", result.error);
+  } catch (error) {
+    console.error("Errore email annullamento professionista:", error);
+  }
+}
 
 async function notifyPatient(appointmentId: string, patientId: string, reason: string) {
   try {
@@ -74,6 +109,7 @@ export async function POST(request: NextRequest, context: Context) {
       if (cancelError) throw cancelError;
       if (!cancelled) return NextResponse.json({ message: "La prenotazione è già stata modificata." }, { status: 409 });
       await notifyPatient(appointment.id, appointment.patient_id, reason);
+      await emailPatient(appointment.id, appointment.patient_id, reason);
       return NextResponse.json({ success: true, message: "Prenotazione annullata. Nessun pagamento da rimborsare." });
     }
 
@@ -118,9 +154,11 @@ export async function POST(request: NextRequest, context: Context) {
     } catch (stripeError) {
       console.error("Rimborso professionista Stripe in attesa di verifica:", stripeError);
       await notifyPatient(appointment.id, appointment.patient_id, reason);
+      await emailPatient(appointment.id, appointment.patient_id, reason);
       return NextResponse.json({ success: true, message: "Annullamento acquisito. Rimborso in verifica; riceverai aggiornamenti dopo la sincronizzazione." }, { status: 202 });
     }
     await notifyPatient(appointment.id, appointment.patient_id, reason);
+      await emailPatient(appointment.id, appointment.patient_id, reason);
     if (refund.status !== "succeeded") {
       return NextResponse.json({ success: true, message: "Annullamento acquisito. Rimborso integrale in elaborazione." }, { status: 202 });
     }
