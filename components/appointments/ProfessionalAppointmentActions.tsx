@@ -41,6 +41,7 @@ export default function ProfessionalAppointmentActions({
   );
 
   const [message, setMessage] = useState("");
+  const [cancellationReason, setCancellationReason] = useState("");
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] =
     useState(false);
@@ -112,6 +113,38 @@ export default function ProfessionalAppointmentActions({
       setError(
         "Impossibile comunicare con il server."
       );
+    } finally {
+      setIsSubmitting(false);
+    }
+  }
+
+  async function cancelAcceptedAppointment() {
+    const reason = cancellationReason.trim();
+    if (reason.length < 5) {
+      setError("Inserisci una motivazione di almeno 5 caratteri.");
+      return;
+    }
+    if (!window.confirm(paymentStatus === "PAID"
+      ? "Confermi l'annullamento? Il paziente riceverà un rimborso integrale."
+      : "Confermi l'annullamento della prenotazione?")) return;
+    setError("");
+    setMessage("");
+    setIsSubmitting(true);
+    try {
+      const response = await fetch(`/api/professional/appointments/${appointmentId}/cancel`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ reason }),
+      });
+      const result = (await response.json()) as UpdateResponse;
+      if (!response.ok) {
+        setError(result.message ?? "Annullamento non riuscito.");
+        return;
+      }
+      setMessage(result.message ?? "Annullamento preso in carico.");
+      router.refresh();
+    } catch {
+      setError("Impossibile comunicare con il server.");
     } finally {
       setIsSubmitting(false);
     }
@@ -189,6 +222,30 @@ export default function ProfessionalAppointmentActions({
           className="mt-4 rounded-xl border border-red-300 bg-red-50 px-4 py-3 text-sm text-red-700"
         >
           {error}
+        </div>
+      )}
+
+      {currentStatus === "ACCEPTED" && (
+        <div className="mt-5 rounded-xl border border-red-100 bg-red-50/50 p-4">
+          <label htmlFor={`cancelReason-${appointmentId}`} className="block text-sm font-semibold text-slate-800">
+            Devi annullare la prestazione?
+          </label>
+          <p className="mt-1 text-xs leading-5 text-slate-600">
+            Indica il motivo. Se il paziente ha già pagato, è previsto il rimborso integrale.
+          </p>
+          <textarea
+            id={`cancelReason-${appointmentId}`}
+            value={cancellationReason}
+            onChange={(event) => setCancellationReason(event.target.value)}
+            maxLength={1000}
+            rows={2}
+            placeholder="Motivazione dell'annullamento"
+            className="mt-3 w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-600"
+          />
+          <button type="button" onClick={() => void cancelAcceptedAppointment()} disabled={isSubmitting}
+            className="mt-3 rounded-xl border border-red-300 bg-white px-4 py-2 text-sm font-semibold text-red-700 hover:bg-red-50 disabled:opacity-50">
+            {isSubmitting ? "Annullamento in corso..." : "Annulla prenotazione"}
+          </button>
         </div>
       )}
 
