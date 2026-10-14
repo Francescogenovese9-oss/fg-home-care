@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import ItalianLocationFields from "@/components/location/ItalianLocationFields";
 
 const weekdays = [
   { value: "MONDAY", label: "Lunedì" },
@@ -373,61 +374,16 @@ export default function ProfessionalProfileForm() {
             )}
           </div>
 
-          <div className="grid gap-5 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label htmlFor="city">
-                Città
-              </Label>
-
-              <Input
-                id="city"
-                placeholder="Es. Cosenza"
-                {...register("city")}
-              />
-
-              {errors.city && (
-                <p className="text-sm text-red-600">
-                  {errors.city.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="province">
-                Provincia
-              </Label>
-
-              <Input
-                id="province"
-                placeholder="Es. CS"
-                {...register("province")}
-              />
-
-              {errors.province && (
-                <p className="text-sm text-red-600">
-                  {errors.province.message}
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="postalCode">
-                CAP
-              </Label>
-
-              <Input
-                id="postalCode"
-                inputMode="numeric"
-                placeholder="Es. 87100"
-                {...register("postalCode")}
-              />
-
-              {errors.postalCode && (
-                <p className="text-sm text-red-600">
-                  {errors.postalCode.message}
-                </p>
-              )}
-            </div>
+          <div className="space-y-2">
+            <ItalianLocationFields province={watch("province") ?? ""} city={watch("city") ?? ""} postalCode={watch("postalCode") ?? ""}
+              onChange={({ province, city, postalCode }) => {
+                setValue("province", province, { shouldValidate: true, shouldDirty: true });
+                setValue("city", city, { shouldValidate: true, shouldDirty: true });
+                setValue("postalCode", postalCode, { shouldValidate: true, shouldDirty: true });
+              }} />
+            {errors.province && <p className="text-sm text-red-600">{errors.province.message}</p>}
+            {errors.city && <p className="text-sm text-red-600">{errors.city.message}</p>}
+            {errors.postalCode && <p className="text-sm text-red-600">{errors.postalCode.message}</p>}
           </div>
 
           <div className="grid gap-5 md:grid-cols-2">
