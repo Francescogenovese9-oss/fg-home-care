@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import ItalianLocationFields from "@/components/location/ItalianLocationFields";
 
 type AppointmentResponse = {
   success?: boolean;
@@ -83,6 +84,7 @@ export default function AppointmentRequestForm({
     handleSubmit,
     reset,
     watch,
+    setValue,
     formState: { errors },
   } = useForm<
     AppointmentInput,
@@ -370,69 +372,15 @@ export default function AppointmentRequestForm({
             </div>
 
               <div className="space-y-2">
-                <Label htmlFor="serviceCity">
-                  Comune
-                </Label>
-
-                <Input
-                  id="serviceCity"
-                  type="text"
-                  autoComplete="address-level2"
-                  placeholder="Es. Cosenza"
-                  {...register("serviceCity")}
-                />
-
-                {errors.serviceCity && (
-                  <p className="text-sm text-red-600">
-                    {errors.serviceCity.message}
-                  </p>
-                )}
-              </div>
-
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-2">
-                  <Label htmlFor="serviceProvince">
-                    Provincia
-                  </Label>
-
-                  <Input
-                    id="serviceProvince"
-                    type="text"
-                    autoComplete="address-level1"
-                    placeholder="CS"
-                    maxLength={2}
-                    className="uppercase"
-                    {...register("serviceProvince")}
-                  />
-
-                  {errors.serviceProvince && (
-                    <p className="text-sm text-red-600">
-                      {errors.serviceProvince.message}
-                    </p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="servicePostalCode">
-                    CAP
-                  </Label>
-
-                  <Input
-                    id="servicePostalCode"
-                    type="text"
-                    inputMode="numeric"
-                    autoComplete="postal-code"
-                    placeholder="87100"
-                    maxLength={5}
-                    {...register("servicePostalCode")}
-                  />
-
-                  {errors.servicePostalCode && (
-                    <p className="text-sm text-red-600">
-                      {errors.servicePostalCode.message}
-                    </p>
-                  )}
-                </div>
+                <ItalianLocationFields province={watch("serviceProvince") ?? ""} city={watch("serviceCity") ?? ""} postalCode={watch("servicePostalCode") ?? ""}
+                  onChange={({ province, city, postalCode }) => {
+                    setValue("serviceProvince", province, { shouldValidate: true, shouldDirty: true });
+                    setValue("serviceCity", city, { shouldValidate: true, shouldDirty: true });
+                    setValue("servicePostalCode", postalCode, { shouldValidate: true, shouldDirty: true });
+                  }} />
+                {errors.serviceProvince && <p className="text-sm text-red-600">{errors.serviceProvince.message}</p>}
+                {errors.serviceCity && <p className="text-sm text-red-600">{errors.serviceCity.message}</p>}
+                {errors.servicePostalCode && <p className="text-sm text-red-600">{errors.servicePostalCode.message}</p>}
               </div>
 
               <div className="space-y-2">
