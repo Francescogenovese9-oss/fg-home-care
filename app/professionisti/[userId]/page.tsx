@@ -186,6 +186,18 @@ async function getProfessional(
 > {
 
 
+  const { data: eligible, error: eligibilityError } = await getSupabaseAdmin()
+    .from("professional_profiles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .eq("verification_status", "APPROVED")
+    .eq("published", true)
+    .maybeSingle();
+  if (eligibilityError || !eligible) {
+    if (eligibilityError) console.error("Errore verifica profilo pubblico:", eligibilityError);
+    return null;
+  }
+
   const supabase =
     await createClient();
 
@@ -352,6 +364,18 @@ export default async function ProfessionalPublicPage({
   const search = await searchParams;
   const source = Array.isArray(search.source) ? search.source[0] : search.source;
   const isCareGuidance = source === "care";
+
+  const { data: eligible, error: eligibilityError } = await getSupabaseAdmin()
+    .from("professional_profiles")
+    .select("user_id")
+    .eq("user_id", userId)
+    .eq("verification_status", "APPROVED")
+    .eq("published", true)
+    .maybeSingle();
+  if (eligibilityError || !eligible) {
+    if (eligibilityError) console.error("Errore verifica accesso profilo pubblico:", eligibilityError);
+    notFound();
+  }
 
   const supabase =
     await createClient();
