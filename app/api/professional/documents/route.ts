@@ -567,6 +567,64 @@ export async function POST(
       `${user.id}/${typedDocument}.${extension}`;
 
     /*
+     * Sicurezza: prima di sostituire un documento obbligatorio,
+     * sospendiamo il profilo gia' approvato. Il controllo avviene
+     * PRIMA dell'upload, evitando che un file nuovo sostituisca
+     * quello verificato mentre il profilo resta pubblicato.
+     */
+    if (typedDocument === "identity" || typedDocument === "registration" || typedDocument === "cv") {
+      const { data: currentDocument, error: currentDocumentError } = await supabaseAdmin
+        .from("professional_documents")
+        .select("id")
+        .eq("professional_id", user.id)
+        .eq("document_type", typedDocument)
+        .maybeSingle();
+
+      if (currentDocumentError) {
+        console.error("Errore controllo documento esistente:", currentDocumentError);
+        return NextResponse.json({ message: "Impossibile verificare il documento precedente." }, { status: 500 });
+      }
+
+      if (currentDocument) {
+        const { data: currentProfile, error: currentProfileError } = await supabaseAdmin
+          .from("professional_profiles")
+          .select("profession, verification_status, published")
+          .eq("user_id", user.id)
+          .maybeSingle();
+
+        if (currentProfileError || !currentProfile) {
+          return NextResponse.json({ message: "Impossibile verificare lo stato del profilo." }, { status: 500 });
+        }
+
+        const requiredDocument =
+          typedDocument !== "registration" || currentProfile.profession !== "Badante";
+
+        if (requiredDocument) {
+          const { error: suspendError } = await supabaseAdmin
+            .from("professional_profiles")
+            .update({
+              verification_status: "PENDING",
+              verified: false,
+              published: false,
+              verification_notes: "Documento obbligatorio sostituito: nuova verifica richiesta.",
+              verified_at: null,
+              verified_by: null,
+              updated_at: new Date().toISOString(),
+            })
+            .eq("user_id", user.id);
+
+          if (suspendError) {
+            console.error("Impossibile sospendere il profilo prima dell'upload:", suspendError);
+            return NextResponse.json(
+              { message: "Impossibile sospendere il profilo per la nuova verifica. Riprova." },
+              { status: 500 }
+            );
+          }
+        }
+      }
+    }
+
+    /*
      * =====================================================
      * UPLOAD STORAGE
      * =====================================================
