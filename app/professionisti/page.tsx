@@ -9,6 +9,7 @@ import ProfessionalCard, {
 import { CareGuidanceMarketplaceTracker } from "@/components/care-guidance/CareGuidanceMarketplaceTracker";
 
 import { createClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 import { getSiteUrl } from "@/lib/site-url";
 import { getProfessionalSearchTerms, normalizeProfessionalSearch } from "@/lib/professional-search";
 import { getRecommendedScore } from "@/lib/professional-ranking";
@@ -217,9 +218,23 @@ export default async function ProfessionalsPage({
     );
   }
 
-  const professionals =
-    (professionalsData ??
-      []) as PublicProfessional[];
+  // Difesa aggiuntiva: la vista pubblica non deve essere l'unico controllo.
+  const candidates = (professionalsData ?? []) as PublicProfessional[];
+  let professionals: PublicProfessional[] = [];
+  if (candidates.length > 0) {
+    const { data: eligible, error: eligibilityError } = await getSupabaseAdmin()
+      .from("professional_profiles")
+      .select("user_id")
+      .in("user_id", candidates.map((p) => p.user_id))
+      .eq("verification_status", "APPROVED")
+      .eq("published", true);
+    if (eligibilityError) {
+      console.error("Errore verifica visibilità professionisti:", eligibilityError);
+    } else {
+      const allowedIds = new Set((eligible ?? []).map((p) => p.user_id));
+      professionals = candidates.filter((p) => allowedIds.has(p.user_id));
+    }
+  }
 
   /*
    * STATISTICHE RECENSIONI
