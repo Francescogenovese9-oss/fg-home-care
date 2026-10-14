@@ -23,6 +23,7 @@ import {
 } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import ItalianLocationFields from "@/components/location/ItalianLocationFields";
 
 type RegisterApiResponse = {
   success?: boolean;
@@ -165,17 +166,14 @@ export default function RegisterForm() {
           </div>
 
           {selectedRole === "PATIENT" && (
-            <div className="grid gap-5 md:grid-cols-2">
-              <div className="space-y-2">
-                <Label htmlFor="city">Citta</Label>
-                <Input id="city" autoComplete="address-level2" {...register("city")} />
-                {errors.city && <p className="text-sm text-red-600">{errors.city.message}</p>}
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="province">Provincia</Label>
-                <Input id="province" autoComplete="address-level1" {...register("province")} />
-                {errors.province && <p className="text-sm text-red-600">{errors.province.message}</p>}
-              </div>
+            <div className="space-y-2">
+              <ItalianLocationFields province={watch("province") ?? ""} city={watch("city") ?? ""} showPostalCode={false}
+                onChange={({ province, city }) => {
+                  setValue("province", province, { shouldValidate: true, shouldDirty: true });
+                  setValue("city", city, { shouldValidate: true, shouldDirty: true });
+                }} />
+              {errors.province && <p className="text-sm text-red-600">{errors.province.message}</p>}
+              {errors.city && <p className="text-sm text-red-600">{errors.city.message}</p>}
             </div>
           )}
 
