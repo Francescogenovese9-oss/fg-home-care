@@ -11,6 +11,8 @@ DECLARE
   v_profession text;
   v_existing boolean;
   v_required boolean;
+  v_currently_approved boolean;
+  v_suspend boolean;
   v_doc public.professional_documents%ROWTYPE;
   v_now timestamptz := transaction_timestamp();
 BEGIN
@@ -23,7 +25,8 @@ BEGIN
     RAISE EXCEPTION 'Metadati documento non validi' USING ERRCODE='22023';
   END IF;
 
-  SELECT profession INTO v_profession
+  SELECT profession, (verification_status='APPROVED' OR verified OR published)
+  INTO v_profession, v_currently_approved
   FROM public.professional_profiles WHERE user_id = p_professional_id FOR UPDATE;
   IF NOT FOUND THEN
     RAISE EXCEPTION 'Profilo professionale non trovato' USING ERRCODE='P0002';
@@ -35,6 +38,7 @@ BEGIN
   ) INTO v_existing;
   v_required := p_document_type IN ('identity','cv')
     OR (p_document_type='registration' AND v_profession IS DISTINCT FROM 'Badante');
+  v_suspend := v_required AND (v_existing OR coalesce(v_currently_approved,false));
 
   -- Upsert serialized by the profile row lock, shared with the admin review RPC.
   INSERT INTO public.professional_documents (
@@ -57,16 +61,16 @@ BEGIN
     registration_document_path=CASE WHEN p_document_type='registration' THEN p_storage_path ELSE registration_document_path END,
     vat_document_path=CASE WHEN p_document_type='vat' THEN p_storage_path ELSE vat_document_path END,
     documents_submitted=true,
-    verification_status=CASE WHEN v_existing AND v_required THEN 'PENDING' ELSE verification_status END,
-    verified=CASE WHEN v_existing AND v_required THEN false ELSE verified END,
-    published=CASE WHEN v_existing AND v_required THEN false ELSE published END,
-    verified_at=CASE WHEN v_existing AND v_required THEN NULL ELSE verified_at END,
-    verified_by=CASE WHEN v_existing AND v_required THEN NULL ELSE verified_by END,
-    verification_notes=CASE WHEN v_existing AND v_required THEN 'Documento obbligatorio sostituito: nuova verifica richiesta.' ELSE verification_notes END,
+    verification_status=CASE WHEN v_suspend THEN 'PENDING' ELSE verification_status END,
+    verified=CASE WHEN v_suspend THEN false ELSE verified END,
+    published=CASE WHEN v_suspend THEN false ELSE published END,
+    verified_at=CASE WHEN v_suspend THEN NULL ELSE verified_at END,
+    verified_by=CASE WHEN v_suspend THEN NULL ELSE verified_by END,
+    verification_notes=CASE WHEN v_suspend THEN 'Documento obbligatorio sostituito: nuova verifica richiesta.' ELSE verification_notes END,
     updated_at=v_now
   WHERE user_id=p_professional_id;
 
-  RETURN jsonb_build_object('document',to_jsonb(v_doc),'profileSuspended',v_existing AND v_required);
+  RETURN jsonb_build_object('document',to_jsonb(v_doc),'profileSuspended',v_suspend);
 END;
 $$;
 
