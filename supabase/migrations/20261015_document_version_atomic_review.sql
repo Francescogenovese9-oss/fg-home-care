@@ -73,6 +73,9 @@ $$;
 REVOKE ALL ON FUNCTION public.record_professional_document_upload_atomic(uuid,text,text,text,text,bigint,boolean) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.record_professional_document_upload_atomic(uuid,text,text,text,text,bigint,boolean) TO service_role;
 
+-- Remove the legacy 5-argument entry point: otherwise old callers can bypass the version check.
+DROP FUNCTION public.admin_review_professional_document_atomic(uuid,uuid,uuid,text,text);
+
 -- Version precondition for every review; fail closed when the admin reviewed a stale file.
 -- Requires a coordinated API rollout supplying p_expected_storage_path.
 CREATE OR REPLACE FUNCTION public.admin_review_professional_document_atomic(
@@ -154,8 +157,7 @@ BEGIN
  RETURN jsonb_build_object('success',true,'document',v_document,'profileAutoApproved',v_auto_approved);
 END;
 $$;
--- The old 5-argument function must be dropped during coordinated deployment
--- (its default argument signature remains callable otherwise).
--- DO NOT apply this migration until a controlled rollout plan includes that DROP.
+-- IMPORTANT: deploy API and database together in a maintenance window.
+-- The previous review signature is deliberately removed to prevent bypass.
 REVOKE ALL ON FUNCTION public.admin_review_professional_document_atomic(uuid,uuid,uuid,text,text,text) FROM PUBLIC,anon,authenticated;
 GRANT EXECUTE ON FUNCTION public.admin_review_professional_document_atomic(uuid,uuid,uuid,text,text,text) TO service_role;
