@@ -16,6 +16,7 @@ type DocumentReviewResponse = {
 type ProfessionalDocumentReviewActionsProps = {
   userId: string;
   documentId: string;
+  expectedStoragePath: string;
   currentStatus: VerificationStatus;
   currentRejectionReason?: string | null;
 };
@@ -23,6 +24,7 @@ type ProfessionalDocumentReviewActionsProps = {
 export default function ProfessionalDocumentReviewActions({
   userId,
   documentId,
+  expectedStoragePath,
   currentStatus,
   currentRejectionReason,
 }: ProfessionalDocumentReviewActionsProps) {
@@ -64,6 +66,7 @@ export default function ProfessionalDocumentReviewActions({
           },
           body: JSON.stringify({
             action,
+            expectedStoragePath,
             rejectionReason:
               rejectionReason.trim(),
           }),
