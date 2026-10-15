@@ -564,65 +564,7 @@ export async function POST(
       "pdf";
 
     const filePath =
-      `${user.id}/${typedDocument}.${extension}`;
-
-    /*
-     * Sicurezza: prima di sostituire un documento obbligatorio,
-     * sospendiamo il profilo gia' approvato. Il controllo avviene
-     * PRIMA dell'upload, evitando che un file nuovo sostituisca
-     * quello verificato mentre il profilo resta pubblicato.
-     */
-    if (typedDocument === "identity" || typedDocument === "registration" || typedDocument === "cv") {
-      const { data: currentDocument, error: currentDocumentError } = await supabaseAdmin
-        .from("professional_documents")
-        .select("id")
-        .eq("professional_id", user.id)
-        .eq("document_type", typedDocument)
-        .maybeSingle();
-
-      if (currentDocumentError) {
-        console.error("Errore controllo documento esistente:", currentDocumentError);
-        return NextResponse.json({ message: "Impossibile verificare il documento precedente." }, { status: 500 });
-      }
-
-      if (currentDocument) {
-        const { data: currentProfile, error: currentProfileError } = await supabaseAdmin
-          .from("professional_profiles")
-          .select("profession, verification_status, published")
-          .eq("user_id", user.id)
-          .maybeSingle();
-
-        if (currentProfileError || !currentProfile) {
-          return NextResponse.json({ message: "Impossibile verificare lo stato del profilo." }, { status: 500 });
-        }
-
-        const requiredDocument =
-          typedDocument !== "registration" || currentProfile.profession !== "Badante";
-
-        if (requiredDocument) {
-          const { error: suspendError } = await supabaseAdmin
-            .from("professional_profiles")
-            .update({
-              verification_status: "PENDING",
-              verified: false,
-              published: false,
-              verification_notes: "Documento obbligatorio sostituito: nuova verifica richiesta.",
-              verified_at: null,
-              verified_by: null,
-              updated_at: new Date().toISOString(),
-            })
-            .eq("user_id", user.id);
-
-          if (suspendError) {
-            console.error("Impossibile sospendere il profilo prima dell'upload:", suspendError);
-            return NextResponse.json(
-              { message: "Impossibile sospendere il profilo per la nuova verifica. Riprova." },
-              { status: 500 }
-            );
-          }
-        }
-      }
-    }
+      `${user.id}/${typedDocument}/${crypto.randomUUID()}.${extension}`;
 
     /*
      * =====================================================
@@ -649,7 +591,7 @@ export async function POST(
           filePath,
           file,
           {
-            upsert: true,
+            upsert: false,
 
             contentType:
               file.type,
@@ -678,189 +620,38 @@ export async function POST(
     }
 
     /*
-     * =====================================================
-     * METADATI DOCUMENTO
-     * =====================================================
+     * Metadata and professional suspension are committed together.
+     * Storage objects have immutable unique paths. Failed metadata writes
+     * are cleaned up best-effort; an orphaned object never becomes approved.
      */
+    const { data: uploadResult, error: documentDatabaseError } =
+      await supabaseAdmin.rpc("record_professional_document_upload_atomic", {
+        p_professional_id: user.id,
+        p_document_type: typedDocument,
+        p_storage_path: filePath,
+        p_original_filename: file.name,
+        p_mime_type: file.type,
+        p_file_size: file.size,
+        p_is_public: cvIsPublic,
+      });
 
-    const now = new Date().toISOString();
-
-    const {
-      data: savedDocument,
-      error: documentDatabaseError,
-    } = await supabaseAdmin
-      .from("professional_documents")
-      .upsert(
-        {
-          professional_id: user.id,
-          document_type: typedDocument,
-          storage_path: filePath,
-          original_filename: file.name,
-          mime_type: file.type,
-          file_size: file.size,
-          is_public: cvIsPublic,
-          verification_status: "PENDING",
-          rejection_reason: null,
-          uploaded_at: now,
-          verified_at: null,
-          verified_by: null,
-          updated_at: now,
-        },
-        {
-          onConflict: "professional_id,document_type",
-        }
-      )
-      .select(
-        `
-          id,
-          professional_id,
-          document_type,
-          storage_path,
-          original_filename,
-          mime_type,
-          file_size,
-          verification_status,
-            is_public,          rejection_reason,
-          expires_at,
-          uploaded_at,
-          verified_at,
-          verified_by,
-          updated_at
-        `
-      )
-      .single();
-
-    if (documentDatabaseError) {
-      console.error(
-        "Errore salvataggio metadati documento:",
-        documentDatabaseError
-      );
-
+    if (documentDatabaseError || !uploadResult) {
+      console.error("Errore registrazione atomica documento:", documentDatabaseError);
+      const { error: cleanupError } = await supabaseAdmin.storage
+        .from("professional-documents").remove([filePath]);
+      if (cleanupError) console.error("Pulizia file orfano fallita:", cleanupError);
       return NextResponse.json(
-        {
-          message:
-            "Documento caricato, ma non è stato possibile registrarne i dati.",
-        },
-        {
-          status: 500,
-        }
+        { message: "Impossibile registrare il documento. Riprova." },
+        { status: 500 }
       );
     }
 
-    /*
-     * =====================================================
-     * COLONNA DATABASE
-     * =====================================================
-     */
-
-    const column =
-      databaseColumns[
-        typedDocument
-      ];
-
-    /*
-     * =====================================================
-     * AGGIORNAMENTO PROFILO
-     * =====================================================
-     *
-     * Scrittura server-side.
-     *
-     * Dopo l'hardening l'utente authenticated
-     * non dovrà possedere UPDATE diretto su
-     * professional_profiles.
-     *
-     * L'identità dell'utente è già stata
-     * verificata sopra tramite auth.getUser().
-     * =====================================================
-     */
-
-    const {
-      data:
-        updatedProfile,
-
-      error:
-        updateError,
-    } = await supabaseAdmin
-      .from(
-        "professional_profiles"
-      )
-      .update({
-        ...(column
-          ? {
-              [column]: filePath,
-            }
-          : {}),
-        documents_submitted: true,
-        updated_at: new Date().toISOString(),
-      })      .eq(
-        "user_id",
-        user.id
-      )
-      .select(
-        `
-          user_id,
-          identity_document_path,
-          registration_document_path,
-          vat_document_path,
-          documents_submitted,
-          updated_at
-        `
-      )
-      .maybeSingle();
-
-    if (updateError) {
-      console.error(
-        "Errore aggiornamento documento nel profilo:",
-        {
-          message:
-            updateError.message,
-
-          code:
-            updateError.code,
-
-          details:
-            updateError.details,
-
-          hint:
-            updateError.hint,
-        }
-      );
-
-      return NextResponse.json(
-        {
-          message:
-            "Documento caricato, ma il profilo non è stato aggiornato.",
-        },
-        {
-          status: 500,
-        }
-      );
-    }
-
-    if (!updatedProfile) {
-      console.error(
-        "Documento caricato ma professional_profiles non trovato:",
-        {
-          professionalId:
-            user.id,
-
-          documentType:
-            typedDocument,
-
-          filePath,
-        }
-      );
-
-      return NextResponse.json(
-        {
-          message:
-            "Documento caricato, ma il profilo professionale non è stato trovato.",
-        },
-        {
-          status: 404,
-        }
-      );
-    }
+    const savedDocument = uploadResult.document;
+    const updatedProfile = {
+      user_id: user.id,
+      documents_submitted: true,
+      profileSuspended: uploadResult.profileSuspended,
+    };
 
     /*
      * =====================================================
