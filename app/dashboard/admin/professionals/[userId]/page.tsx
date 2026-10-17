@@ -707,6 +707,7 @@ export default async function ProfessionalReviewPage({
                     <ProfessionalDocumentReviewActions
                       userId={professionalProfile.user_id}
                       documentId={document.documentId}
+                        expectedStoragePath={document.path}
                       currentStatus={document.verificationStatus}
                       currentRejectionReason={document.rejectionReason}
                     />
