@@ -39,7 +39,6 @@ function formatMessageTime(value: string) {
     "it-IT",
     {
       timeZone: "Europe/Rome",
-    timeZone: "Europe/Rome",
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
@@ -50,7 +49,6 @@ function formatMessageDate(value: string) {
     "it-IT",
     {
       timeZone: "Europe/Rome",
-    timeZone: "Europe/Rome",
     day: "2-digit",
     month: "long",
     year: "numeric",
