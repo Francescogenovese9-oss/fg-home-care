@@ -19,6 +19,7 @@ type DocumentReviewAction =
 type DocumentReviewBody = {
   action?: DocumentReviewAction;
   rejectionReason?: string;
+  expectedStoragePath?: string;
 };
 
 type RouteContext = {
@@ -137,6 +138,10 @@ export async function PATCH(
       );
     }
 
+    if (typeof body.expectedStoragePath !== "string" || !body.expectedStoragePath) {
+      return NextResponse.json({ message: "Versione documento mancante: aggiorna la pagina." }, { status: 400 });
+    }
+
     const rejectionReason =
       body.rejectionReason?.trim() || null;
 
@@ -227,13 +232,15 @@ export async function PATCH(
         p_admin_id: adminUser.id,
         p_action: body.action,
         p_rejection_reason: rejectionReason,
+        p_expected_storage_path: body.expectedStoragePath,
       });
 
     if (reviewError) {
       console.error("Errore revisione atomica documento:", reviewError);
+      const stale = reviewError.code === "40001";
       return NextResponse.json(
-        { message: "Impossibile completare la verifica del documento." },
-        { status: 500 }
+        { message: stale ? "Il documento è cambiato. Aggiorna la pagina e riesaminalo." : "Impossibile completare la verifica del documento." },
+        { status: stale ? 409 : 500 }
       );
     }
 
