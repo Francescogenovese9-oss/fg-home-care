@@ -78,13 +78,12 @@ REVOKE ALL ON FUNCTION public.record_professional_document_upload_atomic(uuid,te
 GRANT EXECUTE ON FUNCTION public.record_professional_document_upload_atomic(uuid,text,text,text,text,bigint,boolean) TO service_role;
 
 -- Remove the legacy 5-argument entry point: otherwise old callers can bypass the version check.
-DROP FUNCTION public.admin_review_professional_document_atomic(uuid,uuid,uuid,text,text);
 
 -- Version precondition for every review; fail closed when the admin reviewed a stale file.
 -- Requires a coordinated API rollout supplying p_expected_storage_path.
 CREATE OR REPLACE FUNCTION public.admin_review_professional_document_atomic(
  p_professional_id uuid,p_document_id uuid,p_admin_id uuid,p_action text,
- p_rejection_reason text DEFAULT NULL,p_expected_storage_path text DEFAULT NULL
+ p_rejection_reason text,p_expected_storage_path text
 ) RETURNS jsonb
 LANGUAGE plpgsql SECURITY DEFINER SET search_path=''
 AS $$
