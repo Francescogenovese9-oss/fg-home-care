@@ -35,14 +35,20 @@ type SendMessageResponse = {
 };
 
 function formatMessageTime(value: string) {
-  return new Intl.DateTimeFormat("it-IT", {
+  return new Intl.DateTimeFormat(
+    "it-IT",
+    {
+      timeZone: "Europe/Rome",
     hour: "2-digit",
     minute: "2-digit",
   }).format(new Date(value));
 }
 
 function formatMessageDate(value: string) {
-  return new Intl.DateTimeFormat("it-IT", {
+  return new Intl.DateTimeFormat(
+    "it-IT",
+    {
+      timeZone: "Europe/Rome",
     day: "2-digit",
     month: "long",
     year: "numeric",

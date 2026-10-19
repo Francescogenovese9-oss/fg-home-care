@@ -141,6 +141,7 @@ function formatNotificationDate(
   return new Intl.DateTimeFormat(
     "it-IT",
     {
+      timeZone: "Europe/Rome",
       day: "2-digit",
       month: "long",
       year: "numeric",

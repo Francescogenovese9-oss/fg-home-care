@@ -103,7 +103,10 @@ function formatDate(value: string | null) {
     return "Non disponibile";
   }
 
-  return new Intl.DateTimeFormat("it-IT", {
+  return new Intl.DateTimeFormat(
+    "it-IT",
+    {
+      timeZone: "Europe/Rome",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
