@@ -518,9 +518,12 @@ export default function ProfessionalDocumentsForm({
 
                       <p className="text-xs text-slate-500">
                         {statusLabel} · Caricato il{" "}
-                       {new Date(
-                          document.uploaded_at
-                        ).toLocaleDateString("it-IT")}
+                       {new Intl.DateTimeFormat("it-IT", {
+                            timeZone: "Europe/Rome",
+                            day: "2-digit",
+                            month: "2-digit",
+                            year: "numeric",
+                          }).format(new Date(document.uploaded_at))}
                       </p>
 
                         {document.document_type === "cv" && (
