@@ -107,7 +107,6 @@ function formatDate(value: string | null) {
     "it-IT",
     {
       timeZone: "Europe/Rome",
-    timeZone: "Europe/Rome",
     day: "2-digit",
     month: "2-digit",
     year: "numeric",
