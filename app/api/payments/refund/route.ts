@@ -232,6 +232,10 @@ export async function POST(
           appointment.appointment_time,
       });
 
+    if (policy.hoursUntilAppointment <= 0) {
+      return NextResponse.json({ message: "Per prestazioni già iniziate o trascorse, contatta l'assistenza." }, { status: 409 });
+    }
+
     const admin =
       getSupabaseAdmin();
 
