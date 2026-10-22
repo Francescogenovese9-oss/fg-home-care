@@ -56,7 +56,8 @@ import {
             appointment_date,
             appointment_time,
             subtotal_amount,
-            payment_status
+            payment_status,
+            status
           `
         )
         .eq(
@@ -79,6 +80,10 @@ import {
         );
       }
   
+      if (appointment.status !== "ACCEPTED") {
+        return NextResponse.json({ message: "Puoi annullare soltanto una prenotazione accettata." }, { status: 409 });
+      }
+
       const policy =
         calculateCancellationPolicy({
           appointmentDate:
@@ -88,6 +93,10 @@ import {
             appointment.appointment_time,
         });
   
+      if (policy.hoursUntilAppointment <= 0) {
+        return NextResponse.json({ message: "Per prestazioni già iniziate o trascorse, contatta l'assistenza." }, { status: 409 });
+      }
+
       const refundAmount =
         appointment.payment_status ===
           "PAID" &&
