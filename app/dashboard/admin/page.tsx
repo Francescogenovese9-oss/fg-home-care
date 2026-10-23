@@ -503,7 +503,7 @@ export default async function AdminDashboardPage() {
 
     error:
       appointmentsError,
-  } = await supabase
+  } = await getSupabaseAdmin()
     .from(
       "appointments"
     )

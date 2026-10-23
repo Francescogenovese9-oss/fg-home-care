@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 
 import LogoutButton from "@/components/auth/LogoutButton";
 import { createClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 type PaymentStatus =
   | "NOT_REQUIRED"
@@ -233,7 +234,7 @@ export default async function AdminFinancePage() {
   const {
     data: appointmentsData,
     error: appointmentsError,
-  } = await supabase
+  } = await getSupabaseAdmin()
     .from("appointments")
     .select(
       `
