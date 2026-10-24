@@ -30,6 +30,17 @@ create trigger archive_notes_on_appointment_completion
 before update of status on public.appointments
 for each row execute function private.archive_notes_on_appointment_completion();
 
+-- Protect notes of appointments that were already completed before this migration.
+insert into private.completed_appointment_notes
+  (appointment_id, patient_notes, professional_notes)
+select id, patient_notes, professional_notes
+from public.appointments
+where status = 'COMPLETED' and (patient_notes is not null or professional_notes is not null)
+on conflict (appointment_id) do nothing;
+update public.appointments
+set patient_notes = null, professional_notes = null
+where status = 'COMPLETED' and (patient_notes is not null or professional_notes is not null);
+
 -- Existing chat policies are restricted by appointment state, including direct REST access.
 drop policy if exists "Participants read appointment messages" on public.appointment_messages;
 create policy "Participants read appointment messages"
