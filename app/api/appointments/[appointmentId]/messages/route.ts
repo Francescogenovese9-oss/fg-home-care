@@ -161,6 +161,10 @@ export async function GET(
       );
     }
 
+    if (appointment.status === "COMPLETED") {
+      return NextResponse.json({ message: "Chat chiusa: prestazione completata." }, { status: 403 });
+    }
+
     /*
      * =====================================================
      * MESSAGGI
@@ -444,7 +448,6 @@ export async function POST(
       ![
         "PENDING",
         "ACCEPTED",
-        "COMPLETED",
       ].includes(
         appointment.status
       )

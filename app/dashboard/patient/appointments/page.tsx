@@ -1102,7 +1102,7 @@ export default async function PatientAppointmentsPage({
 
                         {/* NOTE PAZIENTE */}
 
-                        {appointment.patient_notes && (
+                        {appointment.status !== "COMPLETED" && appointment.patient_notes && (
                           <div className="mt-6 rounded-2xl bg-slate-50 p-5">
                             <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                               La tua richiesta
@@ -1118,7 +1118,7 @@ export default async function PatientAppointmentsPage({
 
                         {/* NOTE PROFESSIONISTA */}
 
-                        {appointment.professional_notes && (
+                        {appointment.status !== "COMPLETED" && appointment.professional_notes && (
                           <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-5">
                             <p className="text-xs font-semibold uppercase tracking-wide text-blue-700">
                               Messaggio del
