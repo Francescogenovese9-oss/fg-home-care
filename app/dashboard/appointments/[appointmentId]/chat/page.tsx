@@ -162,6 +162,10 @@ export default async function AppointmentChatPage({
     notFound();
   }
 
+  if (appointment.status === "COMPLETED") {
+    redirect(isProfessional ? "/dashboard/professional/appointments" : "/dashboard/patient/appointments");
+  }
+
   const otherParticipantId = isPatient
     ? appointment.professional_id
     : appointment.patient_id;
@@ -234,7 +238,6 @@ export default async function AppointmentChatPage({
   const chatEnabled = [
     "PENDING",
     "ACCEPTED",
-    "COMPLETED",
   ].includes(appointment.status);
 
   const appointmentDate =
