@@ -1,9 +1,5 @@
 -- Thirty-day clinical-content retention, with separately controlled legal holds.
 alter table public.appointments add column if not exists completed_at timestamptz;
-update public.appointments
-set completed_at = coalesce(updated_at, created_at)
-where status = 'COMPLETED' and completed_at is null;
-
 create or replace function private.set_appointment_completed_at()
 returns trigger language plpgsql set search_path = '' as $$
 begin
