@@ -513,7 +513,6 @@ export default async function ProfessionalAppointmentsPage({
               const chatAvailable = [
                 "PENDING",
                 "ACCEPTED",
-                "COMPLETED",
               ].includes(appointment.status);
 
               return (
@@ -637,7 +636,7 @@ export default async function ProfessionalAppointmentsPage({
                         )}
                       </div>
                     )}
-                  {appointment.patient_notes && (
+                  {appointment.status !== "COMPLETED" && appointment.patient_notes && (
                     <div className="mt-6 rounded-2xl bg-slate-50 p-5">
                       <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">
                         Motivo della richiesta
@@ -651,7 +650,7 @@ export default async function ProfessionalAppointmentsPage({
                     </div>
                   )}
 
-                  {appointment.professional_notes &&
+                  {appointment.status !== "COMPLETED" && appointment.professional_notes &&
                     appointment.status !==
                       "PENDING" && (
                       <div className="mt-4 rounded-2xl border border-blue-200 bg-blue-50 p-5">
