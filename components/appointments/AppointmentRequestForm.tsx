@@ -187,6 +187,15 @@ export default function AppointmentRequestForm({
     }
   }
 
+  if (process.env.NEXT_PUBLIC_TRANSACTIONS_ENABLED !== "true") {
+    return (
+      <Card className="shadow-sm">
+        <CardHeader><CardTitle>Prenotazioni online in arrivo</CardTitle></CardHeader>
+        <CardContent><p className="text-slate-600">FG Home Care è online per conoscere i professionisti sanitari. Le prenotazioni e i pagamenti saranno disponibili a breve.</p></CardContent>
+      </Card>
+    );
+  }
+
   if (successMessage) {
     return (
       <Card className="shadow-sm">
