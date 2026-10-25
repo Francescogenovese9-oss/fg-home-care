@@ -16,6 +16,13 @@ type RequestBody = {
 export async function POST(
   request: NextRequest
 ) {
+  if (process.env.NEXT_PUBLIC_TRANSACTIONS_ENABLED !== "true") {
+    return NextResponse.json(
+      { message: "Le prenotazioni e i pagamenti online saranno disponibili a breve." },
+      { status: 503, headers: { "Cache-Control": "no-store" } }
+    );
+  }
+
   try {
     let body: RequestBody;
 
