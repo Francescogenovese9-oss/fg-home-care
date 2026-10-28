@@ -13,7 +13,7 @@ const sections = [
   {
     title: "Identificazione del gestore",
     paragraphs: [
-      "FG Home Care — ditta individuale, P. IVA 03587900782, sede legale in Via Dogana 20, 87032 Amantea (CS), Italia. Email: info@fghomecare.it. Nome e cognome del titolare: [DA COMPLETARE]. PEC/domicilio digitale: [DA VERIFICARE].",
+      "FG Home Care — ditta individuale, P. IVA 03587900782, sede legale in Via Dogana 20, 87032 Amantea (CS), Italia. Email: info@fghomecare.it. Nome e cognome del titolare: [DA COMPLETARE]. PEC comunicata dal titolare: amministrazionefghomecare@pec.it (iscrizione come domicilio digitale da verificare).",
       "I dati identificativi personali del titolare e gli ulteriori recapiti obbligatori saranno integrati dopo verifica. Le prenotazioni e i pagamenti online sono attualmente disabilitati, in attesa dell’attivazione commerciale.",
     ],
   },
