@@ -11,6 +11,13 @@ export const metadata: Metadata = {
 
 const sections = [
   {
+    title: "Identificazione del gestore",
+    paragraphs: [
+      "FG Home Care — ditta individuale, P. IVA 03587900782, sede legale in Via Dogana 20, 87032 Amantea (CS), Italia. Email: info@fghomecare.it. Nome e cognome del titolare: [DA COMPLETARE]. PEC/domicilio digitale: [DA VERIFICARE].",
+      "I dati identificativi personali del titolare e gli ulteriori recapiti obbligatori saranno integrati dopo verifica. Le prenotazioni e i pagamenti online sono attualmente disabilitati, in attesa dell’attivazione commerciale.",
+    ],
+  },
+  {
     title: "1. Missione e natura del servizio",
     paragraphs: [
       "FG Home Care è una piattaforma digitale che facilita l'incontro tra persone interessate a servizi sanitari o assistenziali e professionisti che propongono autonomamente le proprie prestazioni, a domicilio e, ove disponibile, a distanza.",
