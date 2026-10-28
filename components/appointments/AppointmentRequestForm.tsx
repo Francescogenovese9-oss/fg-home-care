@@ -468,11 +468,17 @@ export default function AppointmentRequestForm({
 
             <textarea
               id="patientNotes"
-              rows={6}
-              placeholder="Descrivi brevemente il tipo di assistenza necessaria. Non inserire informazioni sanitarie non indispensabili."
+              rows={3}
+              maxLength={300}
+              required
+              aria-describedby="patientNotesHelp"
+              placeholder="Es. Richiedo assistenza infermieristica per una medicazione."
               className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3 text-sm outline-none focus:border-blue-600 focus:ring-2 focus:ring-blue-100"
               {...register("patientNotes")}
             />
+            <p id="patientNotesHelp" className="text-xs leading-5 text-slate-600">
+              Descrivi brevemente il motivo della prestazione, indicando solo le informazioni necessarie al professionista (massimo 300 caratteri). Non inserire referti o documentazione clinica.
+            </p>
 
             {errors.patientNotes && (
               <p className="text-sm text-red-600">
