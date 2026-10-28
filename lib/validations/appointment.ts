@@ -99,11 +99,8 @@ export const appointmentSchema = z
     patientNotes: z
       .string()
       .trim()
-      .max(
-        2000,
-        "Le note non possono superare 2.000 caratteri."
-      )
-      .optional(),
+      .min(1, "Descrivi brevemente il motivo della richiesta.")
+      .max(300, "Il motivo della richiesta non può superare 300 caratteri."),
   })
   .superRefine(
     (
