@@ -951,7 +951,6 @@ export async function POST(
           service_province,
           service_postal_code,
           service_access_notes,
-          patient_notes,
           status,
           created_at
         `
