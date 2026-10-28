@@ -3,7 +3,7 @@ import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 
 const sections = [
-  {"title":"1. Identificazione del gestore","text":"Per FG Home Care è prevista la gestione tramite ditta individuale, la cui apertura non è ancora stata completata. Titolare, partita IVA, sede, indirizzo email e PEC (ove applicabile): [DA COMPLETARE]. I dati effettivi saranno inseriti prima dell'avvio commerciale e dell'adozione della versione contrattuale definitiva."},
+  {"title":"1. Identificazione del gestore","text":"FG Home Care — ditta individuale, P. IVA 03587900782, sede legale in Via Dogana 20, 87032 Amantea (CS), Italia. Email: info@fghomecare.it. Nome e cognome del titolare: [DA COMPLETARE]. PEC/domicilio digitale: [DA VERIFICARE]. L'identificazione personale del titolare e gli ulteriori riferimenti obbligatori saranno completati prima dell'adozione della versione contrattuale definitiva."},
   {"title":"2. Natura del servizio","text":"FG Home Care è una piattaforma digitale che facilita l'incontro tra pazienti e professionisti sanitari indipendenti, permettendo ricerca, prenotazione e pagamento di prestazioni domiciliari. Non eroga direttamente prestazioni sanitarie, non formula diagnosi né prescrive terapie e non sostituisce il rapporto professionale tra paziente e operatore."},
   {"title":"3. Registrazione e account","text":"Gli utenti devono fornire dati veritieri, custodire le credenziali e utilizzare il servizio lecitamente. I professionisti accedono alle funzionalità riservate previa verifica e approvazione del profilo. Limitazioni e sospensioni devono essere proporzionate e rispettare gli obblighi di legge."},
   {"title":"4. Professionisti, verifiche e responsabilità","text":"Ogni professionista opera autonomamente e deve mantenere abilitazioni, iscrizioni, autorizzazioni e coperture assicurative richieste. È responsabile delle valutazioni cliniche, del consenso informato ove richiesto e dell'esecuzione delle prestazioni. Le verifiche documentali della piattaforma non garantiscono in assoluto la qualità delle prestazioni. FG Home Care risponde dei propri obblighi e delle proprie condotte secondo legge; non sono escluse responsabilità inderogabili."},
@@ -32,7 +32,7 @@ export default function TerminiCondizioniPage() {
           <p className="text-sm font-semibold uppercase tracking-widest text-blue-700">Trasparenza e regole del servizio</p>
           <h1 className="mt-3 text-3xl font-bold text-blue-950 sm:text-4xl">Termini e Condizioni</h1>
           <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
-            Bozza pubblicata per consultazione durante la preparazione di FG Home Care. L'apertura della ditta individuale prevista per la gestione della piattaforma non è ancora completata. Questo testo non costituisce la versione contrattuale definitiva: prima dell'avvio commerciale occorre inserire i dati identificativi e fiscali effettivi del gestore e completare la revisione legale e fiscale.
+            Bozza pubblicata per consultazione durante la preparazione di FG Home Care. La ditta individuale e la partita IVA sono già attive. Questo testo resta una bozza: prima dell'avvio commerciale occorre completare l'identificazione del titolare, i recapiti obbligatori e la revisione legale e fiscale. Prenotazioni e pagamenti online sono attualmente disabilitati.
           </p>
           <div className="mt-8 space-y-8">
             {sections.map((section) => (
@@ -43,8 +43,8 @@ export default function TerminiCondizioniPage() {
             ))}
           </div>
           <section className="mt-9 rounded-xl bg-blue-50 p-5">
-            <h2 className="font-bold text-blue-950">Dati del gestore — da completare</h2>
-            <p className="mt-2 text-sm leading-6 text-slate-700">Titolare della futura ditta individuale: [DA COMPLETARE]. Partita IVA (non ancora aperta): [DA COMPLETARE]. Sede: [DA COMPLETARE]. Email e PEC (ove applicabile): [DA COMPLETARE]. Restano inoltre da definire le clausole specifiche su recesso, gestione reclami, fiscalità e dati sanitari prima della versione definitiva.</p>
+            <h2 className="font-bold text-blue-950">Dati del gestore — integrazioni in corso</h2>
+            <p className="mt-2 text-sm leading-6 text-slate-700">FG Home Care — ditta individuale, P. IVA 03587900782, sede legale in Via Dogana 20, 87032 Amantea (CS), Italia. Email: info@fghomecare.it. Nome e cognome del titolare: [DA COMPLETARE]. PEC/domicilio digitale: [DA VERIFICARE]. Restano inoltre da definire le clausole specifiche su recesso, gestione reclami, fiscalità e dati sanitari prima della versione definitiva.</p>
           </section>
           <div className="mt-8 flex flex-wrap gap-5 text-sm font-semibold text-blue-700">
             <Link href="/carta-dei-servizi" className="hover:underline">Carta dei Servizi →</Link>
