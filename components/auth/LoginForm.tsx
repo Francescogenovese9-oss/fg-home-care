@@ -132,6 +132,8 @@ export default function LoginForm() {
             />
           </div>
 
+          <div className="text-right"><Link href="/forgot-password" className="text-sm font-semibold text-blue-700 hover:underline">Hai dimenticato la password?</Link></div>
+
           {serverError && (
             <div
               role="alert"
