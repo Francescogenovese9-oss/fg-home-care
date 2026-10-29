@@ -994,6 +994,11 @@ export default async function AdminDashboardPage() {
       ) ||
     "Amministratore";
 
+  const adminAnalytics = getSupabaseAdmin();
+  const {data:dailyViews} = await adminAnalytics.from("site_daily_views").select("day,views").order("day",{ascending:false}).limit(365);
+  const totalSiteViews = (dailyViews??[]).reduce((sum,item)=>sum+Number(item.views),0);
+  const todaySiteViews = Number((dailyViews??[]).find(item=>item.day===new Date().toISOString().slice(0,10))?.views??0);
+
   /*
    * =====================================================
    * RENDER
@@ -1362,6 +1367,16 @@ export default async function AdminDashboardPage() {
               </p>
             </article>
           </div>
+        </section>
+
+        <section className="mt-10 rounded-3xl border border-blue-100 bg-white p-6 shadow-sm">
+          <p className="text-xs font-bold uppercase tracking-wider text-blue-700">Andamento piattaforma</p>
+          <h2 className="mt-1 text-xl font-bold text-slate-900">Visualizzazioni del sito</h2>
+          <div className="mt-5 grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl bg-blue-50 p-5"><p className="text-sm text-blue-700">Visite registrate oggi (UTC)</p><p className="mt-2 text-4xl font-bold text-blue-900">{todaySiteViews.toLocaleString("it-IT")}</p></div>
+            <div className="rounded-2xl bg-slate-50 p-5"><p className="text-sm text-slate-600">Visite registrate negli ultimi 365 giorni</p><p className="mt-2 text-4xl font-bold text-slate-900">{totalSiteViews.toLocaleString("it-IT")}</p></div>
+          </div>
+          <p className="mt-3 text-xs text-slate-500">Conteggio indicativo delle sessioni giornaliere nel browser, non utenti unici certificati. Attivo dall'introduzione del contatore.</p>
         </section>
 
         {/* =================================================
