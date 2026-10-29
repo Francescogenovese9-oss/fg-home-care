@@ -14,9 +14,10 @@ export async function POST(request:Request){
  if(!profile || !SERVICE_CATALOG[profile.profession])return NextResponse.json({error:"Professione non abilitata"},{status:403});
  let body:unknown;try{body=await request.json()}catch{return NextResponse.json({error:"Dati non validi"},{status:400})}
  const input=body as {service_name?:unknown;price_eur?:unknown};
- const service=typeof input.service_name==="string"?input.service_name:"";
+ const service=typeof input.service_name==="string"?input.service_name.trim():"";
  const price=typeof input.price_eur==="number"?input.price_eur:NaN;
- if(!SERVICE_CATALOG[profile.profession].includes(service)||!Number.isFinite(price)||price<=0||price>10000)return NextResponse.json({error:"Prestazione o prezzo non valido"},{status:400});
+ if(service.length<3||service.length>120||!Number.isFinite(price)||price<=0||price>10000)return NextResponse.json({error:"Prestazione o prezzo non valido"},{status:400});
+ // Le prestazioni personalizzate sono consentite, ma devono rispettare l'abilitazione professionale.
  const {error}=await db.from("professional_services").upsert({professional_id:user.id,service_name:service,price_eur:Math.round(price*100)/100},{onConflict:"professional_id,service_name"});
  if(error)return NextResponse.json({error:"Salvataggio non riuscito"},{status:500});
  return NextResponse.json({ok:true});
