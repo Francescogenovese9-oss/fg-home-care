@@ -83,7 +83,7 @@ export default function RegisterForm() {
 
       if (!response.ok) {
         setServerError(
-          result.message || "Registrazione non riuscita. Riprova."
+          (result.message?.toLowerCase().includes("password should contain") ? "La password deve contenere almeno una lettera maiuscola, una minuscola, un numero e un simbolo speciale (per esempio !, @ oppure #)." : result.message || "Registrazione non riuscita. Riprova.")
         );
         return;
       }
