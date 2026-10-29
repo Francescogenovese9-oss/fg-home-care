@@ -18,6 +18,34 @@ export function VerifyEmailForm({
   const [token, setToken] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
+  const [resendMessage, setResendMessage] = useState("");
+
+  async function resendCode() {
+    if (resending) return;
+    setResending(true);
+    setError("");
+    setResendMessage("");
+    try {
+      const response = await fetch("/api/auth/resend-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email }),
+      });
+      const result: { message?: string } = await response.json();
+      if (!response.ok) {
+        setError(result.message ?? "Impossibile reinviare il codice.");
+        return;
+      }
+      setToken("");
+      setResendMessage(result.message ?? "Controlla la tua email.");
+    } catch {
+      setError("Impossibile richiedere il codice. Riprova più tardi.");
+    } finally {
+      setResending(false);
+    }
+  }
+
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -68,7 +96,7 @@ export function VerifyEmailForm({
         onChange={(event) =>
           setToken(event.target.value.replace(/\D/g, "").slice(0, 8))
         }
-        placeholder="000000"
+        placeholder="00000000"
         className="text-center text-xl tracking-[0.4em]"
         aria-label="Codice di verifica"
         required
@@ -85,6 +113,13 @@ export function VerifyEmailForm({
       >
         {loading ? "Verifica in corso..." : "Conferma email"}
       </Button>
+      <div className="space-y-2 text-center">
+        <p className="text-sm text-slate-600">Non hai ricevuto il codice?</p>
+        <Button type="button" variant="outline" className="w-full" onClick={resendCode} disabled={resending || loading}>
+          {resending ? "Richiesta in corso..." : "Rinvia codice di verifica"}
+        </Button>
+        {resendMessage ? <p role="status" className="text-sm text-green-700">{resendMessage}</p> : null}
+      </div>
     </form>
   );
 }
