@@ -9,6 +9,7 @@ import {
 type CalculatePaymentInput = {
   hourlyRate: number;
   durationMinutes: number;
+  fixedServicePrice?: number | null;
   plan: ProfessionalPlan;
 
   /*
@@ -62,6 +63,7 @@ export function centsToEuros(
 export function calculatePaymentBreakdown({
   hourlyRate,
   durationMinutes,
+  fixedServicePrice,
   plan,
   commissionPercent: customCommissionPercent,
 }: CalculatePaymentInput): PaymentBreakdown {
@@ -98,9 +100,7 @@ export function calculatePaymentBreakdown({
     );
   }
 
-  const subtotalEuros =
-    hourlyRate *
-    (durationMinutes / 60);
+  const subtotalEuros = fixedServicePrice ?? (hourlyRate * (durationMinutes / 60));
 
   const subtotalAmount =
     eurosToCents(subtotalEuros);
