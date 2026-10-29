@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 
 import LoginForm from "@/components/auth/LoginForm";
@@ -16,11 +17,15 @@ export default async function LoginPage({
   return (
     <main className="min-h-screen bg-slate-50 px-5 py-12">
       <div className="mx-auto flex max-w-4xl flex-col items-center">
-        <Link
-          href="/"
-          className="mb-8 text-xl font-bold text-blue-900"
-        >
-          FG Home Care
+        <Link href="/" aria-label="FG Home Care - torna alla homepage" className="mb-8 inline-flex justify-center">
+          <Image
+            src="/images/logo.png"
+            alt="FG Home Care"
+            width={300}
+            height={110}
+            priority
+            className="h-auto w-[245px] object-contain lg:w-[275px]"
+          />
         </Link>
 
         {confirmed === "true" ? (
