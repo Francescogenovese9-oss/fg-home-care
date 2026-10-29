@@ -1001,6 +1001,16 @@ export default async function AdminDashboardPage() {
   const originTotal=(originRows??[]).reduce((n,r)=>n+Number(r.views),0);
   const sourceTotals=Object.entries((originRows??[]).reduce((m,r)=>({...m,[r.source]:(m[r.source]??0)+Number(r.views)}),{} as Record<string,number>)).sort((a,b)=>b[1]-a[1]);
   const countryTotals=Object.entries((originRows??[]).reduce((m,r)=>({...m,[r.country]:(m[r.country]??0)+Number(r.views)}),{} as Record<string,number>)).sort((a,b)=>b[1]-a[1]);
+
+  const trafficGroups=[
+    {name:"Motori di ricerca",detail:"Ricerche e risultati su Google, Bing, Yahoo, DuckDuckGo ed Ecosia. La presenza del referrer non garantisce che il clic sia organico.",match:(s:string)=>/^(Google|Bing|Yahoo|DuckDuckGo|Ecosia)$/.test(s)},
+    {name:"Social network",detail:"Visite attribuite a Facebook, Instagram, TikTok, YouTube, LinkedIn, X e Pinterest.",match:(s:string)=>/^(Facebook \/ Instagram|Facebook|Instagram|TikTok|YouTube|LinkedIn|X \/ Twitter|Pinterest|Altri social)$/.test(s)},
+    {name:"Campagne pubblicitarie",detail:"Traffico indicato come sponsorizzato dai parametri UTM; senza tracciamento della campagna non è possibile distinguerlo con certezza.",match:(s:string)=>/Ads|campagne a pagamento|Campagna UTM/i.test(s)},
+    {name:"Assistenti AI",detail:"Accessi riconoscibili da ChatGPT, Perplexity, Claude, Gemini e Copilot. Le visite senza referrer non sono attribuibili.",match:(s:string)=>/^(ChatGPT|Perplexity|Claude|Gemini|Microsoft Copilot)$/.test(s)},
+    {name:"Link e segnalazioni",detail:"Collegamenti da altri siti, email, newsletter e messaggistica.",match:(s:string)=>/^(Altri siti|Email \/ newsletter|WhatsApp|Telegram)$/.test(s)},
+    {name:"Diretti o non identificati",detail:"Accessi digitati, segnalibri, app che non inviano il referrer e provenienze sconosciute.",match:(s:string)=>/Diretto|non rilevato|Navigazione interna/i.test(s)}
+  ];
+  const groupedTraffic=trafficGroups.map(group=>({...group,channels:sourceTotals.filter(([name])=>group.match(name)),count:sourceTotals.filter(([name])=>group.match(name)).reduce((n,[,v])=>n+v,0)}));
   const todaySiteViews = Number((dailyViews??[]).find(item=>item.day===new Date().toISOString().slice(0,10))?.views??0);
 
   /*
