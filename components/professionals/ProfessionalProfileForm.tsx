@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-import ProfessionalServicesEditor from "@/components/professionals/ProfessionalServicesEditor";
+import ProfessionalServicesEditor, {type PricedService} from "@/components/professionals/ProfessionalServicesEditor";
 import RegionalPrices from "@/components/professionals/RegionalPrices";
 import { PROFESSIONS, isProfession } from "@/lib/professions";
 import {
@@ -64,6 +64,7 @@ export default function ProfessionalProfileForm() {
   const [successMessage, setSuccessMessage] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [pricedServices, setPricedServices] = useState<PricedService[] | null>(null);
 
   const {
     register,
@@ -220,9 +221,19 @@ export default function ProfessionalProfileForm() {
         return;
       }
 
-      setSuccessMessage(
-        "Profilo professionale salvato correttamente."
-      );
+      if (pricedServices !== null) {
+        const servicesResponse = await fetch("/api/professional/services/bulk", {
+          method: "PUT",
+          headers: {"Content-Type":"application/json"},
+          body: JSON.stringify({services:pricedServices}),
+        });
+        if (!servicesResponse.ok) {
+          const servicesResult = await servicesResponse.json().catch(()=>({message:"Errore nel salvataggio delle prestazioni."}));
+          setServerError("Profilo salvato, ma le prestazioni non sono state aggiornate: " + (servicesResult.message ?? "Riprova."));
+          return;
+        }
+      }
+      setSuccessMessage("Profilo, prestazioni e tariffe salvati correttamente.");
     } catch (error) {
       console.error(
         "Errore salvataggio profilo:",
@@ -302,45 +313,12 @@ export default function ProfessionalProfileForm() {
               </div>
             )}
 
-            {selectedProfession !== "Badante" &&
-              selectedProfession !==
-                "Operatore socio sanitario (OSS)" && (
-                <div className="space-y-2">
-                  <Label htmlFor="registrationNumber">
-                    Numero iscrizione albo
-                  </Label>
-
-                  <Input
-                    id="registrationNumber"
-                    {...register("registrationNumber")}
-                  />
-
-                  {errors.registrationNumber && (
-                    <p className="text-sm text-red-600">
-                      {errors.registrationNumber.message}
-                    </p>
-                  )}
-                </div>
-              )}
-            <div className="space-y-2">
-              <Label htmlFor="vatNumber">
-                Partita IVA
-              </Label>
-
-              <Input
-                id="vatNumber"
-                {...register("vatNumber")}
-              />
-
-              {errors.vatNumber && (
-                <p className="text-sm text-red-600">
-                  {errors.vatNumber.message}
-                </p>
-              )}
+            <div className="rounded-xl border border-blue-100 bg-blue-50/50 p-4 text-sm text-slate-600 md:col-span-2">
+              Numero di iscrizione all'albo e partita IVA, se richiesti, sono già stati acquisiti in registrazione e non devono essere inseriti nuovamente.
             </div>
           </div>
 
-          <ProfessionalServicesEditor profession={selectedProfession} />
+          <ProfessionalServicesEditor profession={selectedProfession} onChange={setPricedServices} />
 
           <div className="space-y-2">
             <Label htmlFor="bio">
@@ -395,25 +373,7 @@ export default function ProfessionalProfileForm() {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="hourlyRate">
-                Tariffa oraria in euro
-              </Label>
 
-              <Input
-                id="hourlyRate"
-                type="number"
-                min={0}
-                step="0.01"
-                {...register("hourlyRate")}
-              />
-
-              {errors.hourlyRate && (
-                <p className="text-sm text-red-600">
-                  {errors.hourlyRate.message}
-                </p>
-              )}
-            </div>
           </div>
 
           <div>
