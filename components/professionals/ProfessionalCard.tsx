@@ -10,6 +10,7 @@ export type ProfessionalCardData = {
   avatar_url: string | null;
 
   profession: string;
+  services?: {service_name:string;price_eur:number}[];
   specialization: string | null;
 
   city: string | null;
@@ -225,6 +226,8 @@ export default function ProfessionalCard({
             </span>
           )}
         </div>
+
+        {professional.services && professional.services.length > 0 && <div className="mt-5 rounded-2xl border border-blue-100 bg-blue-50/60 p-4"><p className="text-sm font-bold text-blue-900">Prestazioni disponibili</p><div className="mt-3 space-y-2">{professional.services.slice(0,5).map(s=><div key={s.service_name} className="flex items-start justify-between gap-3 text-xs text-slate-700"><span>{s.service_name}</span><strong className="whitespace-nowrap text-blue-800">{Number(s.price_eur).toLocaleString("it-IT",{style:"currency",currency:"EUR"})}</strong></div>)}</div></div>}
 
         {/* DATI */}
 
