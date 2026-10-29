@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -122,6 +122,11 @@ export default function AppointmentRequestForm({
   const availableServices=pricedServices.filter(x=>selectedServiceType==="VIDEO_CONSULTATION"?isVideoService(x.service_name):!isVideoService(x.service_name));
   const chosenService = availableServices.find(x=>x.id===selectedServiceId);
   const videoServiceMissing=selectedServiceType==="VIDEO_CONSULTATION"&&availableServices.length===0;
+  useEffect(()=>{
+    if(availableServices.length>0&&!availableServices.some(x=>x.id===selectedServiceId)){
+      setValue("selectedServiceId",availableServices[0].id);
+    }
+  },[selectedServiceType,selectedServiceId,pricedServices,setValue]);
 
   async function onSubmit(
     values: AppointmentValues
