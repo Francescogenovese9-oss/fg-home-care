@@ -13,8 +13,8 @@ const sections = [
   {
     title: "Identificazione del gestore",
     paragraphs: [
-      "FG Home Care — ditta individuale, P. IVA 03587900782, sede legale in Via Dogana 20, 87032 Amantea (CS), Italia. Email: info@fghomecare.it. Nome e cognome del titolare: Francesco Genovese. PEC comunicata dal titolare: amministrazionefghomecare@pec.it (iscrizione come domicilio digitale da verificare).",
-      "Gli ulteriori recapiti e adempimenti informativi eventualmente obbligatori saranno verificati prima dell'attivazione commerciale. Le prenotazioni e i pagamenti online sono attualmente disabilitati, in attesa dell’attivazione commerciale.",
+      "FG Home Care — ditta individuale, P. IVA 03587900782, sede legale in Via Dogana 20, 87032 Amantea (CS), Italia. Email: info@fghomecare.it. Nome e cognome del titolare: Francesco Genovese. PEC: amministrazionefghomecare@pec.it.",
+      "Le informazioni aggiornate su prenotazioni, pagamenti e condizioni economiche sono disponibili nei rispettivi percorsi della piattaforma.",
     ],
   },
   {
@@ -58,7 +58,7 @@ const sections = [
     title: "6. Riservatezza e protezione dei dati",
     paragraphs: [
       "FG Home Care tratta i dati personali necessari alla gestione degli account, delle ricerche, delle prenotazioni, delle comunicazioni, dei pagamenti e della sicurezza del servizio secondo il Regolamento (UE) 2016/679 (GDPR) e le altre norme applicabili.",
-      "Alcune informazioni possono rivelare dati relativi alla salute e richiedono particolari garanzie. Finalità, basi giuridiche, destinatari, tempi di conservazione, eventuali trasferimenti e diritti degli interessati devono essere descritti nell'apposita informativa privacy.",
+      "Alcune informazioni possono rivelare dati relativi alla salute e richiedono particolari garanzie. L'apposita informativa privacy descrive finalità, basi giuridiche, destinatari, conservazione, trasferimenti e diritti degli interessati, con le limitazioni e le verifiche ancora indicate nel documento.",
       "I professionisti restano tenuti agli obblighi di segreto professionale, riservatezza e protezione dei dati connessi alle prestazioni da essi svolte, secondo i rispettivi ruoli previsti dalla normativa.",
     ],
   },
