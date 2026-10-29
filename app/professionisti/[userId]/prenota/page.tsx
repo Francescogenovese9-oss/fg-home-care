@@ -87,6 +87,8 @@ export default async function BookProfessionalPage({
     notFound();
   }
 
+  const {data:pricedServices}=await supabase.from("professional_services").select("id,service_name,price_eur").eq("professional_id",userId).order("service_name");
+
   const professionalName =
     [
       data.first_name,
@@ -168,6 +170,7 @@ export default async function BookProfessionalPage({
           availableTo={
             data.available_to
           }
+          pricedServices={pricedServices ?? []}
           hourlyRate={
             data.hourly_rate
           }
