@@ -163,6 +163,7 @@ export default function AppointmentRequestForm({
 
       reset({
         professionalId,
+        selectedServiceId: pricedServices[0]?.id,
         bookingSource,
         serviceType:
           defaultServiceType,
