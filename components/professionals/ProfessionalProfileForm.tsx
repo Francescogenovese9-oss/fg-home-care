@@ -294,29 +294,13 @@ export default function ProfessionalProfileForm() {
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="specialization">
-                {selectedProfession === "Medico specialista"
-                  ? "Specializzazione medica"
-                  : "Ambito di competenza"}
-              </Label>
-
-              <Input
-                id="specialization"
-                placeholder={
-                  selectedProfession === "Medico specialista"
-                    ? "Es. Urologia, Cardiologia, Ortopedia"
-                    : "Es. assistenza post-operatoria"
-                }
-                {...register("specialization")}
-              />
-
-              {errors.specialization && (
-                <p className="text-sm text-red-600">
-                  {errors.specialization.message}
-                </p>
-              )}
-            </div>
+            {selectedProfession === "Medico specialista" && (
+              <div className="space-y-2">
+                <Label htmlFor="specialization">Specializzazione medica</Label>
+                <Input id="specialization" placeholder="Es. Cardiologia, Ortopedia, Urologia" {...register("specialization")} />
+                {errors.specialization && <p className="text-sm text-red-600">{errors.specialization.message}</p>}
+              </div>
+            )}
 
             {selectedProfession !== "Badante" &&
               selectedProfession !==
@@ -355,6 +339,8 @@ export default function ProfessionalProfileForm() {
               )}
             </div>
           </div>
+
+          <ProfessionalServicesEditor profession={selectedProfession} />
 
           <div className="space-y-2">
             <Label htmlFor="bio">
@@ -531,7 +517,6 @@ export default function ProfessionalProfileForm() {
             </label>
           </div>
 
-          <ProfessionalServicesEditor profession={selectedProfession} />
           <RegionalPrices />
 
           {serverError && (
