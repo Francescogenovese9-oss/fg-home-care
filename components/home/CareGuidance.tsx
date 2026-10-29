@@ -175,6 +175,7 @@ export default function CareGuidance() {
                 <p className="mt-2 text-sm leading-6 text-slate-700">
                   {result.summary}
                 </p>
+                <p className="mt-3 text-sm font-medium text-blue-800">Seleziona una figura professionale qui sotto per cercare gli specialisti disponibili nella tua zona.</p>
 
                 <div className="mt-4 space-y-3">
                   {result.professionals.map((professional) => (
@@ -199,7 +200,7 @@ export default function CareGuidance() {
 
             {responseType === "NO_MATCH" && (
               <p className="mt-6 rounded-2xl border border-slate-200 bg-slate-50 p-4 text-sm leading-6 text-slate-700">
-                Non siamo riusciti a individuare automaticamente il professionista più adatto. Prova a descrivere meglio la tua esigenza o i sintomi.
+                Non ho ancora abbastanza informazioni per indicarti una figura professionale affidabile. Prova a specificare chi ha bisogno di assistenza, quale prestazione serve o quale difficoltà sta riscontrando e da quanto tempo. Non inserire nome, telefono o altri dati identificativi.
               </p>
             )}
 
