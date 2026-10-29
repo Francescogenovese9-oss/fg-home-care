@@ -23,6 +23,8 @@ export const appointmentSchema = z
       .string()
       .uuid("Professionista non valido."),
 
+    selectedServiceId: z.string().uuid().optional(),
+
     bookingSource: z
       .enum(["DIRECT", "CARE_GUIDANCE"])
       .default("DIRECT"),
