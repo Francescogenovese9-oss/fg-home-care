@@ -56,6 +56,7 @@ import {
             patient_id,
             professional_id,
             hourly_rate,
+          selected_service_price_eur,
             duration_minutes,
             status
           `
@@ -178,6 +179,7 @@ import {
           hourlyRate: Number(
             appointment.hourly_rate
           ),
+          fixedServicePrice: appointment.selected_service_price_eur == null ? null : Number(appointment.selected_service_price_eur),
 
           durationMinutes:
             appointment.duration_minutes,
