@@ -18,6 +18,8 @@ export const registerSchema = z
       .trim()
       .email("Inserisci un indirizzo email valido."),
 
+    confirmEmail: z.string().trim().email("Conferma un indirizzo email valido."),
+
     password: z
       .string()
       .min(8, "La password deve contenere almeno 8 caratteri."),
@@ -38,6 +40,9 @@ export const registerSchema = z
     subscriptionPlan: z.enum(["BASIC", "PREMIUM"]).optional(),
   })
   .superRefine((data, context) => {
+    if (data.email.toLowerCase() !== data.confirmEmail.toLowerCase()) {
+      context.addIssue({ code: "custom", path: ["confirmEmail"], message: "Gli indirizzi email non coincidono." });
+    }
     if (data.password !== data.confirmPassword) {
       context.addIssue({
         code: "custom",
