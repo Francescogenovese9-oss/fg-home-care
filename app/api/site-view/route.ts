@@ -1,0 +1,3 @@
+import {NextResponse} from "next/server";
+import {getSupabaseAdmin} from "@/lib/supabase/admin";
+export async function POST(request:Request){const origin=request.headers.get("origin");const host=request.headers.get("host");if(origin&&host){try{if(new URL(origin).host!==host)return NextResponse.json({ok:false},{status:403})}catch{return NextResponse.json({ok:false},{status:403})}}const day=new Date().toISOString().slice(0,10);const admin=getSupabaseAdmin();const {error}=await admin.rpc("increment_site_daily_views",{p_day:day});return NextResponse.json({ok:!error},{status:error?500:200,headers:{"Cache-Control":"no-store"}})}
