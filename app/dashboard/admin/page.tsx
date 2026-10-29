@@ -997,6 +997,10 @@ export default async function AdminDashboardPage() {
   const adminAnalytics = getSupabaseAdmin();
   const {data:dailyViews} = await adminAnalytics.from("site_daily_views").select("day,views").order("day",{ascending:false}).limit(365);
   const totalSiteViews = (dailyViews??[]).reduce((sum,item)=>sum+Number(item.views),0);
+  const {data:originRows}=await adminAnalytics.from("site_view_origins_daily").select("day,source,country,views").gte("day",new Date(Date.now()-30*86400000).toISOString().slice(0,10)).limit(10000);
+  const originTotal=(originRows??[]).reduce((n,r)=>n+Number(r.views),0);
+  const sourceTotals=Object.entries((originRows??[]).reduce((m,r)=>({...m,[r.source]:(m[r.source]??0)+Number(r.views)}),{} as Record<string,number>)).sort((a,b)=>b[1]-a[1]);
+  const countryTotals=Object.entries((originRows??[]).reduce((m,r)=>({...m,[r.country]:(m[r.country]??0)+Number(r.views)}),{} as Record<string,number>)).sort((a,b)=>b[1]-a[1]);
   const todaySiteViews = Number((dailyViews??[]).find(item=>item.day===new Date().toISOString().slice(0,10))?.views??0);
 
   /*
@@ -1377,6 +1381,11 @@ export default async function AdminDashboardPage() {
             <div className="rounded-2xl bg-blue-50 p-5"><p className="text-sm text-blue-700">Visite registrate oggi (UTC)</p><p className="mt-2 text-4xl font-bold text-blue-900">{todaySiteViews.toLocaleString("it-IT")}</p></div>
             <div className="rounded-2xl bg-slate-50 p-5"><p className="text-sm text-slate-600">Visite registrate negli ultimi 365 giorni</p><p className="mt-2 text-4xl font-bold text-slate-900">{totalSiteViews.toLocaleString("it-IT")}</p></div>
           </div>
+          <div className="mt-6 grid gap-6 lg:grid-cols-2">
+            <div><h3 className="font-semibold text-slate-900">Da dove arrivano le visite · ultimi 30 giorni</h3><p className="mt-1 text-xs text-slate-500">Motori di ricerca, social, campagne pubblicitarie e accessi diretti.</p><div className="mt-3 space-y-3">{sourceTotals.map(([name,count])=><div key={name}><div className="flex justify-between text-sm"><span>{name}</span><strong>{count} · {originTotal?Math.round(count/originTotal*100):0}%</strong></div><div className="mt-1 h-2 rounded-full bg-slate-100"><div className="h-2 rounded-full bg-blue-600" style={{width:`${originTotal?count/originTotal*100:0}%`}} /></div></div>)}{!sourceTotals.length&&<p className="text-sm text-slate-500">Nessun dato ancora disponibile.</p>}</div></div>
+            <div><h3 className="font-semibold text-slate-900">Paesi di provenienza · ultimi 30 giorni</h3><p className="mt-1 text-xs text-slate-500">Localizzazione approssimativa per Paese, quando disponibile; nessun nome o indirizzo IP conservato.</p><div className="mt-3 space-y-3">{countryTotals.map(([name,count])=><div key={name} className="flex justify-between border-b border-slate-100 py-2 text-sm"><span>{name==="IT"?"Italia":name==="Non rilevato"?"Non rilevato":name}</span><strong>{count} visite</strong></div>)}{!countryTotals.length&&<p className="text-sm text-slate-500">Nessun dato ancora disponibile.</p>}</div></div>
+          </div>
+          <p className="mt-3 text-xs text-slate-500">Le provenienze vengono raccolte solo da ora: non è possibile ricostruire le origini delle visite precedenti. Referrer e parametri UTM possono mancare; i dati sono aggregati e non identificano persone.</p>
           <p className="mt-3 text-xs text-slate-500">Conteggio indicativo delle sessioni giornaliere nel browser, non utenti unici certificati. Attivo dall'introduzione del contatore.</p>
         </section>
 
