@@ -28,18 +28,18 @@ export default function ChiSiamoPage() {
               </p>
 
               <h1 className="mt-5 max-w-3xl text-5xl font-bold leading-[1.05] text-slate-950 md:text-6xl">
-                La salute piu vicina alle persone.
+                La salute più vicina alle persone.
               </h1>
 
               <p className="mt-7 max-w-2xl text-lg leading-8 text-slate-600">
                 FG Home Care nasce nel 2023 con un obiettivo preciso:
-                rendere piu semplice l&apos;accesso all&apos;assistenza e
+                rendere più semplice l&apos;accesso all&apos;assistenza e
                 alle prestazioni sanitarie domiciliari.
               </p>
 
               <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-600">
                 Attraverso una rete multidisciplinare di professionisti,
-                mettiamo in contatto le persone con le figure piu adatte
+                mettiamo in contatto le persone con le figure più adatte
                 alle loro esigenze, favorendo un&apos;
                 <span className="font-semibold text-blue-800">
                   assistenza personalizzata
@@ -48,9 +48,9 @@ export default function ChiSiamoPage() {
               </p>
 
               <p className="mt-4 max-w-2xl text-lg leading-8 text-slate-600">
-                La piattaforma nasce per rendere piu semplice la ricerca,
-                piu trasparente la scelta e piu immediato il contatto con il
-                professionista sanitario piu adatto.
+                La piattaforma nasce per rendere più semplice la ricerca,
+                più trasparente la scelta e più immediato il contatto con il
+                professionista sanitario più adatto.
               </p>
 
               <div className="mt-8 flex flex-wrap gap-4">
@@ -84,7 +84,7 @@ export default function ChiSiamoPage() {
                     Assistenza a domicilio
                   </p>
                   <p className="mt-1 text-sm text-slate-500">
-                    Servizi piu vicini alle persone
+                    Servizi più vicini alle persone
                   </p>
                 </div>
 
@@ -132,13 +132,13 @@ export default function ChiSiamoPage() {
             </p>
 
             <h2 className="mx-auto mt-5 max-w-4xl text-4xl font-bold leading-tight text-slate-950 md:text-5xl">
-              Rendere l&apos;assistenza piu semplice,
+              Rendere l&apos;assistenza più semplice,
               <span className="text-blue-700"> accessibile e vicina.</span>
             </h2>
 
             <p className="mx-auto mt-8 max-w-4xl text-xl leading-9 text-slate-600">
               Vogliamo rendere la ricerca del professionista sanitario
-              piu semplice, trasparente e accessibile, permettendo
+              più semplice, trasparente e accessibile, permettendo
               all&apos;utente di individuare il supporto di cui ha bisogno e
               al professionista di mettere le proprie competenze a
               disposizione delle persone.
