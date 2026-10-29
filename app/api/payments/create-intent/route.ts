@@ -134,6 +134,7 @@ export async function POST(
           status,
           payment_status,
           hourly_rate,
+          selected_service_price_eur,
           duration_minutes,
           currency,
           subtotal_amount,
@@ -457,6 +458,7 @@ export async function POST(
         hourlyRate: Number(
           appointment.hourly_rate
         ),
+          fixedServicePrice: appointment.selected_service_price_eur == null ? null : Number(appointment.selected_service_price_eur),
 
         durationMinutes:
           appointment.duration_minutes,
