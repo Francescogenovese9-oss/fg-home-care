@@ -1,6 +1,5 @@
 import Image from "next/image";
 import Link from "next/link";
-import BackNavigationButton from "@/components/layout/BackNavigationButton";
 
 export default function Header() {
   return (
@@ -49,7 +48,6 @@ export default function Header() {
         </nav>
 
         <div className="flex items-center gap-3">
-          <BackNavigationButton />
           <Link
             href="/login"
             className="rounded-xl border border-slate-200 bg-white px-5 py-3 text-sm font-semibold text-slate-800 transition hover:bg-slate-50"
