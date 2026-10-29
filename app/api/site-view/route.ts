@@ -10,7 +10,10 @@ export async function POST(request:Request){
  if(origin&&host){try{if(new URL(origin).host!==host)return NextResponse.json({ok:false},{status:403})}catch{return NextResponse.json({ok:false},{status:403})}}
  const day=new Date().toISOString().slice(0,10);
  const admin=getSupabaseAdmin();
- const source=sourceOf(request.headers.get("referer"));
+ const payload=await request.json().catch(()=>({})) as {referrer?:unknown;utmSource?:unknown};
+ const utm=typeof payload.utmSource==="string"?payload.utmSource.toLowerCase().slice(0,60):"";
+ const campaign=utm==="google"?"Google Ads":utm==="facebook"||utm==="instagram"||utm==="meta"?"Meta Ads":utm==="tiktok"?"TikTok Ads":utm==="bing"?"Bing Ads":utm?"Campagna UTM / altra":"";
+ const source=campaign||sourceOf(typeof payload.referrer==="string"?payload.referrer:null);
  const countryHeader=request.headers.get("x-vercel-ip-country")??"";
  const country=/^[A-Z]{2}$/.test(countryHeader)?countryHeader:"Non rilevato";
  const [total,detail]=await Promise.all([admin.rpc("increment_site_daily_views",{p_day:day}),admin.rpc("increment_site_view_origin",{p_day:day,p_source:source,p_country:country})]);
