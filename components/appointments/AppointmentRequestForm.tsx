@@ -118,7 +118,10 @@ export default function AppointmentRequestForm({
 
   const selectedServiceType = watch("serviceType");
   const selectedServiceId = watch("selectedServiceId");
-  const chosenService = pricedServices.find(x=>x.id===selectedServiceId);
+  const isVideoService=(name:string)=>/videoconsult|video.?consult|consulenza online/i.test(name);
+  const availableServices=pricedServices.filter(x=>selectedServiceType==="VIDEO_CONSULTATION"?isVideoService(x.service_name):!isVideoService(x.service_name));
+  const chosenService = availableServices.find(x=>x.id===selectedServiceId);
+  const videoServiceMissing=selectedServiceType==="VIDEO_CONSULTATION"&&availableServices.length===0;
 
   async function onSubmit(
     values: AppointmentValues
@@ -126,6 +129,8 @@ export default function AppointmentRequestForm({
     setServerError("");
     setSuccessMessage("");
     setAppointmentId("");
+    if(videoServiceMissing){setServerError("Il professionista non ha ancora indicato una tariffa per il videoconsulto.");return;}
+    if(availableServices.length>0&&!chosenService){setServerError("Seleziona una prestazione disponibile.");return;}
     setIsSubmitting(true);
 
     try {
@@ -137,7 +142,7 @@ export default function AppointmentRequestForm({
             "Content-Type":
               "application/json",
           },
-          body: JSON.stringify(values),
+          body: JSON.stringify({...values,selectedServiceId:chosenService?.id}),
         }
       );
 
@@ -493,7 +498,8 @@ export default function AppointmentRequestForm({
             )}
           </div>
 
-          {pricedServices.length>0&&<div className="space-y-2"><Label htmlFor="selectedServiceId">Prestazione richiesta</Label><select id="selectedServiceId" className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3" {...register("selectedServiceId")}>{pricedServices.map(item=><option key={item.id} value={item.id}>{item.service_name} — {Number(item.price_eur).toFixed(2)} €</option>)}</select></div>}
+          {availableServices.length>0&&<div className="space-y-2"><Label htmlFor="selectedServiceId">Prestazione richiesta</Label><select id="selectedServiceId" className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3" {...register("selectedServiceId")}>{availableServices.map(item=><option key={item.id} value={item.id}>{item.service_name} — {Number(item.price_eur).toFixed(2)} €</option>)}</select></div>}
+          {videoServiceMissing&&<p role="alert" className="text-sm text-red-700">Videoconsulto non prenotabile: il professionista deve prima inserire la relativa tariffa.</p>}
           <div className="rounded-2xl bg-slate-50 p-5">
             <p className="text-sm font-semibold text-slate-800">
               Riepilogo economico
@@ -527,7 +533,7 @@ export default function AppointmentRequestForm({
           <Button
             type="submit"
             className="w-full"
-            disabled={isSubmitting}
+            disabled={isSubmitting||videoServiceMissing}
           >
             {isSubmitting
               ? "Invio in corso..."
