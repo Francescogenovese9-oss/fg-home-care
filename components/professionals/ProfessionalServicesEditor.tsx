@@ -1,0 +1,14 @@
+"use client";
+import {useEffect,useState} from "react";
+import {SERVICE_CATALOG} from "@/lib/services/catalog";
+type Service={id:string;service_name:string;price_eur:number};
+export default function ProfessionalServicesEditor({profession}:{profession:string}){
+ const [items,setItems]=useState<Service[]>([]),[service,setService]=useState(""),[price,setPrice]=useState(""),[status,setStatus]=useState(""),[busy,setBusy]=useState(false);
+ const options=SERVICE_CATALOG[profession]??[];
+ async function refresh(){const r=await fetch("/api/professional/services");if(r.ok){const d=await r.json();setItems(d.services??[])}}
+ useEffect(()=>{if(options.length){void refresh();setService(options[0])}},[profession]);
+ if(!options.length)return null;
+ async function save(){setBusy(true);setStatus("");try{const r=await fetch("/api/professional/services",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({service_name:service,price_eur:Number(price)})});const d=await r.json();if(!r.ok)throw Error(d.error);setPrice("");setStatus("Prestazione salvata");await refresh()}catch(e){setStatus(e instanceof Error?e.message:"Errore")}finally{setBusy(false)}}
+ async function remove(id:string){setBusy(true);await fetch("/api/professional/services?id="+encodeURIComponent(id),{method:"DELETE"});await refresh();setBusy(false)}
+ return <section className="mt-8 rounded-2xl border border-blue-100 bg-blue-50/50 p-5"><h3 className="text-lg font-bold text-slate-900">Le tue prestazioni e tariffe</h3><p className="mt-1 text-sm text-slate-600">Scegli una prestazione prevista dal tuo profilo e indica il prezzo in euro. Le tariffe saranno visibili ai pazienti.</p><div className="mt-4 grid gap-3 sm:grid-cols-[1fr_130px_auto]"><select aria-label="Prestazione" className="rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm" value={service} onChange={e=>setService(e.target.value)}>{options.map(x=><option key={x}>{x}</option>)}</select><input aria-label="Prezzo in euro" type="number" min="1" max="10000" step="0.01" placeholder="Prezzo €" className="rounded-xl border border-slate-300 bg-white px-3 py-3 text-sm" value={price} onChange={e=>setPrice(e.target.value)}/><button type="button" disabled={busy||!service||Number(price)<=0} onClick={save} className="rounded-xl bg-blue-700 px-5 py-3 text-sm font-semibold text-white disabled:opacity-50">Salva</button></div>{status&&<p role="status" className="mt-2 text-sm text-blue-800">{status}</p>}<div className="mt-4 space-y-2">{items.map(x=><div key={x.id} className="flex items-center justify-between gap-3 rounded-xl border border-blue-100 bg-white px-4 py-3 text-sm"><span>{x.service_name}</span><span className="ml-auto font-bold text-blue-800">{Number(x.price_eur).toLocaleString("it-IT",{style:"currency",currency:"EUR"})}</span><button type="button" disabled={busy} onClick={()=>remove(x.id)} className="text-red-700">Rimuovi</button></div>)}</div></section>
+}
