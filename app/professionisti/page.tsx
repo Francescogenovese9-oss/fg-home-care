@@ -296,7 +296,7 @@ export default async function ProfessionalsPage({
 
   const professionalIds = professionals.map(p => p.user_id);
   const {data:serviceRows} = professionalIds.length
-    ? await supabase.from("professional_services").select("professional_id,service_name,price_eur").in("professional_id",professionalIds)
+    ? await getSupabaseAdmin().from("professional_services").select("professional_id,service_name,price_eur").in("professional_id",professionalIds)
     : {data:[] as {professional_id:string;service_name:string;price_eur:number}[]};
   const servicesByProfessional = new Map<string,{service_name:string;price_eur:number}[]>();
   for(const item of serviceRows ?? []){
