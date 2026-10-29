@@ -6,7 +6,8 @@ import {usePathname,useRouter} from "next/navigation";
 export default function GlobalBrandBackBar(){
  const pathname=usePathname();
  const router=useRouter();
- if(pathname==="/")return null;
+ const pagesWithHeader=["/","/chi-siamo","/servizi","/videoconsulti","/contatti","/privacy","/termini-e-condizioni","/carta-dei-servizi"];
+ if(pagesWithHeader.includes(pathname))return null;
  function goBack(){
   if(typeof window!=="undefined"&&window.history.length>1){
    router.back();
