@@ -1058,6 +1058,7 @@ export default async function AdminDashboardPage() {
               }
             />
 
+            <Link href="/dashboard/change-password" className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800 transition hover:bg-blue-100">🔒 Modifica password</Link>
             <LogoutButton />
           </div>
         </div>
