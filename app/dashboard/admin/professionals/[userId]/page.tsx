@@ -4,6 +4,7 @@ import { notFound, redirect } from "next/navigation";
 import ProfessionalDocumentReviewActions from "@/components/admin/ProfessionalDocumentReviewActions";
 import ProfessionalReviewActions from "@/components/admin/ProfessionalReviewActions";
 import LogoutButton from "@/components/auth/LogoutButton";
+import RemoveProfessionalButton from "@/components/admin/RemoveProfessionalButton";
 import { createClient } from "@/lib/supabase/server";
 import { getProfessionCategory, isProfession } from "@/lib/professions";
 
@@ -453,6 +454,7 @@ export default async function ProfessionalReviewPage({
           </div>
         </section>
 
+        <RemoveProfessionalButton userId={userId} fullName={fullName} />
         <div className="mt-8 grid gap-8 lg:grid-cols-2">
           <section className="rounded-2xl bg-white p-6 shadow-sm">
             <h2 className="text-xl font-bold text-slate-900">
