@@ -606,38 +606,6 @@ export default async function ProfessionalsPage({
 
   return (
     <main className="min-h-screen bg-slate-50">
-      {/* HEADER */}
-
-      <header className="border-b bg-white">
-        <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-5">
-          <Link href="/">
-            <p className="text-sm font-semibold text-blue-700">
-              FG Home Care
-            </p>
-
-            <p className="text-xs text-slate-500">
-              La salute a casa tua
-            </p>
-          </Link>
-
-          <div className="flex items-center gap-3">
-            <Link
-              href="/login"
-              className="rounded-xl border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100"
-            >
-              Accedi
-            </Link>
-
-            <Link
-              href="/register"
-              className="rounded-xl bg-blue-700 px-4 py-2 text-sm font-semibold text-white hover:bg-blue-800"
-            >
-              Registrati
-            </Link>
-          </div>
-        </div>
-      </header>
-
       {/* HERO */}
 
       <section className="border-b bg-white">
