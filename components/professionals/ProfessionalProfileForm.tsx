@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 
+import ProfessionalServicesEditor from "@/components/professionals/ProfessionalServicesEditor";
+import RegionalPrices from "@/components/professionals/RegionalPrices";
 import { PROFESSIONS, isProfession } from "@/lib/professions";
 import {
   professionalProfileSchema,
@@ -528,6 +530,9 @@ export default function ProfessionalProfileForm() {
               </span>
             </label>
           </div>
+
+          <ProfessionalServicesEditor profession={selectedProfession} />
+          <RegionalPrices />
 
           {serverError && (
             <div
