@@ -40,6 +40,7 @@ type AppointmentRequestFormProps = {
   availableFrom: string | null;
   availableTo: string | null;
   hourlyRate: number | null;
+  pricedServices: {id:string;service_name:string;price_eur:number}[];
 };
 
 function getMinimumDate() {
@@ -61,6 +62,7 @@ export default function AppointmentRequestForm({
   availableFrom,
   availableTo,
   hourlyRate,
+  pricedServices,
 }: AppointmentRequestFormProps) {
   const [serverError, setServerError] =
     useState("");
@@ -96,6 +98,7 @@ export default function AppointmentRequestForm({
     ),
     defaultValues: {
       professionalId,
+      selectedServiceId: pricedServices[0]?.id,
       bookingSource,
       serviceType:
         defaultServiceType,
@@ -114,6 +117,8 @@ export default function AppointmentRequestForm({
   });
 
   const selectedServiceType = watch("serviceType");
+  const selectedServiceId = watch("selectedServiceId");
+  const chosenService = pricedServices.find(x=>x.id===selectedServiceId);
 
   async function onSubmit(
     values: AppointmentValues
@@ -487,6 +492,7 @@ export default function AppointmentRequestForm({
             )}
           </div>
 
+          {pricedServices.length>0&&<div className="space-y-2"><Label htmlFor="selectedServiceId">Prestazione richiesta</Label><select id="selectedServiceId" className="w-full rounded-xl border border-slate-300 bg-white px-4 py-3" {...register("selectedServiceId")}>{pricedServices.map(item=><option key={item.id} value={item.id}>{item.service_name} — {Number(item.price_eur).toFixed(2)} €</option>)}</select></div>}
           <div className="rounded-2xl bg-slate-50 p-5">
             <p className="text-sm font-semibold text-slate-800">
               Riepilogo economico
@@ -495,7 +501,7 @@ export default function AppointmentRequestForm({
             <p className="mt-2 text-sm text-slate-600">
               Tariffa professionista:{" "}
               <strong>
-                {hourlyRate !== null
+                {chosenService ? `${Number(chosenService.price_eur).toFixed(2)} € per prestazione` : hourlyRate !== null
                   ? `${Number(
                       hourlyRate
                     ).toFixed(2)} € / ora`
@@ -504,9 +510,7 @@ export default function AppointmentRequestForm({
             </p>
 
             <p className="mt-2 text-xs leading-5 text-slate-500">
-              L’importo non viene ancora addebitato.
-              Il pagamento sarà introdotto in uno
-              sprint successivo.
+              La richiesta non comporta un addebito immediato. Il pagamento sarà richiesto dopo l’accettazione del professionista.
             </p>
           </div>
 
