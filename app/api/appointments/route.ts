@@ -872,6 +872,10 @@ export async function POST(
       if(lookup.error||!lookup.data){
         return NextResponse.json({message:"La prestazione selezionata non è disponibile."},{status:400});
       }
+      const videoName=/videoconsult|video.?consult|consulenza online/i.test(lookup.data.service_name);
+      if((values.serviceType==="VIDEO_CONSULTATION")!==videoName){
+        return NextResponse.json({message:"La prestazione scelta non corrisponde al tipo di servizio."},{status:400});
+      }
       chosenService=lookup.data;
     }
 
