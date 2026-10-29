@@ -862,6 +862,19 @@ export async function POST(
 
     const supabaseAdmin =
       getSupabaseAdmin();
+    let chosenService: {id:string;service_name:string;price_eur:number}|null=null;
+    if(values.selectedServiceId){
+      const lookup=await supabaseAdmin.from("professional_services")
+        .select("id,service_name,price_eur")
+        .eq("id",values.selectedServiceId)
+        .eq("professional_id",values.professionalId)
+        .maybeSingle();
+      if(lookup.error||!lookup.data){
+        return NextResponse.json({message:"La prestazione selezionata non è disponibile."},{status:400});
+      }
+      chosenService=lookup.data;
+    }
+
 
     /*
      * =====================================================
@@ -913,7 +926,10 @@ export async function POST(
           values.durationMinutes,
 
         hourly_rate:
-          professional.hourly_rate,
+          chosenService ? Number(chosenService.price_eur)*60/values.durationMinutes : professional.hourly_rate,
+        selected_service_id: chosenService?.id ?? null,
+        selected_service_name: chosenService?.service_name ?? null,
+        selected_service_price_eur: chosenService?.price_eur ?? null,
 
         service_street_address:
           values.serviceStreetAddress ?? null,
