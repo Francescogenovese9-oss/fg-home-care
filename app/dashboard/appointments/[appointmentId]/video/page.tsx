@@ -6,6 +6,7 @@ import {
 
 import LogoutButton from "@/components/auth/LogoutButton";
 import VideoConsultationRoom from "@/components/video/VideoConsultationRoom";
+import VideoConsultationDocuments from "@/components/video/VideoConsultationDocuments";
 import { createClient } from "@/lib/supabase/server";
 
 type PageProps = {
@@ -148,6 +149,8 @@ export default async function VideoConsultationPage({
         <VideoConsultationRoom
           appointmentId={appointment.id}
         />
+
+        <VideoConsultationDocuments appointmentId={appointment.id} />
 
         <p className="mt-4 text-center text-xs leading-5 text-slate-500">
           Consenti l'accesso a videocamera e microfono quando richiesto dal browser.
