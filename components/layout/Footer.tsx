@@ -17,8 +17,8 @@ export default function Footer() {
             <h2 className="text-lg font-bold text-white">FG Home Care</h2>
             <p>Piattaforma di incontro tra pazienti e professionisti sanitari</p>
             <p>
-              <a href="https://fg-home-care.vercel.app" className="underline underline-offset-4 hover:text-white">
-                fg-home-care.vercel.app
+              <a href="https://www.fghomecare.it" className="underline underline-offset-4 hover:text-white">
+                www.fghomecare.it
               </a>
             </p>
             <p>
