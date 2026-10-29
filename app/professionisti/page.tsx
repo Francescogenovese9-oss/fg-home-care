@@ -294,6 +294,17 @@ export default async function ProfessionalsPage({
       )
     );
 
+  const professionalIds = professionals.map(p => p.user_id);
+  const {data:serviceRows} = professionalIds.length
+    ? await supabase.from("professional_services").select("professional_id,service_name,price_eur").in("professional_id",professionalIds)
+    : {data:[] as {professional_id:string;service_name:string;price_eur:number}[]};
+  const servicesByProfessional = new Map<string,{service_name:string;price_eur:number}[]>();
+  for(const item of serviceRows ?? []){
+    const items=servicesByProfessional.get(item.professional_id)??[];
+    items.push({service_name:item.service_name,price_eur:Number(item.price_eur)});
+    servicesByProfessional.set(item.professional_id,items);
+  }
+
   /*
    * =====================================================
    * MERGE PROFESSIONISTI + RECENSIONI + AVATAR
@@ -342,6 +353,7 @@ export default async function ProfessionalsPage({
         return {
           user_id:
             professional.user_id,
+          services: servicesByProfessional.get(professional.user_id) ?? [],
 
           first_name:
             professional.first_name,
