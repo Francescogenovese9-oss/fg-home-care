@@ -1,0 +1,5 @@
+import Link from "next/link";
+import {redirect} from "next/navigation";
+import {createClient} from "@/lib/supabase/server";
+import ChangePasswordForm from "@/components/auth/ChangePasswordForm";
+export default async function ChangePasswordPage(){const db=await createClient();const {data:{user}}=await db.auth.getUser();if(!user)redirect("/login");const {data:profile}=await db.from("profiles").select("role").eq("id",user.id).maybeSingle();const home=profile?.role==="ADMIN"?"/dashboard/admin":profile?.role==="PROFESSIONAL"?"/dashboard/professional":"/dashboard/patient";return <main className="min-h-screen bg-slate-50 px-5 py-12"><div className="mx-auto max-w-lg"><Link href={home} className="text-sm font-semibold text-blue-700 hover:underline">← Torna alla dashboard</Link><ChangePasswordForm /></div></main>}
