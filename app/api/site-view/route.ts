@@ -1,3 +1,18 @@
 import {NextResponse} from "next/server";
 import {getSupabaseAdmin} from "@/lib/supabase/admin";
-export async function POST(request:Request){const origin=request.headers.get("origin");const host=request.headers.get("host");if(origin&&host){try{if(new URL(origin).host!==host)return NextResponse.json({ok:false},{status:403})}catch{return NextResponse.json({ok:false},{status:403})}}const day=new Date().toISOString().slice(0,10);const admin=getSupabaseAdmin();const {error}=await admin.rpc("increment_site_daily_views",{p_day:day});return NextResponse.json({ok:!error},{status:error?500:200,headers:{"Cache-Control":"no-store"}})}
+function sourceOf(ref:string|null){
+ if(!ref)return "Diretto / non rilevato";
+ try{const u=new URL(ref);const host=u.hostname.toLowerCase().replace(/^www\./,"");if(["fghomecare.it","fg-home-care.vercel.app"].includes(host))return "Navigazione interna";
+ if(/google\./.test(host))return "Google";if(/bing\./.test(host))return "Bing";if(/facebook|fb\.com|instagram|l\.facebook/.test(host))return "Facebook / Instagram";if(/tiktok/.test(host))return "TikTok";if(/youtube/.test(host))return "YouTube";return "Altri siti";}catch{return "Diretto / non rilevato";}
+}
+export async function POST(request:Request){
+ const origin=request.headers.get("origin"),host=request.headers.get("host");
+ if(origin&&host){try{if(new URL(origin).host!==host)return NextResponse.json({ok:false},{status:403})}catch{return NextResponse.json({ok:false},{status:403})}}
+ const day=new Date().toISOString().slice(0,10);
+ const admin=getSupabaseAdmin();
+ const source=sourceOf(request.headers.get("referer"));
+ const countryHeader=request.headers.get("x-vercel-ip-country")??"";
+ const country=/^[A-Z]{2}$/.test(countryHeader)?countryHeader:"Non rilevato";
+ const [total,detail]=await Promise.all([admin.rpc("increment_site_daily_views",{p_day:day}),admin.rpc("increment_site_view_origin",{p_day:day,p_source:source,p_country:country})]);
+ return NextResponse.json({ok:!total.error&&!detail.error},{status:total.error||detail.error?500:200,headers:{"Cache-Control":"no-store"}});
+}
