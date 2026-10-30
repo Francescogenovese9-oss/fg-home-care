@@ -103,9 +103,23 @@ export async function syncProfessionalSubscription(
    * active, il professionista mantie i
    * vantaggi fino alla scadenza del periodo.
    */
-  const isPremium =
+  const isActive =
     subscription.status ===
     "active";
+
+  // Stripe is the source of truth for the plan. A DIRECT subscription
+  // is never inferred from browser-provided metadata or registration.
+  const stripePlan =
+    subscription.metadata
+      .fg_home_care_plan;
+
+  const isDirect =
+    isActive &&
+    stripePlan === "DIRECT" &&
+    process.env.FG_DIRECT_PLAN_ENABLED === "true";
+
+  const isPremium =
+    isActive && !isDirect;
 
   const {
     error:
@@ -127,9 +141,11 @@ export async function syncProfessionalSubscription(
             subscription.status,
 
           subscription_plan:
-            isPremium
-              ? "PREMIUM"
-              : "BASIC",
+            isDirect
+              ? "DIRECT"
+              : isPremium
+                ? "PREMIUM"
+                : "BASIC",
 
           subscription_current_period_end:
             getCurrentPeriodEnd(
@@ -161,8 +177,10 @@ export async function syncProfessionalSubscription(
     status:
       subscription.status,
     plan:
-      isPremium
-        ? "PREMIUM"
-        : "BASIC",
+      isDirect
+        ? "DIRECT"
+        : isPremium
+          ? "PREMIUM"
+          : "BASIC",
   };
 }
