@@ -358,6 +358,21 @@ export async function POST(
       );
     }
 
+    // Defense in depth: DIRECT services are paid to the professional
+    // outside FG Home Care. Never create or reuse a Stripe PaymentIntent.
+    if (
+      process.env.FG_DIRECT_PLAN_ENABLED === "true" &&
+      professional.subscription_plan === "DIRECT"
+    ) {
+      return NextResponse.json(
+        {
+          message: "Per il piano DIRECT la prestazione si paga direttamente al professionista, non su FG Home Care.",
+          paymentRoute: "PAY_PROFESSIONAL_DIRECTLY",
+        },
+        { status: 409, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
     if (
       !professional.stripe_account_id
     ) {
