@@ -166,9 +166,12 @@ export async function syncProfessionalSubscription(
     matchesVerifiedProfession &&
     process.env.FG_DIRECT_PLAN_ENABLED === "true";
 
-  // Preserve the existing Premium recognition rule.
+  // Keep legacy Premium subscriptions working, but never misclassify
+  // a DIRECT Stripe Price as PREMIUM if its metadata is missing or stale.
   const isPremium =
-    isActive && stripePlan !== "DIRECT";
+    isActive &&
+    stripePlan !== "DIRECT" &&
+    !matchesDirectPrice;
 
   const {
     error:
