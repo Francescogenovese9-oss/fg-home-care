@@ -113,6 +113,7 @@ export default function AppointmentRequestForm({
       servicePostalCode: "",
       serviceAccessNotes: "",
       patientNotes: "",
+      healthDataConsent: false,
     },
   });
 
@@ -526,6 +527,13 @@ export default function AppointmentRequestForm({
             </p>
           </div>
 
+          <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
+            <label htmlFor="healthDataConsent" className="flex items-start gap-3 text-sm text-slate-800">
+              <input id="healthDataConsent" type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-blue-700" {...register("healthDataConsent")} />
+              <span>Consenso esplicito per i dati relativi alla salute. Acconsento al trattamento, da parte di FG Home Care, delle informazioni sulla salute che inserisco nella richiesta, per gestire la prenotazione e trasmetterle esclusivamente al professionista scelto. Ho letto l'<a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 underline">Informativa Privacy</a>. Comprendo che posso revocare il consenso contattando il titolare, senza pregiudicare i trattamenti già effettuati. Il consenso è distinto dall'accettazione dei Termini e dall'eventuale consenso sanitario alla prestazione.</span>
+            </label>
+            {errors.healthDataConsent && <p role="alert" className="mt-2 text-sm text-red-600">{errors.healthDataConsent.message}</p>}
+          </div>
           {serverError && (
             <div
               role="alert"
