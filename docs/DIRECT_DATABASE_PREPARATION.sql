@@ -3,7 +3,7 @@
 -- La migrazione va generata tramite Supabase CLI e testata su ambiente di staging.
 BEGIN;
 ALTER TABLE public.professional_profiles
-  DROP CONSTRAINT professional_profiles_subscription_plan_check;
+  DROP CONSTRAINT IF EXISTS professional_profiles_subscription_plan_check;
 ALTER TABLE public.professional_profiles
   ADD CONSTRAINT professional_profiles_subscription_plan_check
   CHECK (subscription_plan = ANY (ARRAY['BASIC'::text, 'PREMIUM'::text, 'DIRECT'::text]));
@@ -27,16 +27,31 @@ BEGIN
 END;
 $route_required$;
 
+DROP TRIGGER IF EXISTS appointments_payment_route_required ON public.appointments;
 CREATE TRIGGER appointments_payment_route_required
 BEFORE INSERT ON public.appointments
 FOR EACH ROW EXECUTE FUNCTION public.require_appointment_payment_route_on_insert();
 
+ALTER TABLE public.appointments
+  DROP CONSTRAINT IF EXISTS appointments_service_payment_route_check;
 ALTER TABLE public.appointments
   ADD CONSTRAINT appointments_service_payment_route_check
   CHECK (
     service_payment_route IS NULL OR
     service_payment_route IN ('STRIPE_PLATFORM', 'PAY_PROFESSIONAL_DIRECTLY')
   );
+
+-- DIRECT bookings must not be assigned a platform-payment status.
+-- NOT VALID avoids scanning legacy rows at deploy time; new INSERT/UPDATE
+-- rows are checked immediately. Validate after inspecting existing data.
+ALTER TABLE public.appointments
+  DROP CONSTRAINT IF EXISTS appointments_direct_payment_status_check;
+ALTER TABLE public.appointments
+  ADD CONSTRAINT appointments_direct_payment_status_check
+  CHECK (
+    service_payment_route IS DISTINCT FROM 'PAY_PROFESSIONAL_DIRECTLY'
+    OR payment_status = 'NOT_REQUIRED'
+  ) NOT VALID;
 
 -- Prevent changes after booking, including privileged accidental updates.
 -- A trusted migration can deliberately bypass this only by dropping the trigger.
@@ -53,6 +68,7 @@ BEGIN
 END;
 $route_guard$;
 
+DROP TRIGGER IF EXISTS appointments_payment_route_immutable ON public.appointments;
 CREATE TRIGGER appointments_payment_route_immutable
 BEFORE UPDATE ON public.appointments
 FOR EACH ROW EXECUTE FUNCTION public.prevent_appointment_payment_route_change();
