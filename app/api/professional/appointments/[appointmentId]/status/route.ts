@@ -608,12 +608,39 @@ export async function PATCH(
      * =====================================================
      */
 
+    // DIRECT bookings do not require a patient payment on the platform.
+    // Read the professional plan from the server and verify the active subscription.
+    // Preserve legacy NOT_REQUIRED behavior for older appointments.
+    let directBooking = false;
+    if (action === "ACCEPT" && process.env.FG_DIRECT_PLAN_ENABLED === "true") {
+      const adminForPlan = getSupabaseAdmin();
+      const { data: professionalPlan, error: planError } = await adminForPlan
+        .from("professional_profiles")
+        .select("subscription_plan, subscription_status")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (planError || !professionalPlan) {
+        return NextResponse.json(
+          { message: "Impossibile verificare il piano del professionista." },
+          { status: 503 }
+        );
+      }
+
+      directBooking =
+        professionalPlan.subscription_plan === "DIRECT" &&
+        professionalPlan.subscription_status === "active" &&
+        appointment.payment_status === "NOT_REQUIRED";
+    }
+
     const nextPaymentStatus:
       | PaymentStatus
       | undefined =
       action ===
       "ACCEPT"
-        ? "REQUIRES_PAYMENT"
+        ? directBooking
+          ? "NOT_REQUIRED"
+          : "REQUIRES_PAYMENT"
         : action ===
             "REJECT"
           ? "CANCELLED"
