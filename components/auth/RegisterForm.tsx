@@ -356,12 +356,12 @@ export default function RegisterForm() {
                     Il paziente prenota tramite FG Home Care, ma paga la prestazione
                     direttamente al professionista, fuori dalla piattaforma.
                     FG Home Care non incassa pagamenti dai pazienti per queste prestazioni:
-                    il professionista gestisce direttamente l'incasso e la fatturazione al paziente.
+                    il professionista gestisce direttamente l&apos;incasso e la fatturazione al paziente.
                     Prenotazioni, conferme e calendario restano in piattaforma.
                   </p>
                   <p className="mt-3 text-xs text-emerald-900">
                     DIRECT non è ancora selezionabile: sarà disponibile soltanto dopo
-                    l'attivazione e la verifica dei relativi servizi. Per ora scegli Basic o Premium.
+                    l&apos;attivazione e la verifica dei relativi servizi. Per ora scegli Basic o Premium.
                   </p>
                 </div>
 
