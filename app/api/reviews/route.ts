@@ -190,7 +190,8 @@ export async function POST(
           patient_id,
           professional_id,
           status,
-          payment_status
+          payment_status,
+          service_payment_route
         `
       )
       .eq(
@@ -287,14 +288,18 @@ export async function POST(
      * =====================================================
      */
 
+    const isEligibleDirectReview =
+      appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" &&
+      appointment.payment_status === "NOT_REQUIRED";
+
     if (
-      appointment.payment_status !==
-      "PAID"
+      appointment.payment_status !== "PAID" &&
+      !isEligibleDirectReview
     ) {
       return NextResponse.json(
         {
           message:
-            "La recensione è disponibile solo per prestazioni regolarmente pagate.",
+            "La recensione è disponibile per prestazioni pagate sulla piattaforma o DIRECT completate.",
         },
         {
           status: 409,
