@@ -8,6 +8,7 @@ on:
       - "lib/**"
       - "package.json"
       - "package-lock.json"
+      - "tests/**"
       - ".github/workflows/direct-validation.yml"
   workflow_dispatch:
 
@@ -26,6 +27,8 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx tsc --noEmit
+      - name: DIRECT regression tests
+        run: node --experimental-strip-types --test tests/direct-routing.test.mjs
       - name: Lint (continue to build for diagnostics)
         id: lint
         continue-on-error: true
