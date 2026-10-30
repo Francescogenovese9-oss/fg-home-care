@@ -6,6 +6,7 @@ type AppointmentAcceptedTemplateInput = {
   appointmentDate: string;
   appointmentTime: string;
   paymentUrl: string;
+  directPayment?: boolean;
 };
 
 function escapeHtml(
@@ -25,6 +26,7 @@ export function appointmentAcceptedTemplate({
   appointmentDate,
   appointmentTime,
   paymentUrl,
+  directPayment = false,
 }: AppointmentAcceptedTemplateInput) {
   const safePatientName =
     escapeHtml(patientName);
@@ -49,7 +51,7 @@ export function appointmentAcceptedTemplate({
     `${professionalName} ha accettato la tua richiesta di assistenza.\n\n` +
     `Data: ${appointmentDate}\n` +
     `Ora: ${appointmentTime}\n\n` +
-    `Puoi ora procedere al pagamento:\n` +
+    (directPayment ? `La prestazione si paga direttamente al professionista, non su FG Home Care.\n` : `Puoi ora procedere al pagamento:\n`) +
     `${paymentUrl}\n\n` +
     `FG Home Care`;
 
