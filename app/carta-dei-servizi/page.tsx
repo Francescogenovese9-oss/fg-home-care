@@ -80,7 +80,7 @@ const sections = [
   {
     title: "8. Trasparenza e documenti contrattuali",
     paragraphs: [
-      "Questa Carta dei Servizi illustra gli impegni e le caratteristiche generali della piattaforma. Non sostituisce i Termini e Condizioni, l'informativa privacy, la Cookie Policy o le informazioni precontrattuali applicabili.",
+      "Questa Carta dei Servizi illustra gli impegni e le caratteristiche generali della piattaforma. Non sostituisce i Termini e Condizioni, l&apos;informativa privacy, la Cookie Policy o le informazioni precontrattuali applicabili.",
       "Nessuna disposizione della Carta limita i diritti inderogabili dei consumatori, dei pazienti o degli interessati, né esclude responsabilità che non possono essere escluse per legge.",
     ],
   },
@@ -116,7 +116,7 @@ export default function CartaDeiServiziPage() {
           </div>
           <div className="mt-8 rounded-2xl border border-blue-100 bg-blue-50 p-6 text-sm leading-7 text-slate-700">
             Per domande o segnalazioni, consulta la pagina <Link href="/contatti" className="font-semibold text-blue-800 underline underline-offset-2">Contatti</Link>.
-            Prima dell'utilizzo dei servizi consulta anche i Termini e Condizioni e l'informativa privacy applicabili.
+            Prima dell&apos;utilizzo dei servizi consulta anche i Termini e Condizioni e l'informativa privacy applicabili.
           </div>
         </div>
       </main>
