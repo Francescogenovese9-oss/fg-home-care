@@ -98,7 +98,7 @@ export const appointmentSchema = z
       )
       .optional(),
 
-    healthDataConsent: z.literal(true, { error: "È necessario il consenso esplicito al trattamento dei dati sanitari per inviare la richiesta." }),
+    healthDataConsent: z.boolean().refine(value => value === true, "È necessario il consenso esplicito al trattamento dei dati sanitari per inviare la richiesta."),
 
     patientNotes: z
       .string()
