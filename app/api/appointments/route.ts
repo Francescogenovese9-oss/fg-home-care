@@ -897,10 +897,19 @@ export async function POST(
       );
     }
 
-    const directBooking =
-      process.env.FG_DIRECT_PLAN_ENABLED === "true" &&
+    // Never silently switch a DIRECT service to a patient Stripe charge.
+    if (
       billingProfessional.subscription_plan === "DIRECT" &&
-      billingProfessional.subscription_status === "active";
+      (process.env.FG_DIRECT_PLAN_ENABLED !== "true" ||
+        billingProfessional.subscription_status !== "active")
+    ) {
+      return NextResponse.json(
+        { message: "Il piano DIRECT del professionista non è attualmente disponibile per le prenotazioni." },
+        { status: 409, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
+    const directBooking = billingProfessional.subscription_plan === "DIRECT";
 
     /*
      * =====================================================
