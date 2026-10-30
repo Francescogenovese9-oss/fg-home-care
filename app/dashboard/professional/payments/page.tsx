@@ -354,7 +354,7 @@ export default async function ProfessionalPaymentsPage({
               Non è stato possibile continuare
               la configurazione Stripe.
               Riprova oppure aggiorna lo stato
-              dell'account.
+              dell&apos;account.
             </p>
           </div>
         )}
@@ -669,7 +669,7 @@ export default async function ProfessionalPaymentsPage({
                   </p>
 
                   <p className="mt-1 text-sm leading-6 text-slate-600">
-                    Dopo l'attivazione dei
+                    Dopo l&apos;attivazione dei
                     pagamenti FG Home Care,
                     gli importi spettanti
                     saranno destinati al tuo
