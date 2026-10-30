@@ -35,7 +35,7 @@ ALTER TABLE public.appointments
   ADD CONSTRAINT appointments_direct_payment_status_check
   CHECK (
     service_payment_route IS DISTINCT FROM 'PAY_PROFESSIONAL_DIRECTLY'
-    OR payment_status = 'NOT_REQUIRED'
+    OR (payment_status IS NOT NULL AND payment_status = 'NOT_REQUIRED')
   ) NOT VALID;
 
 -- Prevent changes after booking, including privileged accidental updates.
