@@ -128,10 +128,42 @@ export async function syncProfessionalSubscription(
       (healthcareDirectPriceId && subscribedPriceIds[0] === healthcareDirectPriceId)
     );
 
+  let matchesVerifiedProfession = false;
+  if (stripePlan === "DIRECT" && matchesDirectPrice) {
+    const { data: approvedProfessional, error: professionError } =
+      await supabaseAdmin
+        .from("professional_profiles")
+        .select("profession, verification_status")
+        .eq("user_id", professionalId)
+        .maybeSingle();
+
+    if (professionError) {
+      throw professionError;
+    }
+
+    const doctorProfessions = new Set([
+      "Medico chirurgo",
+      "Medico di medicina generale / Medico di base",
+      "Medico specialista",
+    ]);
+
+    const verifiedProfession = approvedProfessional?.profession;
+    const isDoctor = doctorProfessions.has(verifiedProfession || "");
+    const expectedPriceId = isDoctor
+      ? doctorDirectPriceId
+      : healthcareDirectPriceId;
+
+    matchesVerifiedProfession =
+      approvedProfessional?.verification_status === "APPROVED" &&
+      Boolean(verifiedProfession && expectedPriceId) &&
+      subscribedPriceIds[0] === expectedPriceId;
+  }
+
   const isDirect =
     isActive &&
     stripePlan === "DIRECT" &&
     matchesDirectPrice &&
+    matchesVerifiedProfession &&
     process.env.FG_DIRECT_PLAN_ENABLED === "true";
 
   // Preserve the existing Premium recognition rule.
