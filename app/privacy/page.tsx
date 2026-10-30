@@ -28,7 +28,7 @@ export default function PrivacyPage() {
           <p className="text-sm font-semibold uppercase tracking-widest text-blue-700">Protezione dei dati personali</p>
           <h1 className="mt-3 text-3xl font-bold text-blue-950 sm:text-4xl">Informativa Privacy</h1>
           <p className="mt-5 rounded-xl border border-amber-200 bg-amber-50 p-4 text-sm leading-6 text-amber-950">
-            Questa informativa descrive i principali trattamenti di dati effettuati attraverso FG Home Care. Prima dell'attivazione commerciale dei servizi che comportano dati sanitari occorre completare la verifica delle basi giuridiche, degli accordi con i fornitori, dei trasferimenti internazionali e dei tempi di conservazione.
+            Questa informativa descrive i principali trattamenti di dati effettuati attraverso FG Home Care. Prima dell&apos;attivazione commerciale dei servizi che comportano dati sanitari occorre completare la verifica delle basi giuridiche, degli accordi con i fornitori, dei trasferimenti internazionali e dei tempi di conservazione.
           </p>
           <div className="mt-8 space-y-8">
             {sections.map((section) => (
