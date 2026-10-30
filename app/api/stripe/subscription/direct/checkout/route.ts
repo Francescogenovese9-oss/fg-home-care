@@ -426,7 +426,7 @@ export async function POST(
     return NextResponse.json(
       {
         message:
-          "Impossibile avviare il abbonamento DIRECT.",
+          "Impossibile avviare l'abbonamento DIRECT.",
       },
       {
         status: 500,
