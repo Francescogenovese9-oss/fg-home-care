@@ -118,8 +118,9 @@ export async function syncProfessionalSubscription(
     stripePlan === "DIRECT" &&
     process.env.FG_DIRECT_PLAN_ENABLED === "true";
 
+  // Fail closed: an unenabled DIRECT price must never grant Premium.
   const isPremium =
-    isActive && !isDirect;
+    isActive && stripePlan !== "DIRECT";
 
   const {
     error:
