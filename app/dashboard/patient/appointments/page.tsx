@@ -1296,7 +1296,9 @@ export default async function PatientAppointmentsPage({
 
                             {appointment.service_type === "VIDEO_CONSULTATION" &&
                               appointment.status === "ACCEPTED" &&
-                              appointment.payment_status === "PAID" && (
+                              (appointment.payment_status === "PAID" ||
+                                (appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" &&
+                                 appointment.payment_status === "NOT_REQUIRED")) && (
                               <VideoConsultationButton
                                 appointmentId={appointment.id}
                               />
