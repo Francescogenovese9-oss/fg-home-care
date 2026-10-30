@@ -78,7 +78,8 @@ export async function POST(
         appointment_time,
         duration_minutes,
         status,
-        payment_status
+        payment_status,
+        service_payment_route
       `)
       .eq("id", appointmentId)
       .maybeSingle();
@@ -159,8 +160,9 @@ export async function POST(
     }
 
     if (
-      appointment.payment_status !==
-      "PAID"
+      appointment.payment_status !== "PAID" &&
+      !(appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" &&
+        appointment.payment_status === "NOT_REQUIRED")
     ) {
       return NextResponse.json(
         {
