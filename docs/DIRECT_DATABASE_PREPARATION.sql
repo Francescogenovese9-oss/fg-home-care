@@ -12,26 +12,11 @@ ALTER TABLE public.professional_profiles
 ALTER TABLE public.appointments
   ADD COLUMN IF NOT EXISTS service_payment_route text;
 
--- Existing appointments may retain NULL. New appointments must specify
--- a route; no hardcoded cutoff date is required.
-CREATE OR REPLACE FUNCTION public.require_appointment_payment_route_on_insert()
-RETURNS trigger
-LANGUAGE plpgsql
-SET search_path = ''
-AS $route_required$
-BEGIN
-  IF NEW.service_payment_route IS NULL THEN
-    RAISE EXCEPTION 'Payment route is required for new appointments';
-  END IF;
-  RETURN NEW;
-END;
-$route_required$;
-
-DROP TRIGGER IF EXISTS appointments_payment_route_required ON public.appointments;
-CREATE TRIGGER appointments_payment_route_required
-BEFORE INSERT ON public.appointments
-FOR EACH ROW EXECUTE FUNCTION public.require_appointment_payment_route_on_insert();
-
+-- Rollout compatibility: existing production code still inserts appointments
+-- without service_payment_route. Do not enforce NOT NULL / insert trigger
+-- until the new application code is deployed everywhere and verified.
+-- The new application explicitly snapshots the route on each booking.
+-- A later, separate activation migration can require a non-NULL route.
 ALTER TABLE public.appointments
   DROP CONSTRAINT IF EXISTS appointments_service_payment_route_check;
 ALTER TABLE public.appointments
