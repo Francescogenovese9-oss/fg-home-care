@@ -185,23 +185,19 @@ export async function POST(
       );
     }
 
+    const existingSubscriptionStatuses = new Set([
+      "active", "trialing", "past_due", "unpaid", "incomplete", "paused",
+    ]);
     if (
-      professional
-        .subscription_status ===
-        "active" &&
-      professional
-        .stripe_subscription_id
+      professional.stripe_subscription_id &&
+      existingSubscriptionStatuses.has(professional.subscription_status ?? "")
     ) {
       return NextResponse.json(
         {
-          message:
-            "L'abbonamento Premium è già attivo.",
-          alreadyActive:
-            true,
+          message: "Gestisci prima l'abbonamento esistente dal portale di fatturazione.",
+          alreadyActive: true,
         },
-        {
-        status: 409,
-        }
+        { status: 409 }
       );
     }
 
