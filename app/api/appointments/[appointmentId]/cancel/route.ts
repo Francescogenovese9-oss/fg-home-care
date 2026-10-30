@@ -84,6 +84,7 @@ export async function PATCH(
         `
           id,
           patient_id,
+          professional_id,
           status,
           payment_status,
           service_payment_route,
@@ -210,6 +211,38 @@ export async function PATCH(
         },
         { status: 409 }
       );
+    }
+
+    // Notify the professional after the cancellation is committed.
+    // Notification failure must not undo or misreport a successful cancellation.
+    if (isAcceptedDirect) {
+      try {
+        const { data: existing, error: lookupError } = await admin
+          .from("notifications")
+          .select("id")
+          .eq("user_id", appointment.professional_id)
+          .eq("appointment_id", appointmentId)
+          .eq("type", "APPOINTMENT_CANCELLED")
+          .maybeSingle();
+        if (lookupError) throw lookupError;
+        if (!existing) {
+          const { error: notificationError } = await admin
+            .from("notifications")
+            .insert({
+              user_id: appointment.professional_id,
+              appointment_id: appointmentId,
+              review_report_id: null,
+              type: "APPOINTMENT_CANCELLED",
+              title: "Prenotazione DIRECT annullata dal paziente",
+              message: "Il paziente ha annullato la prenotazione DIRECT. Eventuali pagamenti diretti sono gestiti tra paziente e professionista.",
+              link: "/dashboard/professional/appointments?appointmentId=" + encodeURIComponent(appointmentId),
+              read: false,
+            });
+          if (notificationError) throw notificationError;
+        }
+      } catch (notificationError) {
+        console.error("Annullamento DIRECT riuscito, notifica professionista non inviata:", notificationError);
+      }
     }
 
     return NextResponse.json({
