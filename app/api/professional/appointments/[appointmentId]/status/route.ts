@@ -329,6 +329,7 @@ export async function PATCH(
           professional_id,
           status,
           payment_status,
+          service_payment_route,
           appointment_date,
           appointment_time,
           duration_minutes,
@@ -627,11 +628,35 @@ export async function PATCH(
         );
       }
 
+      // Never reclassify the booking based on a later subscription change.
+      if (
+        appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" &&
+        (professionalPlan.subscription_plan !== "DIRECT" ||
+          professionalPlan.subscription_status !== "active" ||
+          process.env.FG_DIRECT_PLAN_ENABLED !== "true")
+      ) {
+        return NextResponse.json(
+          { message: "La prenotazione DIRECT richiede un abbonamento DIRECT attivo." },
+          { status: 409 }
+        );
+      }
+
+      if (
+        appointment.service_payment_route === "STRIPE_PLATFORM" &&
+        professionalPlan.subscription_plan === "DIRECT"
+      ) {
+        return NextResponse.json(
+          { message: "La modalità di pagamento della prenotazione non corrisponde al piano attuale." },
+          { status: 409 }
+        );
+      }
+
       if (professionalPlan.subscription_plan === "DIRECT") {
         if (
           process.env.FG_DIRECT_PLAN_ENABLED !== "true" ||
           professionalPlan.subscription_status !== "active" ||
-          appointment.payment_status !== "NOT_REQUIRED"
+          appointment.payment_status !== "NOT_REQUIRED" ||
+          appointment.service_payment_route !== "PAY_PROFESSIONAL_DIRECTLY"
         ) {
           return NextResponse.json(
             { message: "La prenotazione DIRECT non può essere accettata: verifica l'abbonamento e lo stato del pagamento." },
