@@ -1,6 +1,8 @@
 import "server-only";
 
 import Stripe from "stripe";
+import { isProfession } from "@/lib/professions";
+import { isDoctorProfession } from "@/lib/subscriptions/direct-plan";
 
 import {
   getSupabaseAdmin,
@@ -141,22 +143,20 @@ export async function syncProfessionalSubscription(
       throw professionError;
     }
 
-    const doctorProfessions = new Set([
-      "Medico chirurgo",
-      "Medico di medicina generale / Medico di base",
-      "Medico specialista",
-    ]);
-
     const verifiedProfession = approvedProfessional?.profession;
-    const isDoctor = doctorProfessions.has(verifiedProfession || "");
-    const expectedPriceId = isDoctor
-      ? doctorDirectPriceId
-      : healthcareDirectPriceId;
-
-    matchesVerifiedProfession =
+    if (
       approvedProfessional?.verification_status === "APPROVED" &&
-      Boolean(verifiedProfession && expectedPriceId) &&
-      subscribedPriceIds[0] === expectedPriceId;
+      typeof verifiedProfession === "string" &&
+      isProfession(verifiedProfession)
+    ) {
+      const expectedPriceId = isDoctorProfession(verifiedProfession)
+        ? doctorDirectPriceId
+        : healthcareDirectPriceId;
+
+      matchesVerifiedProfession =
+        Boolean(expectedPriceId) &&
+        subscribedPriceIds[0] === expectedPriceId;
+    }
   }
 
   const isDirect =
