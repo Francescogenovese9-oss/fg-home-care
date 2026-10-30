@@ -86,6 +86,7 @@ export async function PATCH(
           patient_id,
           status,
           payment_status,
+          service_payment_route,
           appointment_date,
           appointment_time
         `
@@ -127,14 +128,28 @@ export async function PATCH(
       );
     }
 
-    if (appointment.status !== "PENDING") {
+    const isAcceptedDirect =
+      appointment.status === "ACCEPTED" &&
+      appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" &&
+      appointment.payment_status === "NOT_REQUIRED";
+
+    if (appointment.status !== "PENDING" && !isAcceptedDirect) {
       return NextResponse.json(
         {
           message:
-            "Puoi annullare soltanto le richieste ancora in attesa.",
+            "Puoi annullare le richieste in attesa o le prenotazioni DIRECT accettate.",
         },
         { status: 409 }
       );
+    }
+
+    if (isAcceptedDirect) {
+      // Use the shared Europe/Rome parser to handle daylight saving time.
+      const { parseRomeDateTime } = await import("@/lib/payments/cancellation-policy");
+      const appointmentStart = parseRomeDateTime(appointment.appointment_date, appointment.appointment_time);
+      if (Date.now() >= appointmentStart.getTime()) {
+        return NextResponse.json({ message: "La prenotazione DIRECT è già iniziata: contatta il professionista." }, { status: 409 });
+      }
     }
 
     const now = new Date().toISOString();
@@ -148,10 +163,14 @@ export async function PATCH(
         status: "CANCELLED",
         cancelled_at: now,
         updated_at: now,
+        ...(isAcceptedDirect ? {
+          cancellation_policy: "Annullamento DIRECT del paziente: eventuali importi pagati direttamente sono gestiti con il professionista."
+        } : {}),
       })
       .eq("id", appointmentId)
       .eq("patient_id", user.id)
-      .eq("status", "PENDING")
+      .eq("status", isAcceptedDirect ? "ACCEPTED" : "PENDING")
+      .eq("payment_status", appointment.payment_status)
       .select(
         `
           id,
@@ -187,7 +206,7 @@ export async function PATCH(
       return NextResponse.json(
         {
           message:
-            "La richiesta non è più in attesa e non può essere annullata.",
+            "La prenotazione è stata modificata e non può essere annullata.",
         },
         { status: 409 }
       );
@@ -197,7 +216,9 @@ export async function PATCH(
       success: true,
       appointment: cancelledAppointment,
       message:
-        "Richiesta annullata correttamente.",
+        isAcceptedDirect
+          ? "Prenotazione DIRECT annullata. Per eventuali pagamenti diretti contatta il professionista."
+          : "Richiesta annullata correttamente.",
     });
   } catch (error) {
     console.error(
