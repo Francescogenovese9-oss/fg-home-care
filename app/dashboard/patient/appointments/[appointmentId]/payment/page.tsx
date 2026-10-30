@@ -184,6 +184,11 @@ export default async function AppointmentPaymentPage({
     );
   }
 
+  // DIRECT and legacy non-payable appointments must never display Stripe Elements.
+  if (appointment.payment_status === "NOT_REQUIRED") {
+    redirect("/dashboard/patient/appointments");
+  }
+
   /*
    * Se è già pagata non mostriamo
    * nuovamente Stripe Elements.
