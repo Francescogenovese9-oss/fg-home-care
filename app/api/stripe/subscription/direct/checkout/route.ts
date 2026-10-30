@@ -240,6 +240,7 @@ export async function POST(
       !configuredPrice.active ||
       configuredPrice.type !== "recurring" ||
       configuredPrice.recurring?.interval !== "month" ||
+      configuredPrice.recurring?.interval_count !== 1 ||
       configuredPrice.currency !== "eur" ||
       configuredPrice.unit_amount !== (doctor ? 4990 : 2990)
     ) {
