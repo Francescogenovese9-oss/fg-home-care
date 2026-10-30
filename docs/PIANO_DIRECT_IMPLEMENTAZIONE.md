@@ -1,0 +1,32 @@
+# Piano DIRECT — specifica di implementazione (bozza non pubblicata)
+Data: 2026-10-30. Branch di lavoro: feature/direct-plan-2990-staging.
+
+## Proposta commerciale
+- BASIC: €0/mese, commissione 15% su prestazioni incassate in piattaforma.
+- PREMIUM: €19,90/mese, commissioni progressive 8%-5% su prestazioni incassate in piattaforma.
+- DIRECT: **€29,90/mese**, 0% commissioni sulle prestazioni; pagamento del paziente **direttamente al professionista, fuori da FG Home Care**. Canone di abbonamento pagato dal professionista a FG Home Care, non dal paziente.
+- Prezzo sperimentale di lancio, non garanzia di conversione; rivedere dopo dati reali.
+- Non è previsto alcun addebito al paziente da parte della piattaforma per appuntamenti DIRECT.
+
+## Testo pubblico proposto
+**DIRECT — 29,90 €/mese · Zero commissioni.** Ricevi richieste e gestisci gli appuntamenti con FG Home Care, senza incassare le prestazioni attraverso la piattaforma. Il paziente paga direttamente il professionista con modalità concordate tra loro; il professionista emette la relativa documentazione fiscale al paziente. FG Home Care fattura al professionista esclusivamente il canone DIRECT. La piattaforma conserva il flusso di prenotazione, conferma, calendario, notifiche e recensioni, nel rispetto delle regole di servizio. Nessuna garanzia di numero minimo di richieste o prestazioni. Abbonamento soggetto a rinnovo, disdetta e termini esposti prima dell'acquisto.
+
+## Regole funzionali e di sicurezza da implementare prima dell'attivazione
+1. DB: aggiungere DIRECT all'enum/check di subscription_plan e a ogni validazione/RLS/trigger pertinente; migrazione versionata e rollback.
+2. Stripe Billing: creare **un nuovo Price** ricorrente di €29,90/mese per l'abbonamento DIRECT, distinto dal Price PREMIUM. Configurare STRIPE_DIRECT_PRICE_ID soltanto in ambiente autorizzato; non effettuare addebiti per collaudo.
+3. Checkout subscription: accettare un piano esplicito, allowlist PREMIUM/DIRECT, risolvere Price ID server-side, mai dal client. Impedire due abbonamenti contemporanei; gestire upgrade/downgrade e pro-rata soltanto con regole dichiarate.
+4. Webhook: verificare firma e idempotenza, leggere fg_home_care_plan/Price effettivo dalla subscription Stripe; sincronizzare DIRECT soltanto per subscription active; su cancellazione, unpaid, past_due, incomplete, scadenza tornare al piano corretto secondo regole. Non attribuire DIRECT da metadata utente non attendibile.
+5. UI registrazione: terza card DIRECT con prezzo, commissioni 0%, differenza fra pagamento della prestazione e canone, disclaimer. Registrazione DIRECT non deve attivare gratuitamente le funzionalità riservate prima del pagamento e della verifica documentale.
+6. Dashboard professionista: mostrare piano, stato, rinnovo, cambio piano, portale di fatturazione e storico appuntamenti DIRECT. Conteggi analytics separati per DIRECT.
+7. Appuntamenti DIRECT: consentire richiesta e accettazione **senza creare PaymentIntent/Checkout per il paziente**, soltanto dopo approvazione profilo e abbonamento DIRECT attivo. Introdurre stato/flag di regolamento DIRECT; impedire che il flusso payment-required crei addebiti. Notifiche e calendario funzionanti; consenso sanitario e minimizzazione invariati.
+8. Gating: **NEXT_PUBLIC_TRANSACTIONS_ENABLED=false rimane invariato**. Un eventuale test di prenotazione DIRECT va abilitato soltanto in ambiente isolato o con feature flag server-side per account di prova esplicitamente autorizzati, mai globalmente.
+9. Recensioni: ammettere solo appuntamenti DIRECT effettivamente svolti e confermati, non semplicemente accettati; controlli anti-abuso.
+10. Sicurezza: impedire accesso a recapiti/dati sanitari senza autorizzazione, RLS corretta, nessuna fuga di dati fra paziente/professionista, audit trail e revoca permessi dopo scadenza abbonamento.
+11. Legal/fisco: aggiornare T&C, Privacy, Carta dei Servizi, informative prenotazione, fatturazione canoni e gestione cancellazioni/no-show. Validazione da avvocato e commercialista prima della pubblicazione.
+12. Test: suite BASIC/PREMIUM invariata; DIRECT registrazione, checkout test subscription, webhook, annullamento, scadenza, richiesta/accettazione, chat, email, video, recensioni, isolamento dati. **Nessun pagamento reale e nessuna transazione paziente**.
+
+## Limitazioni e decisioni
+- Il pagamento diretto al professionista non impedisce accordi fuori piattaforma: il valore di DIRECT è mantenere agenda, conferme e reputazione dentro FG Home Care.
+- L'abbonamento DIRECT non deve aggirare la verifica dei documenti professionali.
+- Nessun piano DIRECT può essere considerato attivo finché DB, webhook, Stripe e UI non sono coerenti e testati.
+- Questa specifica non equivale a funzionalità implementata o distribuita.
