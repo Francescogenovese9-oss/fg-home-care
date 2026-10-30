@@ -35,6 +35,7 @@ type Appointment = {
   professional_notes: string | null;
   status: AppointmentStatus;
   payment_status: string;
+  service_payment_route: string | null;
   created_at: string;
   updated_at: string;
 };
@@ -688,7 +689,7 @@ export default async function ProfessionalAppointmentsPage({
 
                     {appointment.service_type === "VIDEO_CONSULTATION" &&
                       appointment.status === "ACCEPTED" &&
-                      appointment.payment_status === "PAID" && (
+                      (appointment.payment_status === "PAID" || (appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" && appointment.payment_status === "NOT_REQUIRED")) && (
                         <div className="mt-3">
                           <VideoConsultationButton
                             appointmentId={appointment.id}
