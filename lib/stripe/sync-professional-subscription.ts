@@ -120,7 +120,6 @@ export async function syncProfessionalSubscription(
   );
   const doctorDirectPriceId = process.env.STRIPE_DIRECT_DOCTOR_PRICE_ID?.trim();
   const healthcareDirectPriceId = process.env.STRIPE_DIRECT_HEALTHCARE_PRICE_ID?.trim();
-  const premiumPriceId = process.env.STRIPE_PREMIUM_PRICE_ID?.trim();
 
   const matchesDirectPrice =
     subscribedPriceIds.length === 1 &&
@@ -129,20 +128,15 @@ export async function syncProfessionalSubscription(
       (healthcareDirectPriceId && subscribedPriceIds[0] === healthcareDirectPriceId)
     );
 
-  const matchesPremiumPrice =
-    subscribedPriceIds.length === 1 &&
-    Boolean(premiumPriceId && subscribedPriceIds[0] === premiumPriceId);
-
   const isDirect =
     isActive &&
     stripePlan === "DIRECT" &&
     matchesDirectPrice &&
     process.env.FG_DIRECT_PLAN_ENABLED === "true";
 
+  // Preserve the existing Premium recognition rule.
   const isPremium =
-    isActive &&
-    stripePlan !== "DIRECT" &&
-    matchesPremiumPrice;
+    isActive && stripePlan !== "DIRECT";
 
   const {
     error:
