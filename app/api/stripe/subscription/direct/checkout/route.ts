@@ -234,6 +234,18 @@ export async function POST(
     const stripe =
       getStripe();
 
+    // Reject a misconfigured Stripe Price before opening Checkout.
+    const configuredPrice = await stripe.prices.retrieve(priceId);
+    if (
+      !configuredPrice.active ||
+      configuredPrice.type !== "recurring" ||
+      configuredPrice.recurring?.interval !== "month" ||
+      configuredPrice.currency !== "eur" ||
+      configuredPrice.unit_amount !== (doctor ? 4990 : 2990)
+    ) {
+      throw new Error("Il prezzo Stripe DIRECT non corrisponde alla tariffa prevista.");
+    }
+
     let customerId =
       professional
         .stripe_customer_id;
