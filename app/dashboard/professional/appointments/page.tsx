@@ -708,9 +708,8 @@ export default async function ProfessionalAppointmentsPage({
                     currentNotes={
                       appointment.professional_notes
                     }
-                    paymentStatus={
-                      appointment.payment_status
-                    }
+                    paymentStatus={appointment.payment_status}
+                    servicePaymentRoute={appointment.service_payment_route}
                     appointmentDate={
                       appointment.appointment_date
                     }
