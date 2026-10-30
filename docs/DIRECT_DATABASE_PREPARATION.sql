@@ -25,14 +25,14 @@ CREATE OR REPLACE FUNCTION public.prevent_appointment_payment_route_change()
 RETURNS trigger
 LANGUAGE plpgsql
 SET search_path = ''
-AS $
+AS $route_guard$
 BEGIN
   IF NEW.service_payment_route IS DISTINCT FROM OLD.service_payment_route THEN
     RAISE EXCEPTION 'Appointment payment route is immutable';
   END IF;
   RETURN NEW;
 END;
-$;
+$route_guard$;
 
 CREATE TRIGGER appointments_payment_route_immutable
 BEFORE UPDATE ON public.appointments
