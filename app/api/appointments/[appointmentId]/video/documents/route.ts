@@ -1,12 +1,13 @@
 import {NextResponse} from "next/server";
 import {createClient} from "@/lib/supabase/server";
 import {getSupabaseAdmin} from "@/lib/supabase/admin";
+import {parseRomeDateTime} from "@/lib/payments/cancellation-policy";
 type Context={params:Promise<{appointmentId:string}>};
 async function access(context:Context){const {appointmentId}=await context.params;const db=await createClient();const {data:{user}}=await db.auth.getUser();if(!user)return null;const {data:appointment}=await db.from("appointments").select("id,patient_id,professional_id,service_type,appointment_date,appointment_time,duration_minutes,status").eq("id",appointmentId).maybeSingle();if(!appointment||appointment.service_type!=="VIDEO_CONSULTATION"||![appointment.patient_id,appointment.professional_id].includes(user.id))return null;return {user,appointment};}
 
 function sessionExpired(a:{appointment_date:string;appointment_time:string;duration_minutes:number;status:string}){
  if(a.status==="COMPLETED"||a.status==="CANCELLED"||a.status==="REJECTED")return true;
- const start=new Date(a.appointment_date+"T"+a.appointment_time+"+01:00");
+ const start=parseRomeDateTime(a.appointment_date,a.appointment_time);
  // The authoritative window is validated by the video-room endpoint; this is a fallback only.
  return !Number.isNaN(start.getTime()) && Date.now()>start.getTime()+((Number(a.duration_minutes)||60)+90)*60000;
 }
