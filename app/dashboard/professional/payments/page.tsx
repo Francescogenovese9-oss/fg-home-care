@@ -361,6 +361,7 @@ export default async function ProfessionalPaymentsPage({
 
         <ProfessionalSubscriptionCard
           plan={subscriptionPlan}
+          profession={professionalProfile.profession}
           status={
             professionalProfile.subscription_status ??
             "INACTIVE"
