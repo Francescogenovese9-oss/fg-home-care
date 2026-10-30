@@ -990,6 +990,9 @@ export async function POST(
         status:
           "PENDING",
 
+        service_payment_route: directBooking
+          ? "PAY_PROFESSIONAL_DIRECTLY"
+          : "STRIPE_PLATFORM",
         ...(directBooking
           ? { payment_status: "NOT_REQUIRED", commission_percent: 0 }
           : {}),
