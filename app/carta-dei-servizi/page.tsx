@@ -11,6 +11,14 @@ export const metadata: Metadata = {
 
 const sections = [
   {
+    title: "Piano DIRECT — pagamento diretto (in preparazione)",
+    paragraphs: [
+      "DIRECT è un piano previsto per i professionisti, non ancora acquistabile: 29,90 € al mese per professionisti sanitari non medici e 49,90 € al mese per medici, secondo qualifica verificata. FG Home Care non applicherà commissioni sulle singole prestazioni DIRECT.",
+      "Il paziente prenota tramite FG Home Care ma non paga la prestazione sulla piattaforma. Il pagamento avviene direttamente dal paziente al professionista, che gestisce incasso e documentazione fiscale; FG Home Care incassa dal professionista esclusivamente il canone mensile DIRECT.",
+      "Richieste, conferme, calendario e notifiche resteranno nella piattaforma. Nessun numero minimo di prenotazioni è garantito. Condizioni di rinnovo, cancellazione e attivazione saranno rese disponibili prima dell'acquisto. Le funzionalità sono subordinate alle verifiche tecniche e legali prima della pubblicazione."
+    ],
+  },
+  {
     title: "Identificazione del gestore",
     paragraphs: [
       "FG Home Care — ditta individuale, P. IVA 03587900782, sede legale in Via Dogana 20, 87032 Amantea (CS), Italia. Email: info@fghomecare.it. Nome e cognome del titolare: Francesco Genovese. PEC: amministrazionefghomecare@pec.it.",
