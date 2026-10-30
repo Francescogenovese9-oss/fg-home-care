@@ -228,6 +228,7 @@ export default async function ProfessionalAppointmentsPage({
         professional_notes,
         status,
         payment_status,
+        service_payment_route,
         created_at,
         updated_at
       `
