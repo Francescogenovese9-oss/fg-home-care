@@ -30,3 +30,8 @@ Data: 2026-10-30. Branch di lavoro: feature/direct-plan-2990-staging.
 - L'abbonamento DIRECT non deve aggirare la verifica dei documenti professionali.
 - Nessun piano DIRECT può essere considerato attivo finché DB, webhook, Stripe e UI non sono coerenti e testati.
 - Questa specifica non equivale a funzionalità implementata o distribuita.
+
+## Stato integrazione (2026-10-30)
+- Fatto nel ramo di sviluppo: modello prezzi DIRECT in lib/subscriptions/direct-plan.ts; scheda informativa non acquistabile in registrazione; sezioni dedicate in Termini e Condizioni, Privacy e Carta dei Servizi.
+- Da fare prima della pubblicazione: migrazione DB, Stripe Price IDs e webhook, checkout abbonamento, dashboard, prenotazioni senza PaymentIntent, notifiche e test end-to-end.
+- Non sono stati modificati database live, Stripe live, Vercel o flag globale di transazione. Non affermare che DIRECT è attivo.
