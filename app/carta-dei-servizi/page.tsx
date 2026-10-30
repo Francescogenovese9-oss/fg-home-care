@@ -58,7 +58,7 @@ const sections = [
     title: "6. Riservatezza e protezione dei dati",
     paragraphs: [
       "FG Home Care tratta i dati personali necessari alla gestione degli account, delle ricerche, delle prenotazioni, delle comunicazioni, dei pagamenti e della sicurezza del servizio secondo il Regolamento (UE) 2016/679 (GDPR) e le altre norme applicabili.",
-      "Alcune informazioni possono rivelare dati relativi alla salute e richiedono particolari garanzie. L'apposita informativa privacy descrive finalità, basi giuridiche, destinatari, conservazione, trasferimenti e diritti degli interessati, con le limitazioni e le verifiche ancora indicate nel documento.",
+      "La breve descrizione della richiesta e i messaggi possono contenere dati relativi alla salute e richiedono particolari garanzie. Il caricamento di documenti sanitari è consentito soltanto nell'area del videoconsulto; i documenti sono destinati alla cancellazione alla chiusura della sessione, con una procedura periodica di recupero per i casi di abbandono. L'apposita informativa privacy descrive finalità, basi giuridiche, destinatari, conservazione, trasferimenti e diritti degli interessati, con le limitazioni e le verifiche ancora indicate nel documento.",
       "I professionisti restano tenuti agli obblighi di segreto professionale, riservatezza e protezione dei dati connessi alle prestazioni da essi svolte, secondo i rispettivi ruoli previsti dalla normativa.",
     ],
   },
