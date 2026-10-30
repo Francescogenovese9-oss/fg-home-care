@@ -35,7 +35,11 @@ Data: 2026-10-30. Branch di lavoro: feature/direct-plan-2990-staging.
 - Branch: `feature/direct-plan-2990-staging`, PR #10. Non ancora distribuito su `main`.
 - CI: TypeScript, build, lint mirato e test di routing DIRECT eseguiti con esito positivo fino al commit `9198f5a0`; ricontrollare il commit finale.
 - Implementati: checkout DIRECT protetto da flag, sincronizzazione abbonamenti con controlli professione/Price, snapshot immutabile della modalità di pagamento, prenotazione e accettazione senza Stripe paziente, blocchi PaymentIntent/rimborsi Stripe, annullamento professionista, messaggi, dashboard paziente/professionista, recensioni per prestazioni completate, promemoria di completamento, videoconsulti DIRECT.
-- `docs/DIRECT_DATABASE_PREPARATION.sql` è uno script preparatorio, NON applicato al database. Contiene vincolo piano DIRECT, route di pagamento obbligatoria all'inserimento, immutabilità, e vincolo di stato pagamento DIRECT; non sostituisce una migrazione versionata testata.
+- `docs/DIRECT_DATABASE_PREPARATION.sql` è uno script preparatorio, NON applicato al database. Contiene vincolo piano DIRECT, route di pagamento esplicita nel nuovo codice (senza trigger di obbligatorietà durante il rollout), immutabilità, e vincolo di stato pagamento DIRECT; non sostituisce una migrazione versionata testata.
 - **Bloccanti di rilascio**: (1) database di test isolato e migrazione verificata, (2) due Stripe Price ricorrenti in modalità test e relativi ID, (3) test end-to-end con abbonamento, webhook, prenotazione, annullamento, video, recensione, (4) approvazione legale/fiscale. Non usare dati o addebiti reali per i test.
 - **Sequenza rilascio**: prima test e migrazione DB compatibile, poi configurazione Price/variabili server, deploy del codice con DIRECT disabilitato, verifica funzionale, infine abilitazione controllata dei flag. Non attivare `FG_DIRECT_PLAN_ENABLED` finché i test non sono superati.
 - Nessuna modifica al database di produzione e nessun canone DIRECT addebitato.
+
+## Correzione rollout senza interruzione
+- Il codice `main` ancora in produzione può creare prenotazioni senza `service_payment_route`. La migrazione DB deve quindi essere applicabile **prima** del deploy applicativo senza bloccare le prenotazioni esistenti: nessun trigger di route obbligatoria nella prima fase.
+- Dopo deploy e verifica di tutti i percorsi di creazione, aggiungere in una **seconda migrazione** il vincolo di route obbligatoria per i nuovi inserimenti. Le prenotazioni storiche possono restare NULL.
