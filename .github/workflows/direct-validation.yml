@@ -26,9 +26,20 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npx tsc --noEmit
-      - run: npm run lint
-      - run: npm run build
+      - name: Lint (continue to build for diagnostics)
+        id: lint
+        continue-on-error: true
+        run: npm run lint
+      - name: Build
+        id: build
+        continue-on-error: true
+        run: npm run build
         env:
           NEXT_TELEMETRY_DISABLED: "1"
           NEXT_PUBLIC_TRANSACTIONS_ENABLED: "false"
           FG_DIRECT_PLAN_ENABLED: "false"
+      - name: Enforce lint and build success
+        if: always()
+        run: |
+          test "${{ steps.lint.outcome }}" = "success"
+          test "${{ steps.build.outcome }}" = "success"
