@@ -116,7 +116,7 @@ export default function CartaDeiServiziPage() {
           </div>
           <div className="mt-8 rounded-2xl border border-blue-100 bg-blue-50 p-6 text-sm leading-7 text-slate-700">
             Per domande o segnalazioni, consulta la pagina <Link href="/contatti" className="font-semibold text-blue-800 underline underline-offset-2">Contatti</Link>.
-            Prima dell&apos;utilizzo dei servizi consulta anche i Termini e Condizioni e l'informativa privacy applicabili.
+            Prima dell&apos;utilizzo dei servizi consulta anche i Termini e Condizioni e l&apos;informativa privacy applicabili.
           </div>
         </div>
       </main>
