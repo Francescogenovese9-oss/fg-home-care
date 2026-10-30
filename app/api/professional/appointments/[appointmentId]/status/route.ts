@@ -612,7 +612,7 @@ export async function PATCH(
     // Read the professional plan from the server and verify the active subscription.
     // Preserve legacy NOT_REQUIRED behavior for older appointments.
     let directBooking = false;
-    if (action === "ACCEPT" && process.env.FG_DIRECT_PLAN_ENABLED === "true") {
+    if (action === "ACCEPT") {
       const adminForPlan = getSupabaseAdmin();
       const { data: professionalPlan, error: planError } = await adminForPlan
         .from("professional_profiles")
@@ -627,10 +627,19 @@ export async function PATCH(
         );
       }
 
-      directBooking =
-        professionalPlan.subscription_plan === "DIRECT" &&
-        professionalPlan.subscription_status === "active" &&
-        appointment.payment_status === "NOT_REQUIRED";
+      if (professionalPlan.subscription_plan === "DIRECT") {
+        if (
+          process.env.FG_DIRECT_PLAN_ENABLED !== "true" ||
+          professionalPlan.subscription_status !== "active" ||
+          appointment.payment_status !== "NOT_REQUIRED"
+        ) {
+          return NextResponse.json(
+            { message: "La prenotazione DIRECT non può essere accettata: verifica l'abbonamento e lo stato del pagamento." },
+            { status: 409 }
+          );
+        }
+        directBooking = true;
+      }
     }
 
     const nextPaymentStatus:
