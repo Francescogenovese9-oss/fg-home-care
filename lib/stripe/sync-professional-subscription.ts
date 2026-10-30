@@ -113,14 +113,36 @@ export async function syncProfessionalSubscription(
     subscription.metadata
       .fg_home_care_plan;
 
+  // Subscription metadata alone cannot authorize a plan.
+  // Match the actual recurring Price ID configured server-side.
+  const subscribedPriceIds = subscription.items.data.map(
+    (item) => item.price.id
+  );
+  const doctorDirectPriceId = process.env.STRIPE_DIRECT_DOCTOR_PRICE_ID?.trim();
+  const healthcareDirectPriceId = process.env.STRIPE_DIRECT_HEALTHCARE_PRICE_ID?.trim();
+  const premiumPriceId = process.env.STRIPE_PREMIUM_PRICE_ID?.trim();
+
+  const matchesDirectPrice =
+    subscribedPriceIds.length === 1 &&
+    Boolean(
+      (doctorDirectPriceId && subscribedPriceIds[0] === doctorDirectPriceId) ||
+      (healthcareDirectPriceId && subscribedPriceIds[0] === healthcareDirectPriceId)
+    );
+
+  const matchesPremiumPrice =
+    subscribedPriceIds.length === 1 &&
+    Boolean(premiumPriceId && subscribedPriceIds[0] === premiumPriceId);
+
   const isDirect =
     isActive &&
     stripePlan === "DIRECT" &&
+    matchesDirectPrice &&
     process.env.FG_DIRECT_PLAN_ENABLED === "true";
 
-  // Fail closed: an unenabled DIRECT price must never grant Premium.
   const isPremium =
-    isActive && stripePlan !== "DIRECT";
+    isActive &&
+    stripePlan !== "DIRECT" &&
+    matchesPremiumPrice;
 
   const {
     error:
