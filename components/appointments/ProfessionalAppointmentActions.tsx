@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type AppointmentStatus =
@@ -47,6 +47,14 @@ export default function ProfessionalAppointmentActions({
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] =
     useState(false);
+  const [currentTime, setCurrentTime] = useState<number | null>(null);
+
+  useEffect(() => {
+    const updateTime = () => setCurrentTime(Date.now());
+    updateTime();
+    const interval = setInterval(updateTime, 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   async function updateAppointment(
     action: "ACCEPT" | "REJECT" | "COMPLETE"
@@ -183,7 +191,8 @@ export default function ProfessionalAppointmentActions({
     Number.isInteger(durationMinutes) &&
     durationMinutes > 0 &&
     !Number.isNaN(appointmentEnd.getTime()) &&
-    Date.now() >= appointmentEnd.getTime();
+    currentTime !== null &&
+    currentTime >= appointmentEnd.getTime();
 
   return (
     <section className="mt-6 border-t border-slate-200 pt-6">
