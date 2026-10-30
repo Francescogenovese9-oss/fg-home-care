@@ -953,6 +953,9 @@ export async function POST(
         patient_notes:
           values.patientNotes ?? null,
 
+        health_data_consent_at: new Date().toISOString(),
+        health_data_consent_version: "privacy-2026-10-30-v1",
+
         status:
           "PENDING",
       })
