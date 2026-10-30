@@ -3,6 +3,10 @@
     {
       "path": "/api/internal/payments/reconcile",
       "schedule": "15 3 * * *"
+    },
+    {
+      "path": "/api/internal/privacy/purge-video-documents",
+      "schedule": "40 3 * * *"
     }
   ]
 }
