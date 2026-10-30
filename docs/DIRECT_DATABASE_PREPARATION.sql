@@ -7,6 +7,37 @@ ALTER TABLE public.professional_profiles
 ALTER TABLE public.professional_profiles
   ADD CONSTRAINT professional_profiles_subscription_plan_check
   CHECK (subscription_plan = ANY (ARRAY['BASIC'::text, 'PREMIUM'::text, 'DIRECT'::text]));
+-- Immutable booking-time payment route. Existing bookings remain NULL and
+-- follow legacy processing; DIRECT bookings always store an explicit route.
+ALTER TABLE public.appointments
+  ADD COLUMN IF NOT EXISTS service_payment_route text;
+
+ALTER TABLE public.appointments
+  ADD CONSTRAINT appointments_service_payment_route_check
+  CHECK (
+    service_payment_route IS NULL OR
+    service_payment_route IN ('STRIPE_PLATFORM', 'PAY_PROFESSIONAL_DIRECTLY')
+  );
+
+-- Prevent changes after booking, including privileged accidental updates.
+-- A trusted migration can deliberately bypass this only by dropping the trigger.
+CREATE OR REPLACE FUNCTION public.prevent_appointment_payment_route_change()
+RETURNS trigger
+LANGUAGE plpgsql
+SET search_path = ''
+AS $
+BEGIN
+  IF NEW.service_payment_route IS DISTINCT FROM OLD.service_payment_route THEN
+    RAISE EXCEPTION 'Appointment payment route is immutable';
+  END IF;
+  RETURN NEW;
+END;
+$;
+
+CREATE TRIGGER appointments_payment_route_immutable
+BEFORE UPDATE ON public.appointments
+FOR EACH ROW EXECUTE FUNCTION public.prevent_appointment_payment_route_change();
+
 COMMIT;
 -- Verifica post-migrazione:
 -- SELECT pg_get_constraintdef(oid) FROM pg_constraint
