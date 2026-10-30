@@ -867,10 +867,13 @@ export async function PATCH(
 
       notificationMessage =
         `La tua richiesta per il ${formattedAppointmentDate} alle ${formattedAppointmentTime} ` +
-        "è stata accettata. Puoi ora procedere al pagamento.";
+        (directBooking
+          ? "è stata accettata. Pagherai la prestazione direttamente al professionista."
+          : "è stata accettata. Puoi ora procedere al pagamento.");
 
-      notificationLink =
-        `/dashboard/patient/appointments/${appointmentId}/payment`;
+      notificationLink = directBooking
+        ? "/dashboard/patient/appointments"
+        : `/dashboard/patient/appointments/${appointmentId}/payment`;
     } else if (
       action ===
       "REJECT"
@@ -1134,8 +1137,9 @@ export async function PATCH(
               action ===
               "ACCEPT"
             ) {
-              const paymentUrl =
-                `${siteUrl}/dashboard/patient/appointments/${appointmentId}/payment`;
+              const paymentUrl = directBooking
+                ? `${siteUrl}/dashboard/patient/appointments`
+                : `${siteUrl}/dashboard/patient/appointments/${appointmentId}/payment`;
 
               const emailTemplate =
                 appointmentAcceptedTemplate({
@@ -1150,6 +1154,7 @@ export async function PATCH(
                     formattedAppointmentTime,
 
                   paymentUrl,
+                  directPayment: directBooking,
                 });
 
               const emailResult =
