@@ -1321,7 +1321,10 @@ export default async function PatientAppointmentsPage({
                             </Link>
                           )}
 
-                          {appointment.status === "PENDING" && (
+                          {(appointment.status === "PENDING" ||
+                            (appointment.status === "ACCEPTED" &&
+                             appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" &&
+                             appointment.payment_status === "NOT_REQUIRED")) && (
                             <CancelAppointmentButton
                               appointmentId={appointment.id}
                             />
