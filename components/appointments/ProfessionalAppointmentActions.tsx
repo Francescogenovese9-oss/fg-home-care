@@ -183,7 +183,8 @@ export default function ProfessionalAppointmentActions({
 
   const paymentAllowsCompletion =
     paymentStatus === "PAID" ||
-    paymentStatus === "NOT_REQUIRED";
+    (paymentStatus === "NOT_REQUIRED" &&
+      servicePaymentRoute === "PAY_PROFESSIONAL_DIRECTLY");
 
   const canComplete =
     currentStatus === "ACCEPTED" &&
