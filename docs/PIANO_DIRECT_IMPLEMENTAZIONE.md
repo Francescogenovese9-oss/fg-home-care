@@ -31,11 +31,11 @@ Data: 2026-10-30. Branch di lavoro: feature/direct-plan-2990-staging.
 - Nessun piano DIRECT può essere considerato attivo finché DB, webhook, Stripe e UI non sono coerenti e testati.
 - Questa specifica non equivale a funzionalità implementata o distribuita.
 
-## Stato integrazione aggiornato (2026-10-30)
-- CI su GitHub: TypeScript, lint mirato e build completati con successo prima dell'ultima modifica UI; rieseguire sul commit finale.
-- Checkout DIRECT server-side implementato e protetto da `FG_DIRECT_PLAN_ENABLED` e `NEXT_PUBLIC_TRANSACTIONS_ENABLED`.
-- Dashboard: pulsante DIRECT visibile ai professionisti BASIC verificati, ma disabilitato finché `NEXT_PUBLIC_DIRECT_PLAN_ENABLED` non è `true`. Il server resta comunque autoritativo.
-- API prenotazioni, accettazione e PaymentIntent: protezioni per evitare fallback su Stripe quando DIRECT non è attivo.
-- Test di regressione del routing aggiunti in `tests/direct-routing.test.mjs`; l'esecuzione CI di questi test deve ancora essere collegata e verificata.
-- **Bloccanti:** ambiente Supabase isolato (attualmente nessun branch disponibile), migrazione schema, Price Stripe test, flusso e2e, snapshot immutabile del tipo di pagamento per appuntamento e approvazione legale.
-- **Non pubblicare o attivare** finché i bloccanti non sono risolti. La produzione resta invariata.
+## Stato verificato al 31 ottobre 2026
+- Branch: `feature/direct-plan-2990-staging`, PR #10. Non ancora distribuito su `main`.
+- CI: TypeScript, build, lint mirato e test di routing DIRECT eseguiti con esito positivo fino al commit `9198f5a0`; ricontrollare il commit finale.
+- Implementati: checkout DIRECT protetto da flag, sincronizzazione abbonamenti con controlli professione/Price, snapshot immutabile della modalità di pagamento, prenotazione e accettazione senza Stripe paziente, blocchi PaymentIntent/rimborsi Stripe, annullamento professionista, messaggi, dashboard paziente/professionista, recensioni per prestazioni completate, promemoria di completamento, videoconsulti DIRECT.
+- `docs/DIRECT_DATABASE_PREPARATION.sql` è uno script preparatorio, NON applicato al database. Contiene vincolo piano DIRECT, route di pagamento obbligatoria all'inserimento, immutabilità, e vincolo di stato pagamento DIRECT; non sostituisce una migrazione versionata testata.
+- **Bloccanti di rilascio**: (1) database di test isolato e migrazione verificata, (2) due Stripe Price ricorrenti in modalità test e relativi ID, (3) test end-to-end con abbonamento, webhook, prenotazione, annullamento, video, recensione, (4) approvazione legale/fiscale. Non usare dati o addebiti reali per i test.
+- **Sequenza rilascio**: prima test e migrazione DB compatibile, poi configurazione Price/variabili server, deploy del codice con DIRECT disabilitato, verifica funzionale, infine abilitazione controllata dei flag. Non attivare `FG_DIRECT_PLAN_ENABLED` finché i test non sono superati.
+- Nessuna modifica al database di produzione e nessun canone DIRECT addebitato.
