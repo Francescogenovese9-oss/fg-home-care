@@ -12,6 +12,13 @@ ALTER TABLE public.professional_profiles
 ALTER TABLE public.appointments
   ADD COLUMN IF NOT EXISTS service_payment_route text;
 
+-- Keep NULL for pre-existing bookings only. Newly created bookings must
+-- explicitly snapshot their route, even when the API is bypassed.
+ALTER TABLE public.appointments
+  ADD CONSTRAINT appointments_payment_route_required_new
+  CHECK (created_at < TIMESTAMPTZ '2026-11-01 00:00:00+00' OR service_payment_route IS NOT NULL)
+  NOT VALID;
+
 ALTER TABLE public.appointments
   ADD CONSTRAINT appointments_service_payment_route_check
   CHECK (
