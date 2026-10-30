@@ -156,10 +156,11 @@ export default async function ProfessionalPaymentsPage({
     );
 
   const subscriptionPlan =
-    professionalProfile.subscription_plan ===
-    "PREMIUM"
-      ? "PREMIUM"
-      : "BASIC";
+    professionalProfile.subscription_plan === "DIRECT"
+      ? "DIRECT"
+      : professionalProfile.subscription_plan === "PREMIUM"
+        ? "PREMIUM"
+        : "BASIC";
 
   const subscriptionActive =
     professionalProfile.subscription_status ===
