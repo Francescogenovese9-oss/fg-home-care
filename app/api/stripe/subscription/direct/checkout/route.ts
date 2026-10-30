@@ -188,17 +188,19 @@ export async function POST(
       );
     }
 
+    // Do not open a second subscription while an existing one can
+    // still recover, renew or be resumed through the Billing Portal.
+    const blockingSubscriptionStatuses = new Set([
+      "active", "trialing", "past_due", "unpaid", "incomplete", "paused",
+    ]);
     if (
-      professional
-        .subscription_status ===
-        "active" &&
-      professional
-        .stripe_subscription_id
+      professional.stripe_subscription_id &&
+      blockingSubscriptionStatuses.has(professional.subscription_status ?? "")
     ) {
       return NextResponse.json(
         {
           message:
-            "Un abbonamento è già attivo.",
+            "Esiste già un abbonamento da gestire. Apri il portale di fatturazione prima di sottoscriverne un altro.",
           alreadyActive:
             true,
         },
