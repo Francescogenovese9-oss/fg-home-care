@@ -167,7 +167,7 @@ export default function ProfessionalSubscriptionCard({
       {!verificationApproved && (
         <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
           <p className="text-sm font-semibold text-amber-900">
-            Il piano Premium sarà disponibile dopo l'approvazione del profilo professionale.
+            Il piano Premium sarà disponibile dopo l&apos;approvazione del profilo professionale.
           </p>
         </div>
       )}
