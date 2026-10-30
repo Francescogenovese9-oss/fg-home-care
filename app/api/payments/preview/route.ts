@@ -58,6 +58,7 @@ import {
             hourly_rate,
           selected_service_price_eur,
             duration_minutes,
+            service_payment_route,
             status
           `
         )
@@ -103,6 +104,19 @@ import {
         );
       }
   
+      // DIRECT bookings are settled outside FG Home Care.
+      // Do not display a Stripe commission breakdown for them.
+      if (appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY") {
+        return NextResponse.json({
+          success: true,
+          appointmentId: appointment.id,
+          appointmentStatus: appointment.status,
+          paymentRoute: "PAY_PROFESSIONAL_DIRECTLY",
+          platformCommissionPercent: 0,
+          message: "Il paziente paga la prestazione direttamente al professionista.",
+        }, { headers: { "Cache-Control": "no-store" } });
+      }
+
       if (
         appointment.hourly_rate === null
       ) {
