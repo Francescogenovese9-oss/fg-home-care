@@ -213,6 +213,24 @@ export default function ProfessionalSubscriptionCard({
               : "Passa a Premium — 19,90 €/mese"}
           </button>
         )}
+        {!isPremium && !isDirect && (
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-sm font-semibold text-slate-900">
+              Piano DIRECT — {directDoctor ? "49,90" : "29,90"} € / mese
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Commissione 0% sulle prestazioni. Il paziente paga direttamente il professionista.
+            </p>
+            <button
+              type="button"
+              disabled={loading || !verificationApproved || process.env.NEXT_PUBLIC_DIRECT_PLAN_ENABLED !== "true"}
+              onClick={() => openStripe("/api/stripe/subscription/direct/checkout")}
+              className="mt-3 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? "Apertura..." : process.env.NEXT_PUBLIC_DIRECT_PLAN_ENABLED === "true" ? "Attiva DIRECT" : "DIRECT in preparazione"}
+            </button>
+          </div>
+        )}
       </div>
     </section>
   );
