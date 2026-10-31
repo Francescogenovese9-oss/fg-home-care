@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import ProfessionalPlanCard, { type ProfessionalPlan } from "@/components/payments/ProfessionalPlanCard";
 import { LEGAL_UPDATED_LABEL } from "@/lib/legal/versions";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
@@ -243,177 +244,34 @@ export default function RegisterForm({ directSelectable = false }: { directSelec
 
           {selectedRole === "PROFESSIONAL" && (
             <div className="space-y-5 rounded-2xl bg-slate-50 p-5">
-              <div className="space-y-4">
+              <section aria-labelledby="professional-plans-heading" className="space-y-5">
                 <div>
-                  <p className="text-lg font-bold text-blue-950">
-                    Piani per professionisti
-                  </p>
-                  <p className="mt-1 text-sm text-slate-600">
-                    Confronta i piani e le commissioni. Con Premium attivo, le commissioni diminuiscono sulle prestazioni successive completate e pagate con lo stesso paziente.
-                  </p>
+                  <h2 id="professional-plans-heading" className="text-xl font-bold text-blue-950">Il piano giusto per il tuo modo di lavorare</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Confronta le tre soluzioni e scegli come iniziare la tua attività su FG Home Care.</p>
                 </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
-                  <button
-                    type="button"
-                    onClick={() =>
-                      setValue("subscriptionPlan", "BASIC", {
-                        shouldValidate: true,
-                        shouldDirty: true,
-                      })
-                    }
-                    className={`rounded-2xl border-2 p-5 text-left transition ${
-                      selectedSubscriptionPlan === "BASIC"
-                        ? "border-blue-600 bg-blue-50 shadow-md"
-                        : "border-slate-200 bg-white hover:border-blue-300"
-                    }`}
-                  >
-                    <p className="text-sm font-bold uppercase tracking-wide text-blue-700">
-                      Basic
-                    </p>
-                    <h3 className="mt-2 text-xl font-bold text-blue-950">
-                      Piano Basic
-                    </h3>
-
-                    <div className="mt-4">
-                      <span className="text-3xl font-black text-blue-950">0 €</span>
-                    <span className="text-sm text-slate-500"> / mese</span>
-                    </div>
-
-                    <p className="mt-1 font-semibold text-blue-700">
-                      15% per prestazione
-                    </p>
-
-                    <p className="mt-4 text-sm leading-6 text-slate-600">
-                      Nessun canone mensile. La commissione del 15% viene applicata alle prestazioni gestite tramite FG Home Care.
-                    </p>
-
-                    <ul className="mt-4 space-y-2 text-sm text-slate-700">
-                      <li>✓ Profilo professionale pubblico</li>
-                      <li>✓ Prenotazioni e calendario</li>
-                      <li>✓ Chat e pagamenti in piattaforma</li>
-                      <li>✓ Recensioni verificate</li>
-                    </ul>
-                  </button>                  <button
-                    type="button"
-                    onClick={() =>
-                      setValue("subscriptionPlan", "PREMIUM", {
-                        shouldValidate: true,
-                        shouldDirty: true,
-                      })
-                    }
-                    className={`relative rounded-2xl border-2 p-5 text-left transition ${
-                      selectedSubscriptionPlan === "PREMIUM"
-                        ? "border-indigo-400 bg-gradient-to-br from-blue-700 to-indigo-800 text-white shadow-xl"
-                        : "border-indigo-200 bg-gradient-to-br from-blue-600 to-indigo-700 text-white hover:shadow-lg"
-                    }`}
-                  >
-                    <span className="absolute right-4 top-4 rounded-full bg-white/95 px-3 py-1 text-xs font-bold text-indigo-700">
-                      PREMIUM
-                    </span>
-
-                    <p className="text-sm font-bold uppercase tracking-wide text-blue-100">
-                      Premium
-                    </p>
-
-                    <h3 className="mt-2 text-xl font-bold">
-                      Piano Premium
-                  </h3>
-
-                    <div className="mt-4">
-                      <span className="text-3xl font-black">19,90 €</span>
-                      <span className="text-sm text-blue-100"> / mese</span>
-                    </div>
-
-                    <p className="mt-1 font-semibold text-blue-100">
-                      Dall&apos;8% al 5% per paziente
-                    </p>
-
-                    <p className="mt-4 text-sm leading-6 text-blue-50">
-                      Il piano Premium prevede un canone di 19,90 &euro; al mese e commissioni progressive dall&apos;8% al 5% sulle prestazioni completate e pagate con lo stesso paziente.
-                    </p>
-
-                    <ul className="mt-4 space-y-2 text-sm text-blue-50">
-                      <li>✓ Tutto ciò che include Basic</li>
-                      <li>✓ Commissioni progressive dall&apos;8% al 5%</li>
-                      <li>✓ Maggiore visibilità nei risultati</li>
-                      <li>✓ Badge Premium e statistiche avanzate</li>
-                 <li>✓ Supporto prioritario</li>
-                    </ul>
-                  </button>
+                <div className="space-y-5">
+                  {(["BASIC", "PREMIUM", "DIRECT"] as ProfessionalPlan[]).map((plan) => (
+                    <ProfessionalPlanCard key={plan} plan={plan}
+                      doctor={["Medico chirurgo", "Medico di medicina generale / Medico di base", "Medico specialista"].includes(selectedProfession || "")}
+                      selected={selectedSubscriptionPlan === plan}
+                      badge={selectedSubscriptionPlan === plan ? "Selezionato" : plan === "PREMIUM" ? "Continuità e vantaggi" : plan === "DIRECT" ? "Zero commissioni" : "Senza canone"}>
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="max-w-lg text-xs leading-5 text-slate-500">
+                          {plan === "BASIC" ? "Nessun canone mensile. Il profilo viene pubblicato dopo la verifica dei documenti." : plan === "PREMIUM" ? "Canone base al netto dell’IVA eventualmente dovuta. L’abbonamento richiede approvazione e attivazione a pagamento; il totale è mostrato prima della conferma." : "La scelta non attiva un abbonamento: inizi da Basic. Dopo l’approvazione potrai attivare DIRECT dalla dashboard. Canone base al netto dell’IVA eventualmente dovuta."}
+                        </p>
+                        <button type="button" aria-pressed={selectedSubscriptionPlan === plan}
+                          disabled={plan === "DIRECT" && !directSelectable}
+                          onClick={() => setValue("subscriptionPlan", plan, { shouldValidate: true, shouldDirty: true })}
+                          className={`shrink-0 rounded-xl px-5 py-3 text-sm font-bold text-white transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700 disabled:cursor-not-allowed disabled:opacity-50 ${plan === "DIRECT" ? "bg-emerald-800 hover:bg-emerald-900" : plan === "PREMIUM" ? "bg-indigo-700 hover:bg-indigo-800" : "bg-blue-800 hover:bg-blue-900"}`}>
+                          {plan === "DIRECT" && !directSelectable ? "Non disponibile" : selectedSubscriptionPlan === plan ? `${plan} selezionato` : `Scegli ${plan}`}
+                        </button>
+                      </div>
+                    </ProfessionalPlanCard>
+                  ))}
                 </div>
+                {errors.subscriptionPlan && <p role="alert" className="text-sm text-red-600">{errors.subscriptionPlan.message}</p>}
+              </section>
 
-                <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5">
-                  <div className="flex flex-wrap items-center justify-between gap-2">
-                    <h3 className="text-xl font-bold text-emerald-950">Piano DIRECT</h3>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-800">{selectedSubscriptionPlan === "DIRECT" ? "Selezionato" : directSelectable ? "Disponibile" : "In preparazione"}</span>
-                  </div>
-                  <p className="mt-3 text-sm text-emerald-950">
-                    <strong>29,90 € / mese</strong> per professionisti sanitari non medici;
-                    <strong> 49,90 € / mese</strong> per medici, previa verifica della qualifica.
-                    <strong> Zero commissioni</strong> sulle prestazioni.
-                  </p>
-                  <p className="mt-3 text-sm leading-6 text-emerald-950">
-                    Il paziente prenota tramite FG Home Care, ma paga la prestazione
-                    direttamente al professionista, fuori dalla piattaforma.
-                    FG Home Care non incassa pagamenti dai pazienti per queste prestazioni:
-                    il professionista gestisce direttamente l&apos;incasso e la fatturazione al paziente.
-                    Prenotazioni, conferme e calendario restano in piattaforma.
-                  </p>
-                  <p className="mt-3 text-xs text-emerald-900">
-                    {directSelectable
-                      ? "La scelta non attiva un abbonamento: il profilo inizia da Basic. Dopo la verifica dei documenti potrai attivare DIRECT dalla dashboard, prima di utilizzare le relative funzioni."
-                      : "DIRECT è in collaudo. Per ora puoi registrarti con Basic o Premium."}
-                  </p>
-                </div>
-
-                {directSelectable && (
-                  <button type="button" aria-pressed={selectedSubscriptionPlan === "DIRECT"}
-                    onClick={() => setValue("subscriptionPlan", "DIRECT", { shouldValidate: true, shouldDirty: true })}
-                    className="rounded-xl bg-emerald-800 px-5 py-3 text-sm font-bold text-white">
-                    {selectedSubscriptionPlan === "DIRECT" ? "DIRECT selezionato" : "Scegli DIRECT"}
-                  </button>
-                )}
-
-                <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
-                  <div className="px-4 py-3">
-                    <p className="font-semibold text-blue-950">Tabella delle commissioni</p>
-                    <p className="mt-1 text-xs text-slate-600">
-                      Se lo stesso paziente prenota più volte con lo stesso specialista tramite FG Home Care, la commissione Premium diminuisce progressivamente: 8% sulla prima prestazione, 7% sulla seconda, 6% sulla terza e 5% dalla quarta in poi. Il conteggio riguarda le prestazioni completate e pagate sulla piattaforma, per ciascuna coppia paziente-professionista.
-                    </p>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full min-w-[360px] text-left text-sm">
-                      <thead className="bg-slate-100 text-slate-700">
-                        <tr>
-                          <th scope="col" className="px-4 py-3">Prestazione con lo stesso paziente</th>
-                          <th scope="col" className="px-4 py-3">Basic</th>
-                          <th scope="col" className="px-4 py-3">Premium</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-slate-100 text-slate-800">
-                        <tr><th scope="row" className="px-4 py-3 font-medium">Prima</th><td className="px-4 py-3">15%</td><td className="px-4 py-3 font-semibold">8%</td></tr>
-                        <tr><th scope="row" className="px-4 py-3 font-medium">Seconda</th><td className="px-4 py-3">15%</td><td className="px-4 py-3 font-semibold">7%</td></tr>
-                        <tr><th scope="row" className="px-4 py-3 font-medium">Terza</th><td className="px-4 py-3">15%</td><td className="px-4 py-3 font-semibold">6%</td></tr>
-                        <tr><th scope="row" className="px-4 py-3 font-medium">Dalla quarta</th><td className="px-4 py-3">15%</td><td className="px-4 py-3 font-semibold">5%</td></tr>
-                      </tbody>
-                    </table>
-                  </div>
-                  <p className="border-t border-slate-100 px-4 py-3 text-xs text-slate-600">
-                    Canone mensile: Basic 0 €; Premium 19,90 €. Le tariffe Premium agevolate si applicano soltanto con abbonamento attivo. Il paziente non paga abbonamenti per utilizzare FG Home Care.
-                  </p>
-                </div>
-
-                {errors.subscriptionPlan && (
-                  <p className="text-sm text-red-600">
-                    {errors.subscriptionPlan.message}
-                  </p>
-                )}
-
-                <p className="text-center text-xs text-slate-500">
-                  Puoi iniziare con il piano Basic e passare successivamente al piano Premium dalla dashboard professionista. Premium viene attivato dopo il completamento dell&apos;abbonamento.
-                </p>
-              </div>
               <div className="space-y-2">
                 <Label htmlFor="profession">
                   Professione
