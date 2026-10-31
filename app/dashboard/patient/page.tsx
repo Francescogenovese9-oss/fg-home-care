@@ -1,11 +1,8 @@
 import Link from "next/link";
+import type { NotificationPreview } from "@/components/notifications/NotificationBell";
 import { redirect } from "next/navigation";
 
-import LogoutButton from "@/components/auth/LogoutButton";
 import CareGuidance from "@/components/home/CareGuidance";
-import NotificationBell, {
-  type NotificationPreview,
-} from "@/components/notifications/NotificationBell";
 import { createClient } from "@/lib/supabase/server";
 
 type AppointmentStatus =
@@ -279,27 +276,6 @@ export default async function PatientDashboardPage() {
             </h1>
           </div>
 
-          <div className="flex flex-wrap items-center gap-4">
-            <Link
-              href="/professionisti"
-              className="text-sm font-semibold text-slate-600 hover:text-blue-700"
-            >
-              Cerca professionisti
-            </Link>
-
-            <NotificationBell
-              userId={user.id}
-              initialUnreadCount={
-                unreadNotificationCount ?? 0
-              }
-              initialNotifications={
-                recentNotifications
-              }
-            />
-
-            <Link href="/dashboard/change-password" className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-sm font-semibold text-blue-800 transition hover:bg-blue-100">🔒 Modifica password</Link>
-            <LogoutButton />
-          </div>
         </div>
       </header>
 
