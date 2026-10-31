@@ -362,7 +362,7 @@ export default function RegisterForm({ directSelectable = false }: { directSelec
             </div>
             <p className="mt-4 text-xs leading-5 text-slate-500">
               Documenti aggiornati al {LEGAL_UPDATED_LABEL}, con le condizioni del piano DIRECT.
-              L&apos;attivazione a pagamento richiede una scelta separata dopo l&apos;approvazione del profilo.
+              Con PREMIUM e DIRECT, dopo la conferma dell&apos;email completi la registrazione pagando il primo canone. La verifica dei documenti per visibilità e prenotazioni avviene successivamente. BASIC resta senza canone.
             </p>
           </section>
 
