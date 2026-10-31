@@ -43,3 +43,12 @@ Data: 2026-10-30. Branch di lavoro: feature/direct-plan-2990-staging.
 ## Correzione rollout senza interruzione
 - Il codice `main` ancora in produzione può creare prenotazioni senza `service_payment_route`. La migrazione DB deve quindi essere applicabile **prima** del deploy applicativo senza bloccare le prenotazioni esistenti: nessun trigger di route obbligatoria nella prima fase.
 - Dopo deploy e verifica di tutti i percorsi di creazione, aggiungere in una **seconda migrazione** il vincolo di route obbligatoria per i nuovi inserimenti. Le prenotazioni storiche possono restare NULL.
+
+## Prezzi Stripe Sandbox predisposti il 31 ottobre 2026
+- DIRECT sanitari non medici: EUR 29,90/mese, `STRIPE_DIRECT_HEALTHCARE_PRICE_ID=price_1UWWehICrDO5QeptfxwyP8WS`.
+- DIRECT medici: EUR 49,90/mese, `STRIPE_DIRECT_DOCTOR_PRICE_ID=price_1UWWkfICrDO5QepttPPD6Eau`.
+- Gli ID sono stati copiati dalla dashboard Sandbox dall'operatore; non sono stati verificati via API sandbox (il connettore Stripe disponibile accede solo all'account live).
+- Non impostare questi ID nell'ambiente live. Devono essere associati alle credenziali Stripe della stessa Sandbox in un deploy isolato.
+- Non committare chiavi `sk_test`, `sk_live`, webhook secret o credenziali Supabase. Configurare tramite variabili protette dell'ambiente isolato.
+- Il deploy isolato deve mantenere `NEXT_PUBLIC_TRANSACTIONS_ENABLED=false` finché non è pronto il collaudo con utenze di prova; l'abilitazione di `FG_DIRECT_PLAN_ENABLED` va effettuata solo dopo la migrazione DB testata.
+- Ultima CI verificata: commit `55a75cd5` verde. La PR #10 resta draft e `main` invariato.
