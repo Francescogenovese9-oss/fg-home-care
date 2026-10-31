@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import ProfessionalPlanCard, { type ProfessionalPlan } from "@/components/payments/ProfessionalPlanCard";
 import { DIRECT_TERMS_VERSION } from "@/lib/legal/versions";
 
 import {
@@ -106,159 +107,51 @@ export default function ProfessionalSubscriptionCard({
     }
   }
 
+  const currentPlan: ProfessionalPlan = isDirect ? "DIRECT" : isPremium ? "PREMIUM" : "BASIC";
+  const paidPlanActive = isDirect || isPremium;
+  const buttonClass = "rounded-xl bg-blue-800 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700 disabled:cursor-not-allowed disabled:opacity-50";
+
   return (
-    <section
-      className={
-        isPremium
-          ? "mt-8 rounded-3xl border border-blue-200 bg-white p-7 shadow-sm"
-          : "mt-8 rounded-3xl border-2 border-blue-300 bg-gradient-to-br from-blue-50 via-white to-white p-7 shadow-md"
-      }
-    >
-      <div className="flex flex-wrap items-start justify-between gap-5">
-        <div>
-          <p className="text-sm font-semibold text-blue-700">
-            Piano professionale
-          </p>
-
-          <h3 className="mt-1 text-2xl font-bold text-slate-900">
-            {isDirect ? "FG Home Care DIRECT" : isPremium ? "FG Home Care Premium" : "FG Home Care Basic"}
-          </h3>
-
-          <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            {isDirect ? "Nessuna commissione sulle prestazioni. Il paziente paga direttamente il professionista; FG Home Care gestisce prenotazioni e notifiche." : isPremium
-              ? "Commissione ridotta all'8% sulle prestazioni, maggiore visibilità e funzionalità Premium."             : "Il piano Basic non prevede un canone mensile e applica una commissione del 15% sulle prestazioni. È possibile passare in qualsiasi momento al piano Premium da 19,90 €/mese, con commissione ridotta all'8%."}
-          </p>
-        </div>
-
-        <span
-          className={
-            isPremium
-              ? "rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700"
-              : "rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-bold text-slate-700"
-          }
-        >
-          {isDirect ? "DIRECT" : isPremium ? "PREMIUM" : "BASIC"}
-        </span>
+    <section aria-labelledby="subscription-plans-heading" className="mt-8 space-y-6">
+      <div>
+        <p className="text-sm font-semibold text-blue-700">Piani professionali</p>
+        <h2 id="subscription-plans-heading" className="mt-2 text-2xl font-bold tracking-tight text-blue-950 sm:text-3xl">Scegli come far crescere la tua attività</h2>
+        <p className="mt-3 text-sm leading-6 text-slate-600">Confronta canoni, strumenti e commissioni. Il tuo piano attuale è <strong className="text-slate-900">{currentPlan}</strong>.</p>
       </div>
-
-      <div className="mt-7 grid gap-4 sm:grid-cols-2">
-        <div className="rounded-2xl bg-slate-50 p-5">
-          <p className="text-sm text-slate-500">
-            Canone
-          </p>
-
-          <p className="mt-1 text-xl font-bold text-slate-900">
-            {isDirect ? (directDoctor ? "49,90 € / mese" : "29,90 € / mese") : isPremium ? "19,90 € / mese" : "0 € / mese"}
-          </p>
-        </div>
-
-        <div className="rounded-2xl bg-slate-50 p-5">
-          <p className="text-sm text-slate-500">
-            Commissione
-          </p>
-
-          <p className="mt-1 text-xl font-bold text-slate-900">
-            {isDirect ? "0%" : isPremium ? "8%" : "15%"}
-          </p>
-        </div>
-      </div>
-
-      {(isPremium || isDirect) &&
-        cancelAtPeriodEnd && (
-          <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-            <p className="font-semibold text-amber-900">
-              Disdetta programmata
-            </p>
-
-            <p className="mt-1 text-sm leading-6 text-amber-800">
-              Il piano attuale rimarrà attivo
-              {periodEndFormatted
-                ? ` fino al ${periodEndFormatted}.`
-                : " fino alla fine del periodo già pagato."}
-            </p>
-        </div>
-        )}
-
-      {!verificationApproved && (
-        <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
-          <p className="text-sm font-semibold text-amber-900">
-            Il piano Premium sarà disponibile dopo l&apos;approvazione del profilo professionale.
-          </p>
-        </div>
-      )}
-
-      {error && (
-        <div className="mt-5 rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-          {error}
-        </div>
-      )}
-
-      <div className="mt-7">
-        {isPremium || isDirect ? (
-          <button
-            type="button"
-            disabled={loading}
-            onClick={() =>
-              openStripe(
-                "/api/stripe/subscription/portal"
-              )
-            }
-            className="rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white transition hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-60"
-          >
-            {loading
-              ? "Apertura..."
-              : "Gestisci abbonamento"}
-          </button>
-        ) : (
-          <button
-            type="button"
-            disabled={
-              loading ||
-              !verificationApproved
-            }
-            onClick={() =>
-              openStripe(
-                "/api/stripe/subscription/checkout"
-              )
-            }
-            className="wll rounded-2xl bg-blue-700 px-6 py-4 text-base font-bold text-white shadow-sm transition hover:bg-blue-800 disabled:cursor-not-allowed disabled:opacity-60 sm:w-auto"
-          >
-            {loading
-              ? "Apertura..."
-              : "Passa a Premium — 19,90 €/mese"}
-          </button>
-        )}
-        {!isPremium && !isDirect && (
-          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-sm font-semibold text-slate-900">
-              Piano DIRECT — {directDoctor ? "49,90" : "29,90"} € / mese
-            </p>
-            <p className="mt-1 text-sm text-slate-600">
-              Commissione 0% sulle prestazioni. Il paziente paga direttamente il professionista.
-            </p>
-            <p className="mt-3 text-sm leading-6 text-slate-600">
-              Canone base al netto dell&apos;IVA eventualmente dovuta. Il totale è mostrato prima della conferma in Stripe.
-              Rinnovo automatico mensile; disdetta da Gestisci abbonamento con effetto ordinario a fine periodo.
-              Nessun numero minimo di prenotazioni è garantito.
-            </p>
-            <label className="mt-3 flex items-start gap-3 text-sm leading-6 text-slate-700" htmlFor="acceptDirectTerms">
-              <input id="acceptDirectTerms" type="checkbox" checked={directTermsAccepted}
-                onChange={(event) => setDirectTermsAccepted(event.target.checked)}
-                className="mt-1 h-5 w-5 shrink-0 accent-blue-700" />
-              <span>Ho letto e accetto le <Link href="/condizioni-direct" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 underline">condizioni del piano DIRECT</Link>, inclusi canone e rinnovo mensile.
-                Ho preso visione dell&apos;<Link href="/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-700 underline">Informativa Privacy</Link>.
-                La conferma finale dell&apos;abbonamento con obbligo di pagamento avviene in Stripe.</span>
-            </label>
-            <button
-              type="button"
-              disabled={loading || !verificationApproved || !directPurchaseEnabled || !directTermsAccepted}
-              onClick={() => openStripe("/api/stripe/subscription/direct/checkout")}
-              className="mt-3 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
-            >
-              {loading ? "Apertura..." : directPurchaseEnabled ? "Attiva DIRECT" : "DIRECT in preparazione"}
-            </button>
-          </div>
-        )}
+      {paidPlanActive && cancelAtPeriodEnd ? <div className="rounded-2xl border border-amber-200 bg-amber-50 p-5">
+        <p className="font-semibold text-amber-900">Disdetta programmata</p>
+        <p className="mt-2 text-sm leading-6 text-amber-800">Il piano {currentPlan} rimane attivo {periodEndFormatted ? `fino al ${periodEndFormatted}` : "fino alla fine del periodo già pagato"}.</p>
+      </div> : null}
+      {!verificationApproved ? <p className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900">Puoi confrontare i piani. L’attivazione di Premium e DIRECT richiede l’approvazione del profilo professionale.</p> : null}
+      {error ? <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</p> : null}
+      <div className="space-y-5">
+        {(["BASIC", "PREMIUM", "DIRECT"] as ProfessionalPlan[]).map((option) => (
+          <ProfessionalPlanCard key={option} plan={option} doctor={directDoctor} selected={currentPlan === option}
+            badge={currentPlan === option ? "Piano attuale" : option === "PREMIUM" ? "Continuità e vantaggi" : option === "DIRECT" ? "Zero commissioni" : "Senza canone"}>
+            {option === "BASIC" ? <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs leading-5 text-slate-500">{paidPlanActive ? "Per tornare a Basic, gestisci la disdetta del tuo abbonamento. I vantaggi restano disponibili fino alla scadenza prevista." : "Il tuo profilo utilizza Basic, senza canone mensile."}</p>
+              <button type="button" className={`${buttonClass} shrink-0`} disabled={loading || !paidPlanActive}
+                onClick={() => openStripe("/api/stripe/subscription/portal")}>{loading ? "Apertura…" : paidPlanActive ? "Gestisci il passaggio a Basic" : "Il tuo piano attuale"}</button>
+            </div> : paidPlanActive ? <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-xs leading-5 text-slate-500">{currentPlan === option ? "Controlla rinnovo, metodo di pagamento e disdetta dal portale di fatturazione." : "Hai già un abbonamento attivo. Gestiscilo prima di sottoscrivere un altro piano."}</p>
+              <button type="button" className={`${buttonClass} shrink-0`} disabled={loading}
+                onClick={() => openStripe("/api/stripe/subscription/portal")}>{loading ? "Apertura…" : "Gestisci abbonamento"}</button>
+            </div> : option === "PREMIUM" ? <div className="space-y-3">
+              <p className="text-xs leading-5 text-slate-500">Canone base al netto dell’IVA eventualmente dovuta. Rinnovo automatico mensile, con disdetta dal portale di fatturazione. Totale e condizioni sono mostrati prima della conferma.</p>
+              <button type="button" className={`${buttonClass} bg-indigo-700 hover:bg-indigo-800`} disabled={loading || !verificationApproved}
+                onClick={() => openStripe("/api/stripe/subscription/checkout")}>{loading ? "Apertura…" : "Attiva Premium"}</button>
+              <Link href="/termini-e-condizioni" target="_blank" rel="noopener noreferrer" className="ml-4 inline-block text-xs font-semibold text-indigo-800 underline">Termini del piano</Link>
+            </div> : <div className="space-y-3">
+              <p className="text-xs leading-5 text-slate-500">Canone base al netto dell’IVA eventualmente dovuta. Rinnovo automatico mensile; disdetta ordinaria a fine periodo. Totale mostrato prima della conferma in Stripe. Nessun numero minimo di prenotazioni garantito.</p>
+              <label className="flex items-start gap-3 text-sm leading-6 text-slate-700" htmlFor="acceptDirectTerms">
+                <input id="acceptDirectTerms" type="checkbox" checked={directTermsAccepted} onChange={(event) => setDirectTermsAccepted(event.target.checked)} className="mt-1 h-5 w-5 shrink-0 accent-emerald-800" />
+                <span>Ho letto e accetto le <Link href="/condizioni-direct" target="_blank" rel="noopener noreferrer" className="font-semibold text-emerald-800 underline">condizioni DIRECT</Link>, inclusi canone e rinnovo mensile. Ho preso visione dell’<Link href="/privacy" target="_blank" rel="noopener noreferrer" className="text-emerald-800 underline">Informativa Privacy</Link>. Confermerò l’abbonamento con obbligo di pagamento in Stripe.</span>
+              </label>
+              <button type="button" className={`${buttonClass} bg-emerald-800 hover:bg-emerald-900`} disabled={loading || !verificationApproved || !directPurchaseEnabled || !directTermsAccepted}
+                onClick={() => openStripe("/api/stripe/subscription/direct/checkout")}>{loading ? "Apertura…" : directPurchaseEnabled ? "Attiva DIRECT" : "DIRECT non disponibile"}</button>
+            </div>}
+          </ProfessionalPlanCard>
+        ))}
       </div>
     </section>
   );
