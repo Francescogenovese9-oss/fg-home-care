@@ -1,3 +1,4 @@
+import { saveAppointmentNotification } from "@/lib/appointments/save-notification";
 import { canRequestAppointment, isDirectEnabledFor } from "@/lib/subscriptions/direct-rollout";
 
 import {
@@ -1122,11 +1123,7 @@ export async function POST(
     const {
       error:
         notificationError,
-    } = await supabaseAdmin
-      .from(
-        "notifications"
-      )
-      .insert({
+    } = await saveAppointmentNotification(supabaseAdmin, {
         user_id:
           values.professionalId,
 
@@ -1151,7 +1148,7 @@ export async function POST(
 
         read:
           false,
-      });
+      }, ["APPOINTMENT_CREATED"]);
 
     if (
       notificationError

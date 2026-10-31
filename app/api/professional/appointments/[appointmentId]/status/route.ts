@@ -1,3 +1,4 @@
+import { saveAppointmentNotification } from "@/lib/appointments/save-notification";
 import { getDecisionPaymentStatus } from "@/lib/payments/service-payment-route";
 import { canViewRolloutProfessional, isDirectEnabledFor } from "@/lib/subscriptions/direct-rollout";
 import {
@@ -940,11 +941,7 @@ export async function PATCH(
     const {
       error:
         notificationError,
-    } = await supabaseAdmin
-      .from(
-        "notifications"
-      )
-      .insert({
+    } = await saveAppointmentNotification(supabaseAdmin, {
         user_id:
           updatedAppointment.patient_id,
 
