@@ -362,7 +362,7 @@ export default async function ProfessionalPaymentsPage({
 
         <ProfessionalSubscriptionCard
           plan={subscriptionPlan}
-          directPurchaseEnabled={process.env.NEXT_PUBLIC_TRANSACTIONS_ENABLED === "true" && isDirectEnabledFor(user.id)}
+          directPurchaseEnabled={isDirectEnabledFor(user.id)}
           profession={professionalProfile.profession}
           status={
             professionalProfile.subscription_status ??

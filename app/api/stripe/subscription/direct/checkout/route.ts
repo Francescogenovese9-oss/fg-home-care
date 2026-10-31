@@ -27,13 +27,6 @@ export const runtime = "nodejs";
 export async function POST(
   _request: NextRequest
 ) {
-  if (process.env.NEXT_PUBLIC_TRANSACTIONS_ENABLED !== "true") {
-    return NextResponse.json(
-      { message: "Le prenotazioni e i pagamenti online saranno disponibili a breve." },
-      { status: 503, headers: { "Cache-Control": "no-store" } }
-    );
-  }
-
   try {
     const supabase =
       await createClient();

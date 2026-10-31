@@ -40,3 +40,20 @@ export function canRequestAppointment(patientId: string, professionalId: string,
   }
   return env.NEXT_PUBLIC_TRANSACTIONS_ENABLED === "true";
 }
+
+/** The plan must come from the database, never from the booking request. */
+export function canRequestAppointmentForPlan(
+  patientId: string,
+  professionalId: string,
+  plan: { subscription_plan: string | null; subscription_status: string | null },
+  env: RolloutEnvironment = process.env,
+  now = Date.now(),
+) {
+  const ids = testIds(env);
+  if (ids && (patientId.toLowerCase() === ids.patient || professionalId.toLowerCase() === ids.professional)) {
+    return isDirectTestPair(patientId, professionalId, env, now);
+  }
+  return canRequestAppointment(patientId, professionalId, env, now) ||
+    (plan.subscription_plan === "DIRECT" && plan.subscription_status === "active" &&
+      isDirectEnabledFor(professionalId, env, now));
+}

@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { canRequestAppointment, canViewRolloutProfessional } from "@/lib/subscriptions/direct-rollout";
+import { canRequestAppointmentForPlan, canViewRolloutProfessional } from "@/lib/subscriptions/direct-rollout";
 import {
   notFound,
   redirect,
@@ -97,7 +97,7 @@ export default async function BookProfessionalPage({
   const admin = getSupabaseAdmin();
   const { data: billingProfile, error: billingError } = await admin
     .from("professional_profiles")
-    .select("subscription_plan")
+    .select("subscription_plan, subscription_status")
     .eq("user_id", userId)
     .eq("verification_status", "APPROVED")
     .eq("published", true)
@@ -179,7 +179,7 @@ export default async function BookProfessionalPage({
 
         <AppointmentRequestForm
           professionalId={data.user_id}
-          bookingEnabled={canRequestAppointment(user.id, data.user_id)}
+          bookingEnabled={canRequestAppointmentForPlan(user.id, data.user_id, billingProfile)}
           directPayment={billingProfile.subscription_plan === "DIRECT"}
           bookingSource={isCareGuidance ? "CARE_GUIDANCE" : "DIRECT"}
           professionalName={
