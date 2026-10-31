@@ -244,34 +244,6 @@ export default function RegisterForm({ directSelectable = false }: { directSelec
 
           {selectedRole === "PROFESSIONAL" && (
             <div className="space-y-5 rounded-2xl bg-slate-50 p-5">
-              <section aria-labelledby="professional-plans-heading" className="space-y-5">
-                <div>
-                  <h2 id="professional-plans-heading" className="text-xl font-bold text-blue-950">Il piano giusto per il tuo modo di lavorare</h2>
-                  <p className="mt-2 text-sm leading-6 text-slate-600">Confronta le tre soluzioni e scegli come iniziare la tua attività su FG Home Care.</p>
-                </div>
-                <div className="space-y-5">
-                  {(["BASIC", "PREMIUM", "DIRECT"] as ProfessionalPlan[]).map((plan) => (
-                    <ProfessionalPlanCard key={plan} plan={plan}
-                      doctor={["Medico chirurgo", "Medico di medicina generale / Medico di base", "Medico specialista"].includes(selectedProfession || "")}
-                      selected={selectedSubscriptionPlan === plan}
-                      badge={selectedSubscriptionPlan === plan ? "Selezionato" : plan === "PREMIUM" ? "Continuità e vantaggi" : plan === "DIRECT" ? "Zero commissioni" : "Senza canone"}>
-                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-                        <p className="max-w-lg text-xs leading-5 text-slate-500">
-                          {plan === "BASIC" ? "Nessun canone mensile. Il profilo viene pubblicato dopo la verifica dei documenti." : plan === "PREMIUM" ? "Dopo la conferma dell’email completi la registrazione pagando il canone mensile. Il canone decorre dal pagamento; profilo visibile e prenotabile dopo la verifica dei documenti. IVA eventualmente dovuta e totale sono mostrati prima della conferma." : "Dopo la conferma dell’email paghi il canone DIRECT per completare la registrazione: 29,90 €/mese per professionisti sanitari, 49,90 €/mese per medici. Il canone decorre dal pagamento; visibilità e prenotazioni dopo la verifica dei documenti. IVA eventualmente dovuta e totale sono mostrati nel Checkout."}
-                        </p>
-                        <button type="button" aria-pressed={selectedSubscriptionPlan === plan}
-                          disabled={plan === "DIRECT" && !directSelectable}
-                          onClick={() => setValue("subscriptionPlan", plan, { shouldValidate: true, shouldDirty: true })}
-                          className={`shrink-0 rounded-xl px-5 py-3 text-sm font-bold text-white transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700 disabled:cursor-not-allowed disabled:opacity-50 ${plan === "DIRECT" ? "bg-emerald-800 hover:bg-emerald-900" : plan === "PREMIUM" ? "bg-indigo-700 hover:bg-indigo-800" : "bg-blue-800 hover:bg-blue-900"}`}>
-                          {plan === "DIRECT" && !directSelectable ? "Non disponibile" : selectedSubscriptionPlan === plan ? `${plan} selezionato` : `Scegli ${plan}`}
-                        </button>
-                      </div>
-                    </ProfessionalPlanCard>
-                  ))}
-                </div>
-                {errors.subscriptionPlan && <p role="alert" className="text-sm text-red-600">{errors.subscriptionPlan.message}</p>}
-              </section>
-
               <div className="space-y-2">
                 <Label htmlFor="profession">
                   Professione
@@ -326,6 +298,40 @@ export default function RegisterForm({ directSelectable = false }: { directSelec
                   />
                 </div>
               </div>
+            </div>
+          )}
+
+          {selectedRole === "PROFESSIONAL" && (
+            <div className="space-y-5 rounded-2xl bg-slate-50 p-5">
+              <section aria-labelledby="professional-plans-heading" className="space-y-5">
+                <div>
+                  <h2 id="professional-plans-heading" className="text-xl font-bold text-blue-950">Il piano giusto per il tuo modo di lavorare</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">Confronta le tre soluzioni e scegli come iniziare la tua attività su FG Home Care.</p>
+                </div>
+                <div className="space-y-5">
+                  {(["BASIC", "PREMIUM", "DIRECT"] as ProfessionalPlan[]).map((plan) => (
+                    <ProfessionalPlanCard key={plan} plan={plan}
+                      doctor={["Medico chirurgo", "Medico di medicina generale / Medico di base", "Medico specialista"].includes(selectedProfession || "")}
+                      selected={selectedSubscriptionPlan === plan}
+                      badge={selectedSubscriptionPlan === plan ? "Selezionato" : plan === "PREMIUM" ? "Continuità e vantaggi" : plan === "DIRECT" ? "Zero commissioni" : "Senza canone"}>
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                        <p className="max-w-lg text-xs leading-5 text-slate-500">
+                          {plan === "BASIC" ? "Nessun canone mensile. Il profilo viene pubblicato dopo la verifica dei documenti." : plan === "PREMIUM" ? "Dopo la conferma dell’email completi la registrazione pagando il canone mensile. Il canone decorre dal pagamento; profilo visibile e prenotabile dopo la verifica dei documenti. IVA eventualmente dovuta e totale sono mostrati prima della conferma." : "Dopo la conferma dell’email paghi il canone DIRECT per completare la registrazione: 29,90 €/mese per professionisti sanitari, 49,90 €/mese per medici. Il canone decorre dal pagamento; visibilità e prenotazioni dopo la verifica dei documenti. IVA eventualmente dovuta e totale sono mostrati nel Checkout."}
+                        </p>
+                        <button type="button" aria-pressed={selectedSubscriptionPlan === plan}
+                          disabled={plan === "DIRECT" && !directSelectable}
+                          onClick={() => setValue("subscriptionPlan", plan, { shouldValidate: true, shouldDirty: true })}
+                          className={`shrink-0 rounded-xl px-5 py-3 text-sm font-bold text-white transition focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700 disabled:cursor-not-allowed disabled:opacity-50 ${plan === "DIRECT" ? "bg-emerald-800 hover:bg-emerald-900" : plan === "PREMIUM" ? "bg-indigo-700 hover:bg-indigo-800" : "bg-blue-800 hover:bg-blue-900"}`}>
+                          {plan === "DIRECT" && !directSelectable ? "Non disponibile" : selectedSubscriptionPlan === plan ? `${plan} selezionato` : `Scegli ${plan}`}
+                        </button>
+                      </div>
+                    </ProfessionalPlanCard>
+                  ))}
+                </div>
+                {errors.subscriptionPlan && <p role="alert" className="text-sm text-red-600">{errors.subscriptionPlan.message}</p>}
+              </section>
+
+
             </div>
           )}
 
