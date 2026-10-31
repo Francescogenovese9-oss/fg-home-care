@@ -71,7 +71,7 @@ type ProfessionalProfile = {
 
   stripe_payouts_enabled: boolean;
 
-  subscription_plan: "BASIC" | "PREMIUM" | null;
+  subscription_plan: "BASIC" | "PREMIUM" | "DIRECT" | null;
   subscription_status: string | null;
 };
 
@@ -924,7 +924,28 @@ export default async function ProfessionalDashboardPage() {
             PIANO PROFESSIONALE
         ================================================= */}
 
-        {professionalProfile?.subscription_plan === "PREMIUM" &&
+        {professionalProfile?.subscription_plan === "DIRECT" &&
+        professionalProfile?.subscription_status === "active" ? (
+          <section className="mt-8 rounded-2xl border border-emerald-200 bg-white p-6 shadow-sm">
+            <div className="flex flex-wrap items-center justify-between gap-4">
+              <div>
+                <p className="text-sm font-semibold text-emerald-700">Piano attuale: DIRECT</p>
+                <h3 className="mt-1 text-xl font-bold text-slate-900">Zero commissioni sulle prestazioni</h3>
+                <p className="mt-2 text-sm text-slate-600">
+                  Il paziente paga direttamente il professionista. FG Home Care gestisce prenotazioni,
+                  conferme e notifiche; non incassa il pagamento della prestazione.
+                </p>
+                <p className="mt-2 text-sm text-slate-600">
+                  Canone: 29,90 €/mese per sanitari non medici; 49,90 €/mese per medici.
+                </p>
+              </div>
+              <Link href="/dashboard/professional/payments"
+                className="rounded-xl border border-slate-300 bg-white px-5 py-3 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+                Gestisci piano
+              </Link>
+            </div>
+          </section>
+        ) : professionalProfile?.subscription_plan === "PREMIUM" &&
         professionalProfile?.subscription_status === "active" ? (
           <section className="mt-8 rounded-2xl border border-blue-200 bg-white p-6 shadow-sm">
             <div className="flex flex-wrap items-center justify-between gap-4">
