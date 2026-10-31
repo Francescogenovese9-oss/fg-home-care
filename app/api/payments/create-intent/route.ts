@@ -409,6 +409,9 @@ export async function POST(
         true ||
       professional
         .stripe_transfers_enabled !==
+        true ||
+      professional
+        .stripe_payouts_enabled !==
         true
     ) {
       console.log(
