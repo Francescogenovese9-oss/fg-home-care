@@ -1,8 +1,10 @@
+"use client";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import LogoutButton from "@/components/auth/LogoutButton";
 import NotificationBell, { type NotificationPreview } from "@/components/notifications/NotificationBell";
-import { createClient } from "@/lib/supabase/server";
+import { createClient } from "@/lib/supabase/client";
 
 const publicLinks = [
   { href: "/chi-siamo", label: "Chi siamo" },
@@ -34,30 +36,34 @@ const roleLinks = {
   ],
 } as const;
 
-export default async function Header() {
-  const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
-  let role: keyof typeof roleLinks | null = null;
-  let unreadCount = 0;
-  let notifications: NotificationPreview[] = [];
-
-  if (user) {
-    const { data: profile } = await supabase
-      .from("profiles")
-      .select("role")
-      .eq("id", user.id)
-      .maybeSingle();
-    if (profile?.role === "PROFESSIONAL" || profile?.role === "PATIENT" || profile?.role === "ADMIN") {
-      role = profile.role;
+export default function Header() {
+  const [userId, setUserId] = useState<string | null>(null);
+  const [role, setRole] = useState<keyof typeof roleLinks | null>(null);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifications, setNotifications] = useState<NotificationPreview[]>([]);
+  useEffect(() => {
+    let active = true;
+    const supabase = createClient();
+    async function loadSession() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!active) return;
+      setUserId(user?.id ?? null);
+      if (!user) { setRole(null); return; }
+      const { data: profile } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+      if (!active) return;
+      setRole(profile?.role === "PROFESSIONAL" || profile?.role === "PATIENT" || profile?.role === "ADMIN" ? profile.role : null);
+      const [{ count }, { data }] = await Promise.all([
+        supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("read", false),
+        supabase.from("notifications").select("id, type, title, message, link, read, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
+      ]);
+      if (!active) return;
+      setUnreadCount(count ?? 0);
+      setNotifications((data ?? []) as NotificationPreview[]);
     }
-    const [{ count }, { data }] = await Promise.all([
-      supabase.from("notifications").select("id", { count: "exact", head: true }).eq("user_id", user.id).eq("read", false),
-      supabase.from("notifications").select("id, type, title, message, link, read, created_at").eq("user_id", user.id).order("created_at", { ascending: false }).limit(5),
-    ]);
-    unreadCount = count ?? 0;
-    notifications = (data ?? []) as NotificationPreview[];
-  }
-
+    void loadSession();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => { void loadSession(); });
+    return () => { active = false; subscription.unsubscribe(); };
+  }, []);
   const links = role ? roleLinks[role] : publicLinks;
   return (
     <header className="relative z-50 border-b border-slate-100 bg-white">
@@ -73,13 +79,13 @@ export default async function Header() {
           ))}
         </nav>
         <div className="order-2 ml-auto flex shrink-0 items-center gap-2 lg:order-3">
-          {user && role ? (
+          {userId && role ? (
             <>
-              <NotificationBell userId={user.id} initialUnreadCount={unreadCount} initialNotifications={notifications} />
+              <NotificationBell userId={userId} initialUnreadCount={unreadCount} initialNotifications={notifications} />
               <Link href="/dashboard/change-password" className="rounded-xl border border-blue-200 bg-blue-50 px-3 py-2 text-xs font-semibold text-blue-800 transition hover:bg-blue-100 sm:text-sm">Modifica password</Link>
               <LogoutButton />
             </>
-          ) : user ? (
+          ) : userId ? (
             <LogoutButton />
           ) : (
             <>
