@@ -1,4 +1,5 @@
 import Link from "next/link";
+import type { NotificationPreview } from "@/components/notifications/NotificationBell";
 import { redirect } from "next/navigation";
 
 import CareGuidance from "@/components/home/CareGuidance";
