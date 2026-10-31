@@ -1402,8 +1402,9 @@ export async function PATCH(
       action ===
       "ACCEPT"
     ) {
-      responseMessage =
-        "Richiesta accettata. Il paziente può ora procedere al pagamento.";
+      responseMessage = directBooking
+        ? "Richiesta DIRECT accettata. Il paziente paga direttamente il professionista, senza pagamento in piattaforma."
+        : "Richiesta accettata. Il paziente può ora procedere al pagamento.";
     }
 
     if (
