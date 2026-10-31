@@ -1,5 +1,8 @@
 "use client";
 
+import Link from "next/link";
+import { DIRECT_TERMS_VERSION } from "@/lib/legal/versions";
+
 import {
   useState,
 } from "react";
@@ -28,6 +31,7 @@ export default function ProfessionalSubscriptionCard({
 
   const [error, setError] =
     useState("");
+  const [directTermsAccepted, setDirectTermsAccepted] = useState(false);
 
   const isDirect = plan === "DIRECT" && status === "active";
   const directDoctor = ["Medico chirurgo", "Medico di medicina generale / Medico di base", "Medico specialista"].includes(profession || "");
@@ -56,6 +60,11 @@ export default function ProfessionalSubscriptionCard({
     endpoint: string
   ) {
     try {
+      const directCheckout = endpoint === "/api/stripe/subscription/direct/checkout";
+      if (directCheckout && !directTermsAccepted) {
+        setError("Leggi e accetta le condizioni DIRECT prima di continuare.");
+        return;
+      }
       setLoading(true);
       setError("");
 
@@ -64,6 +73,10 @@ export default function ProfessionalSubscriptionCard({
           endpoint,
           {
             method: "POST",
+            ...(directCheckout ? {
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ directTermsAccepted: true, directTermsVersion: DIRECT_TERMS_VERSION }),
+            } : {}),
           }
         );
 
@@ -223,9 +236,22 @@ export default function ProfessionalSubscriptionCard({
             <p className="mt-1 text-sm text-slate-600">
               Commissione 0% sulle prestazioni. Il paziente paga direttamente il professionista.
             </p>
+            <p className="mt-3 text-sm leading-6 text-slate-600">
+              Canone base al netto dell&apos;IVA eventualmente dovuta. Il totale è mostrato prima della conferma in Stripe.
+              Rinnovo automatico mensile; disdetta da Gestisci abbonamento con effetto ordinario a fine periodo.
+              Nessun numero minimo di prenotazioni è garantito.
+            </p>
+            <label className="mt-3 flex items-start gap-3 text-sm leading-6 text-slate-700" htmlFor="acceptDirectTerms">
+              <input id="acceptDirectTerms" type="checkbox" checked={directTermsAccepted}
+                onChange={(event) => setDirectTermsAccepted(event.target.checked)}
+                className="mt-1 h-5 w-5 shrink-0 accent-blue-700" />
+              <span>Ho letto e accetto le <Link href="/condizioni-direct" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 underline">condizioni del piano DIRECT</Link>, inclusi canone e rinnovo mensile.
+                Ho preso visione dell&apos;<Link href="/privacy" target="_blank" rel="noopener noreferrer" className="text-blue-700 underline">Informativa Privacy</Link>.
+                La conferma finale dell&apos;abbonamento con obbligo di pagamento avviene in Stripe.</span>
+            </label>
             <button
               type="button"
-              disabled={loading || !verificationApproved || !directPurchaseEnabled}
+              disabled={loading || !verificationApproved || !directPurchaseEnabled || !directTermsAccepted}
               onClick={() => openStripe("/api/stripe/subscription/direct/checkout")}
               className="mt-3 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
             >

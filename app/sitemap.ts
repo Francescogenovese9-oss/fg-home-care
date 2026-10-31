@@ -31,6 +31,12 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const staticPages: MetadataRoute.Sitemap = [
+    ...["termini-e-condizioni", "privacy", "carta-dei-servizi", "condizioni-direct", "cookie-policy"].map((path) => ({
+      url: `${siteUrl}/${path}`,
+      lastModified: new Date("2026-10-31T00:00:00+01:00"),
+      changeFrequency: "monthly" as const,
+      priority: 0.4,
+    })),
     {
       url: siteUrl,
       lastModified: new Date(),

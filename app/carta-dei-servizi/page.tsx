@@ -3,6 +3,7 @@ import Image from "next/image";
 import Link from "next/link";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
+import { LEGAL_UPDATED_LABEL } from "@/lib/legal/versions";
 
 export const metadata: Metadata = {
   title: "Carta dei Servizi | FG Home Care",
@@ -11,12 +12,15 @@ export const metadata: Metadata = {
 
 const sections = [
   {
-    title: "Piano DIRECT — pagamento diretto (in preparazione)",
-    paragraphs: [
-      "DIRECT è un piano previsto per i professionisti, non ancora acquistabile: 29,90 € al mese per professionisti sanitari non medici e 49,90 € al mese per medici, secondo qualifica verificata. FG Home Care non applicherà commissioni sulle singole prestazioni DIRECT.",
-      "Il paziente prenota tramite FG Home Care ma non paga la prestazione sulla piattaforma. Il pagamento avviene direttamente dal paziente al professionista, che gestisce incasso e documentazione fiscale; FG Home Care incassa dal professionista esclusivamente il canone mensile DIRECT.",
-      "Richieste, conferme, calendario e notifiche resteranno nella piattaforma. Nessun numero minimo di prenotazioni è garantito. Condizioni di rinnovo, cancellazione e attivazione saranno rese disponibili prima dell'acquisto. Le funzionalità sono subordinate alle verifiche tecniche e legali prima della pubblicazione."
-    ],
+    "title": "Piano DIRECT — servizio attivo e pagamento al professionista",
+    "paragraphs": [
+      "DIRECT è disponibile ai professionisti approvati e prevede un canone base mensile di 29,90 € per professionisti sanitari non medici oppure 49,90 € per le categorie di medici previste, secondo qualifica verificata, al netto dell’IVA eventualmente dovuta. Il riepilogo prima della sottoscrizione indica il totale da confermare. FG Home Care non applica commissioni sulle singole prestazioni DIRECT.",
+      "Il professionista sottoscrive con FG Home Care il servizio digitale; il paziente concorda la prestazione con il professionista e lo paga direttamente. Il professionista gestisce incasso, condizioni della prestazione e documentazione fiscale del paziente. FG Home Care cura la fatturazione del proprio canone, non incassa né rimborsa le somme versate fuori piattaforma per la prestazione.",
+      "Profili, richieste, accettazione, calendario, messaggi e notifiche restano in piattaforma. Il paziente non paga un abbonamento a FG Home Care. La preferenza espressa in registrazione non attiva il piano: servono approvazione, accettazione delle condizioni specifiche e sottoscrizione confermata tramite Stripe. Non è garantito un numero minimo di richieste o un risultato economico.",
+      "Il canone si rinnova automaticamente ogni mese salvo disdetta dal portale raggiungibile con Gestisci abbonamento. La disdetta ordinaria ha effetto alla fine del periodo già pagato; alla cessazione il profilo torna BASIC. Le nuove prenotazioni DIRECT richiedono piano attivo. Le prenotazioni già registrate come DIRECT non diventano retroattivamente pagamenti in piattaforma.",
+      "Per una prenotazione DIRECT accettata, il paziente può annullare dall’area riservata prima dell’inizio previsto. Un eventuale rimborso di denaro già versato direttamente deve essere richiesto al professionista: l’annullamento nell’app non esegue un rimborso. Le percentuali di rimborso delle prestazioni pagate in piattaforma non si estendono automaticamente a DIRECT. I diritti inderogabili del paziente restano salvi.",
+      "Le Condizioni DIRECT, consultabili e scaricabili prima dell’acquisto, descrivono rinnovo, disdetta, mancati pagamenti, rimborsi del canone, ruoli privacy e responsabilità. BASIC e PREMIUM mantengono i propri corrispettivi e commissioni; la disponibilità dei pagamenti in piattaforma è distinta da quella di DIRECT."
+    ]
   },
   {
     title: "Identificazione del gestore",
@@ -80,7 +84,7 @@ const sections = [
   {
     title: "8. Trasparenza e documenti contrattuali",
     paragraphs: [
-      "Questa Carta dei Servizi illustra gli impegni e le caratteristiche generali della piattaforma. Non sostituisce i Termini e Condizioni, l&apos;informativa privacy, la Cookie Policy o le informazioni precontrattuali applicabili.",
+      "Questa Carta dei Servizi illustra gli impegni e le caratteristiche generali della piattaforma. Non sostituisce i Termini e Condizioni, l’informativa privacy, la Cookie Policy o le informazioni precontrattuali applicabili.",
       "Nessuna disposizione della Carta limita i diritti inderogabili dei consumatori, dei pazienti o degli interessati, né esclude responsabilità che non possono essere escluse per legge.",
     ],
   },
@@ -102,7 +106,7 @@ export default function CartaDeiServiziPage() {
             <p className="mt-5 max-w-3xl text-lg leading-8 text-slate-700">
               Come funziona FG Home Care, quali sono gli impegni della piattaforma e quali responsabilità competono ai professionisti che offrono le prestazioni.
             </p>
-            <p className="mt-4 text-sm text-slate-500">Documento informativo sulla natura e sulle modalità del servizio.</p>
+            <p className="mt-4 text-sm text-slate-500">Documento informativo sulla natura e sulle modalità del servizio. Aggiornamento: {LEGAL_UPDATED_LABEL} · Versione carta-2026-10-31-direct-v1.</p>
           </div>
           <div className="mt-8 space-y-5">
             {sections.map((section) => (
@@ -115,6 +119,7 @@ export default function CartaDeiServiziPage() {
             ))}
           </div>
           <div className="mt-8 rounded-2xl border border-blue-100 bg-blue-50 p-6 text-sm leading-7 text-slate-700">
+            <p className="mb-3"><Link href="/condizioni-direct" className="font-semibold text-blue-800 underline">Condizioni del piano DIRECT</Link> · <Link href="/termini-e-condizioni" className="font-semibold text-blue-800 underline">Termini e Condizioni</Link> · <Link href="/privacy" className="font-semibold text-blue-800 underline">Privacy</Link> · <Link href="/cookie-policy" className="font-semibold text-blue-800 underline">Cookie</Link></p>
             Per domande o segnalazioni, consulta la pagina <Link href="/contatti" className="font-semibold text-blue-800 underline underline-offset-2">Contatti</Link>.
             Prima dell&apos;utilizzo dei servizi consulta anche i Termini e Condizioni e l&apos;informativa privacy applicabili.
           </div>

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { registerSchema } from "@/lib/validations/register";
+import { TERMS_VERSION } from "@/lib/legal/versions";
 
 export async function POST(request: NextRequest) {
   try {
@@ -33,7 +34,7 @@ export async function POST(request: NextRequest) {
         data: {
           terms_accepted: true,
           terms_accepted_at: new Date().toISOString(),
-          terms_version: "bozza-2026-10-11",
+          terms_version: TERMS_VERSION,
           first_name: values.firstName,
           last_name: values.lastName,
           role: values.role,
