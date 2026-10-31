@@ -1,3 +1,4 @@
+import { getSignupPlan } from "@/lib/subscriptions/paid-signup";
 import Link from "next/link";
 import { isDirectEnabledFor } from "@/lib/subscriptions/direct-rollout";
 import { redirect } from "next/navigation";
@@ -361,6 +362,7 @@ export default async function ProfessionalPaymentsPage({
         )}
 
         <ProfessionalSubscriptionCard
+          pendingPaidPlan={!verificationApproved && user.app_metadata.signup_subscription_completed === true && professionalProfile.subscription_status === "active" ? getSignupPlan(user) : null}
           plan={subscriptionPlan}
           directPurchaseEnabled={isDirectEnabledFor(user.id)}
           profession={professionalProfile.profession}

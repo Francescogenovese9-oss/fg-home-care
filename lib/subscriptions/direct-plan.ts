@@ -1,19 +1,14 @@
 import type { Profession } from "@/lib/professions";
 
-/**
- * DIRECT is not live yet. Prices are display-only until the subscription,
- * booking and billing flows have been migrated and verified.
- *
- * The server must determine the verified profession from approved documents;
- * never trust a profession or price submitted by a browser for billing.
- */
+/** DIRECT pricing. Signup uses the server-recorded declared profession;
+ * publication and entitlement require verification of the professional documents. */
 export const DIRECT_PLAN = {
   code: "DIRECT",
   healthcareMonthlyCents: 2990,
   doctorMonthlyCents: 4990,
   patientPlatformPayment: false,
   platformCommissionPercent: 0,
-  availableForPurchase: false,
+  availableForPurchase: true,
 } as const;
 
 const DOCTOR_PROFESSIONS: ReadonlySet<Profession> = new Set([

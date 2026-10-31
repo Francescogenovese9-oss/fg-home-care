@@ -1,3 +1,4 @@
+import { getSignupPlan, needsSignupPayment } from "@/lib/subscriptions/paid-signup";
 import { isDirectEnabledFor } from "@/lib/subscriptions/direct-rollout";
 import { DIRECT_TERMS_VERSION, TERMS_VERSION, PRIVACY_VERSION, hasAcceptedDirectTerms } from "@/lib/legal/versions";
 import {
@@ -59,6 +60,10 @@ export async function POST(
     if (!isDirectEnabledFor(user.id)) {
       return NextResponse.json({ message: "DIRECT non è ancora disponibile per questo account." }, { status: 503 });
     }
+
+    const signupPlan = getSignupPlan(user);
+    const signup = needsSignupPayment(user);
+    if (signup && signupPlan !== "DIRECT") return NextResponse.json({ message: "Completa il piano scelto durante la registrazione." }, { status: 409 });
 
     const {
       data:
@@ -172,7 +177,7 @@ export async function POST(
     }
 
     if (
-      professional
+      !signup && professional
         .verification_status !==
       "APPROVED"
     ) {
@@ -219,14 +224,16 @@ export async function POST(
     }
 
     // Never use a client-supplied profession or Stripe Price ID.
-    // Only the server-side, approved professional profile determines pricing.
-    if (!isProfession(professional.profession || "")) {
+    // New signups use the declaration frozen in server-only app_metadata.
+    // Entitlement still requires approved documents and a matching Stripe price.
+    const billingProfession = signup ? user.app_metadata.signup_profession : professional.profession;
+    if (typeof billingProfession !== "string" || !isProfession(billingProfession)) {
       return NextResponse.json(
         { message: "Professione non verificabile: contatta l'assistenza." },
         { status: 403 }
       );
     }
-    const doctor = isDoctorProfession(professional.profession);
+    const doctor = isDoctorProfession(billingProfession);
     const priceId = (
       doctor
         ? process.env.STRIPE_DIRECT_DOCTOR_PRICE_ID
@@ -384,10 +391,10 @@ export async function POST(
           ],
 
           success_url:
-            `${siteUrl}/dashboard/professional/payments?direct=success`,
+            signup ? `${siteUrl}/onboarding/subscription?payment=success` : `${siteUrl}/dashboard/professional/payments?direct=success`,
 
           cancel_url:
-            `${siteUrl}/dashboard/professional/payments?direct=canceled`,
+            signup ? `${siteUrl}/onboarding/subscription?payment=canceled` : `${siteUrl}/dashboard/professional/payments?direct=canceled`,
 
           metadata: {
             fg_direct_terms_version: DIRECT_TERMS_VERSION,

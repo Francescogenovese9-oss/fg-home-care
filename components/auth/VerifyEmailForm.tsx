@@ -77,7 +77,7 @@ export function VerifyEmailForm({
         return;
       }
 
-      router.replace("/login?confirmed=true");
+      router.replace(data.redirectTo === "/onboarding/subscription" ? "/onboarding/subscription" : "/login?confirmed=true");
     } catch {
       setError("Impossibile verificare il codice. Riprova.");
     } finally {

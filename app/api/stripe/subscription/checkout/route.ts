@@ -1,3 +1,5 @@
+import { TERMS_VERSION } from "@/lib/legal/versions";
+import { getSignupPlan, needsSignupPayment } from "@/lib/subscriptions/paid-signup";
 import {
   NextRequest,
   NextResponse,
@@ -22,15 +24,8 @@ import {
 export const runtime = "nodejs";
 
 export async function POST(
-  _request: NextRequest
+  request: NextRequest
 ) {
-  if (process.env.NEXT_PUBLIC_TRANSACTIONS_ENABLED !== "true") {
-    return NextResponse.json(
-      { message: "Le prenotazioni e i pagamenti online saranno disponibili a breve." },
-      { status: 503, headers: { "Cache-Control": "no-store" } }
-    );
-  }
-
   try {
     const supabase =
       await createClient();
@@ -57,6 +52,15 @@ export async function POST(
           status: 401,
         }
       );
+    }
+
+    const signupPlan = getSignupPlan(user);
+    const signup = needsSignupPayment(user);
+    if (signup && signupPlan !== "PREMIUM") return NextResponse.json({ message: "Completa il piano scelto durante la registrazione." }, { status: 409 });
+    if (process.env.NEXT_PUBLIC_TRANSACTIONS_ENABLED !== "true" && !signup) return NextResponse.json({ message: "Nuove attivazioni Premium dalla dashboard non disponibili." }, { status: 503 });
+    if (signup) {
+      const consent = await request.json().catch(() => null);
+      if (consent?.signupTermsAccepted !== true || consent.signupTermsVersion !== TERMS_VERSION) return NextResponse.json({ message: "Accetta le condizioni aggiornate dell’abbonamento." }, { status: 400 });
     }
 
     const {
@@ -170,7 +174,7 @@ export async function POST(
     }
 
     if (
-      professional
+      !signup && professional
         .verification_status !==
       "APPROVED"
     ) {
@@ -216,6 +220,13 @@ export async function POST(
 
     const stripe =
       getStripe();
+
+    const configuredPrice = await stripe.prices.retrieve(priceId);
+    if (!configuredPrice.active || configuredPrice.type !== "recurring" ||
+        configuredPrice.recurring?.interval !== "month" || configuredPrice.recurring?.interval_count !== 1 ||
+        configuredPrice.currency !== "eur" || configuredPrice.unit_amount !== 1990) {
+      throw new Error("Il prezzo Stripe Premium non corrisponde alla tariffa prevista.");
+    }
 
     let customerId =
       professional
@@ -276,6 +287,7 @@ export async function POST(
               undefined,
 
             metadata: {
+              ...(signup ? { fg_signup_flow: "paid-signup-v1", fg_terms_version: TERMS_VERSION, fg_terms_accepted_at: new Date().toISOString() } : {}),
               fg_home_care_professional_id:
                 user.id,
             },
@@ -344,12 +356,13 @@ export async function POST(
           ],
 
           success_url:
-            `${siteUrl}/dashboard/professional/payments?premium=success`,
+            signup ? `${siteUrl}/onboarding/subscription?payment=success` : `${siteUrl}/dashboard/professional/payments?premium=success`,
 
           cancel_url:
-            `${siteUrl}/dashboard/professional/payments?premium=canceled`,
+            signup ? `${siteUrl}/onboarding/subscription?payment=canceled` : `${siteUrl}/dashboard/professional/payments?premium=canceled`,
 
           metadata: {
+            ...(signup ? { fg_signup_flow: "paid-signup-v1", fg_terms_version: TERMS_VERSION, fg_terms_accepted_at: new Date().toISOString() } : {}),
             fg_home_care_professional_id:
               user.id,
 
@@ -359,6 +372,7 @@ export async function POST(
 
           subscription_data: {
             metadata: {
+              ...(signup ? { fg_signup_flow: "paid-signup-v1", fg_terms_version: TERMS_VERSION, fg_terms_accepted_at: new Date().toISOString() } : {}),
               fg_home_care_professional_id:
                 user.id,
 

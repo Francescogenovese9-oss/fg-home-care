@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 
+import { needsSignupPayment } from "@/lib/subscriptions/paid-signup";
 import { createClient } from "@/lib/supabase/server";
 
 export async function POST(request: NextRequest) {
@@ -55,8 +56,10 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    const { data: { user } } = await supabase.auth.getUser();
     return NextResponse.json({
       success: true,
+      redirectTo: user && needsSignupPayment(user) ? "/onboarding/subscription" : "/login?confirmed=true",
     });
   } catch (error) {
     console.error("Errore API verifica email:", error);
