@@ -329,6 +329,7 @@ export async function PATCH(
           professional_id,
           status,
           payment_status,
+          service_payment_route,
           appointment_date,
           appointment_time,
           duration_minutes,
@@ -608,12 +609,72 @@ export async function PATCH(
      * =====================================================
      */
 
+    // DIRECT bookings do not require a patient payment on the platform.
+    // Read the professional plan from the server and verify the active subscription.
+    // Preserve legacy NOT_REQUIRED behavior for older appointments.
+    let directBooking = false;
+    if (action === "ACCEPT") {
+      const adminForPlan = getSupabaseAdmin();
+      const { data: professionalPlan, error: planError } = await adminForPlan
+        .from("professional_profiles")
+        .select("subscription_plan, subscription_status")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (planError || !professionalPlan) {
+        return NextResponse.json(
+          { message: "Impossibile verificare il piano del professionista." },
+          { status: 503 }
+        );
+      }
+
+      // Never reclassify the booking based on a later subscription change.
+      if (
+        appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" &&
+        (professionalPlan.subscription_plan !== "DIRECT" ||
+          professionalPlan.subscription_status !== "active" ||
+          process.env.FG_DIRECT_PLAN_ENABLED !== "true")
+      ) {
+        return NextResponse.json(
+          { message: "La prenotazione DIRECT richiede un abbonamento DIRECT attivo." },
+          { status: 409 }
+        );
+      }
+
+      if (
+        appointment.service_payment_route === "STRIPE_PLATFORM" &&
+        professionalPlan.subscription_plan === "DIRECT"
+      ) {
+        return NextResponse.json(
+          { message: "La modalità di pagamento della prenotazione non corrisponde al piano attuale." },
+          { status: 409 }
+        );
+      }
+
+      if (professionalPlan.subscription_plan === "DIRECT") {
+        if (
+          process.env.FG_DIRECT_PLAN_ENABLED !== "true" ||
+          professionalPlan.subscription_status !== "active" ||
+          appointment.payment_status !== "NOT_REQUIRED" ||
+          appointment.service_payment_route !== "PAY_PROFESSIONAL_DIRECTLY"
+        ) {
+          return NextResponse.json(
+            { message: "La prenotazione DIRECT non può essere accettata: verifica l'abbonamento e lo stato del pagamento." },
+            { status: 409 }
+          );
+        }
+        directBooking = true;
+      }
+    }
+
     const nextPaymentStatus:
       | PaymentStatus
       | undefined =
       action ===
       "ACCEPT"
-        ? "REQUIRES_PAYMENT"
+        ? directBooking
+          ? "NOT_REQUIRED"
+          : "REQUIRES_PAYMENT"
         : action ===
             "REJECT"
           ? "CANCELLED"
@@ -840,10 +901,13 @@ export async function PATCH(
 
       notificationMessage =
         `La tua richiesta per il ${formattedAppointmentDate} alle ${formattedAppointmentTime} ` +
-        "è stata accettata. Puoi ora procedere al pagamento.";
+        (directBooking
+          ? "è stata accettata. Pagherai la prestazione direttamente al professionista."
+          : "è stata accettata. Puoi ora procedere al pagamento.");
 
-      notificationLink =
-        `/dashboard/patient/appointments/${appointmentId}/payment`;
+      notificationLink = directBooking
+        ? "/dashboard/patient/appointments"
+        : `/dashboard/patient/appointments/${appointmentId}/payment`;
     } else if (
       action ===
       "REJECT"
@@ -1107,8 +1171,9 @@ export async function PATCH(
               action ===
               "ACCEPT"
             ) {
-              const paymentUrl =
-                `${siteUrl}/dashboard/patient/appointments/${appointmentId}/payment`;
+              const paymentUrl = directBooking
+                ? `${siteUrl}/dashboard/patient/appointments`
+                : `${siteUrl}/dashboard/patient/appointments/${appointmentId}/payment`;
 
               const emailTemplate =
                 appointmentAcceptedTemplate({
@@ -1123,6 +1188,7 @@ export async function PATCH(
                     formattedAppointmentTime,
 
                   paymentUrl,
+                  directPayment: directBooking,
                 });
 
               const emailResult =

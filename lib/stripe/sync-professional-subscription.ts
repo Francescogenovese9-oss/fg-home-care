@@ -1,6 +1,8 @@
 import "server-only";
 
 import Stripe from "stripe";
+import { isProfession } from "@/lib/professions";
+import { isDoctorProfession } from "@/lib/subscriptions/direct-plan";
 
 import {
   getSupabaseAdmin,
@@ -103,9 +105,73 @@ export async function syncProfessionalSubscription(
    * active, il professionista mantie i
    * vantaggi fino alla scadenza del periodo.
    */
-  const isPremium =
+  const isActive =
     subscription.status ===
     "active";
+
+  // Stripe is the source of truth for the plan. A DIRECT subscription
+  // is never inferred from browser-provided metadata or registration.
+  const stripePlan =
+    subscription.metadata
+      .fg_home_care_plan;
+
+  // Subscription metadata alone cannot authorize a plan.
+  // Match the actual recurring Price ID configured server-side.
+  const subscribedPriceIds = subscription.items.data.map(
+    (item) => item.price.id
+  );
+  const doctorDirectPriceId = process.env.STRIPE_DIRECT_DOCTOR_PRICE_ID?.trim();
+  const healthcareDirectPriceId = process.env.STRIPE_DIRECT_HEALTHCARE_PRICE_ID?.trim();
+
+  const matchesDirectPrice =
+    subscribedPriceIds.length === 1 &&
+    Boolean(
+      (doctorDirectPriceId && subscribedPriceIds[0] === doctorDirectPriceId) ||
+      (healthcareDirectPriceId && subscribedPriceIds[0] === healthcareDirectPriceId)
+    );
+
+  let matchesVerifiedProfession = false;
+  if (stripePlan === "DIRECT" && matchesDirectPrice) {
+    const { data: approvedProfessional, error: professionError } =
+      await supabaseAdmin
+        .from("professional_profiles")
+        .select("profession, verification_status")
+        .eq("user_id", professionalId)
+        .maybeSingle();
+
+    if (professionError) {
+      throw professionError;
+    }
+
+    const verifiedProfession = approvedProfessional?.profession;
+    if (
+      approvedProfessional?.verification_status === "APPROVED" &&
+      typeof verifiedProfession === "string" &&
+      isProfession(verifiedProfession)
+    ) {
+      const expectedPriceId = isDoctorProfession(verifiedProfession)
+        ? doctorDirectPriceId
+        : healthcareDirectPriceId;
+
+      matchesVerifiedProfession =
+        Boolean(expectedPriceId) &&
+        subscribedPriceIds[0] === expectedPriceId;
+    }
+  }
+
+  const isDirect =
+    isActive &&
+    stripePlan === "DIRECT" &&
+    matchesDirectPrice &&
+    matchesVerifiedProfession &&
+    process.env.FG_DIRECT_PLAN_ENABLED === "true";
+
+  // Keep legacy Premium subscriptions working, but never misclassify
+  // a DIRECT Stripe Price as PREMIUM if its metadata is missing or stale.
+  const isPremium =
+    isActive &&
+    stripePlan !== "DIRECT" &&
+    !matchesDirectPrice;
 
   const {
     error:
@@ -127,9 +193,11 @@ export async function syncProfessionalSubscription(
             subscription.status,
 
           subscription_plan:
-            isPremium
-              ? "PREMIUM"
-              : "BASIC",
+            isDirect
+              ? "DIRECT"
+              : isPremium
+                ? "PREMIUM"
+                : "BASIC",
 
           subscription_current_period_end:
             getCurrentPeriodEnd(
@@ -161,8 +229,10 @@ export async function syncProfessionalSubscription(
     status:
       subscription.status,
     plan:
-      isPremium
-        ? "PREMIUM"
-        : "BASIC",
+      isDirect
+        ? "DIRECT"
+        : isPremium
+          ? "PREMIUM"
+          : "BASIC",
   };
 }

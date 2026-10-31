@@ -138,6 +138,7 @@ export default async function AppointmentPaymentPage({
 
         status,
         payment_status,
+        service_payment_route,
 
         currency,
 
@@ -182,6 +183,15 @@ export default async function AppointmentPaymentPage({
     redirect(
       "/dashboard/patient/appointments"
     );
+  }
+
+  // The immutable booking route takes precedence over current subscription.
+  // DIRECT and legacy non-payable appointments never display Stripe Elements.
+  if (
+    appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" ||
+    appointment.payment_status === "NOT_REQUIRED"
+  ) {
+    redirect("/dashboard/patient/appointments");
   }
 
   /*

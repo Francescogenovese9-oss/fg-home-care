@@ -5,7 +5,8 @@ import {
 } from "react";
 
 type Props = {
-  plan: "BASIC" | "PREMIUM";
+  plan: "BASIC" | "PREMIUM" | "DIRECT";
+  profession?: string | null;
   status: string;
   cancelAtPeriodEnd: boolean;
   currentPeriodEnd: string | null;
@@ -14,6 +15,7 @@ type Props = {
 
 export default function ProfessionalSubscriptionCard({
   plan,
+  profession,
   status,
   cancelAtPeriodEnd,
   currentPeriodEnd,
@@ -24,6 +26,9 @@ export default function ProfessionalSubscriptionCard({
 
   const [error, setError] =
     useState("");
+
+  const isDirect = plan === "DIRECT" && status === "active";
+  const directDoctor = ["Medico chirurgo", "Medico di medicina generale / Medico di base", "Medico specialista"].includes(profession || "");
 
   const isPremium =
     plan === "PREMIUM" &&
@@ -101,13 +106,11 @@ export default function ProfessionalSubscriptionCard({
           </p>
 
           <h3 className="mt-1 text-2xl font-bold text-slate-900">
-            {isPremium
-              ? "FG Home Care Premium"
-              : "FG Home Care Basic"}
+            {isDirect ? "FG Home Care DIRECT" : isPremium ? "FG Home Care Premium" : "FG Home Care Basic"}
           </h3>
 
           <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-            {isPremium
+            {isDirect ? "Nessuna commissione sulle prestazioni. Il paziente paga direttamente il professionista; FG Home Care gestisce prenotazioni e notifiche." : isPremium
               ? "Commissione ridotta all'8% sulle prestazioni, maggiore visibilità e funzionalità Premium."             : "Il piano Basic non prevede un canone mensile e applica una commissione del 15% sulle prestazioni. È possibile passare in qualsiasi momento al piano Premium da 19,90 €/mese, con commissione ridotta all'8%."}
           </p>
         </div>
@@ -119,9 +122,7 @@ export default function ProfessionalSubscriptionCard({
               : "rounded-full border border-slate-200 bg-slate-50 px-4 py-2 text-sm font-bold text-slate-700"
           }
         >
-          {isPremium
-            ? "PREMIUM"
-            : "BASIC"}
+          {isDirect ? "DIRECT" : isPremium ? "PREMIUM" : "BASIC"}
         </span>
       </div>
 
@@ -132,9 +133,7 @@ export default function ProfessionalSubscriptionCard({
           </p>
 
           <p className="mt-1 text-xl font-bold text-slate-900">
-            {isPremium
-              ? "19,90 € / mese"
-              : "0 € / mese"}
+            {isDirect ? (directDoctor ? "49,90 € / mese" : "29,90 € / mese") : isPremium ? "19,90 € / mese" : "0 € / mese"}
           </p>
         </div>
 
@@ -144,14 +143,12 @@ export default function ProfessionalSubscriptionCard({
           </p>
 
           <p className="mt-1 text-xl font-bold text-slate-900">
-            {isPremium
-              ? "8%"
-              : "15%"}
+            {isDirect ? "0%" : isPremium ? "8%" : "15%"}
           </p>
         </div>
       </div>
 
-      {isPremium &&
+      {(isPremium || isDirect) &&
         cancelAtPeriodEnd && (
           <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
             <p className="font-semibold text-amber-900">
@@ -159,7 +156,7 @@ export default function ProfessionalSubscriptionCard({
             </p>
 
             <p className="mt-1 text-sm leading-6 text-amber-800">
-              Il piano Premium rimarrà attivo
+              Il piano attuale rimarrà attivo
               {periodEndFormatted
                 ? ` fino al ${periodEndFormatted}.`
                 : " fino alla fine del periodo già pagato."}
@@ -170,7 +167,7 @@ export default function ProfessionalSubscriptionCard({
       {!verificationApproved && (
         <div className="mt-5 rounded-2xl border border-amber-200 bg-amber-50 p-4">
           <p className="text-sm font-semibold text-amber-900">
-            Il piano Premium sarà disponibile dopo l'approvazione del profilo professionale.
+            Il piano Premium sarà disponibile dopo l&apos;approvazione del profilo professionale.
           </p>
         </div>
       )}
@@ -182,7 +179,7 @@ export default function ProfessionalSubscriptionCard({
       )}
 
       <div className="mt-7">
-        {isPremium ? (
+        {isPremium || isDirect ? (
           <button
             type="button"
             disabled={loading}
@@ -215,6 +212,24 @@ export default function ProfessionalSubscriptionCard({
               ? "Apertura..."
               : "Passa a Premium — 19,90 €/mese"}
           </button>
+        )}
+        {!isPremium && !isDirect && (
+          <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-4">
+            <p className="text-sm font-semibold text-slate-900">
+              Piano DIRECT — {directDoctor ? "49,90" : "29,90"} € / mese
+            </p>
+            <p className="mt-1 text-sm text-slate-600">
+              Commissione 0% sulle prestazioni. Il paziente paga direttamente il professionista.
+            </p>
+            <button
+              type="button"
+              disabled={loading || !verificationApproved || process.env.NEXT_PUBLIC_DIRECT_PLAN_ENABLED !== "true"}
+              onClick={() => openStripe("/api/stripe/subscription/direct/checkout")}
+              className="mt-3 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              {loading ? "Apertura..." : process.env.NEXT_PUBLIC_DIRECT_PLAN_ENABLED === "true" ? "Attiva DIRECT" : "DIRECT in preparazione"}
+            </button>
+          </div>
         )}
       </div>
     </section>

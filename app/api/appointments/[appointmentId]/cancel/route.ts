@@ -84,8 +84,10 @@ export async function PATCH(
         `
           id,
           patient_id,
+          professional_id,
           status,
           payment_status,
+          service_payment_route,
           appointment_date,
           appointment_time
         `
@@ -127,14 +129,28 @@ export async function PATCH(
       );
     }
 
-    if (appointment.status !== "PENDING") {
+    const isAcceptedDirect =
+      appointment.status === "ACCEPTED" &&
+      appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" &&
+      appointment.payment_status === "NOT_REQUIRED";
+
+    if (appointment.status !== "PENDING" && !isAcceptedDirect) {
       return NextResponse.json(
         {
           message:
-            "Puoi annullare soltanto le richieste ancora in attesa.",
+            "Puoi annullare le richieste in attesa o le prenotazioni DIRECT accettate.",
         },
         { status: 409 }
       );
+    }
+
+    if (isAcceptedDirect) {
+      // Use the shared Europe/Rome parser to handle daylight saving time.
+      const { parseRomeDateTime } = await import("@/lib/payments/cancellation-policy");
+      const appointmentStart = parseRomeDateTime(appointment.appointment_date, appointment.appointment_time);
+      if (Date.now() >= appointmentStart.getTime()) {
+        return NextResponse.json({ message: "La prenotazione DIRECT è già iniziata: contatta il professionista." }, { status: 409 });
+      }
     }
 
     const now = new Date().toISOString();
@@ -148,10 +164,14 @@ export async function PATCH(
         status: "CANCELLED",
         cancelled_at: now,
         updated_at: now,
+        ...(isAcceptedDirect ? {
+          cancellation_policy: "Annullamento DIRECT del paziente: eventuali importi pagati direttamente sono gestiti con il professionista."
+        } : {}),
       })
       .eq("id", appointmentId)
       .eq("patient_id", user.id)
-      .eq("status", "PENDING")
+      .eq("status", isAcceptedDirect ? "ACCEPTED" : "PENDING")
+      .eq("payment_status", appointment.payment_status)
       .select(
         `
           id,
@@ -187,17 +207,51 @@ export async function PATCH(
       return NextResponse.json(
         {
           message:
-            "La richiesta non è più in attesa e non può essere annullata.",
+            "La prenotazione è stata modificata e non può essere annullata.",
         },
         { status: 409 }
       );
+    }
+
+    // Notify the professional after the cancellation is committed.
+    // Notification failure must not undo or misreport a successful cancellation.
+    if (isAcceptedDirect) {
+      try {
+        const { data: existing, error: lookupError } = await admin
+          .from("notifications")
+          .select("id")
+          .eq("user_id", appointment.professional_id)
+          .eq("appointment_id", appointmentId)
+          .eq("type", "APPOINTMENT_CANCELLED")
+          .maybeSingle();
+        if (lookupError) throw lookupError;
+        if (!existing) {
+          const { error: notificationError } = await admin
+            .from("notifications")
+            .insert({
+              user_id: appointment.professional_id,
+              appointment_id: appointmentId,
+              review_report_id: null,
+              type: "APPOINTMENT_CANCELLED",
+              title: "Prenotazione DIRECT annullata dal paziente",
+              message: "Il paziente ha annullato la prenotazione DIRECT. Eventuali pagamenti diretti sono gestiti tra paziente e professionista.",
+              link: "/dashboard/professional/appointments?appointmentId=" + encodeURIComponent(appointmentId),
+              read: false,
+            });
+          if (notificationError) throw notificationError;
+        }
+      } catch (notificationError) {
+        console.error("Annullamento DIRECT riuscito, notifica professionista non inviata:", notificationError);
+      }
     }
 
     return NextResponse.json({
       success: true,
       appointment: cancelledAppointment,
       message:
-        "Richiesta annullata correttamente.",
+        isAcceptedDirect
+          ? "Prenotazione DIRECT annullata. Per eventuali pagamenti diretti contatta il professionista."
+          : "Richiesta annullata correttamente.",
     });
   } catch (error) {
     console.error(

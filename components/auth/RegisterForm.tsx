@@ -342,6 +342,29 @@ export default function RegisterForm() {
                   </button>
                 </div>
 
+                <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-xl font-bold text-emerald-950">Piano DIRECT</h3>
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-800">In preparazione</span>
+                  </div>
+                  <p className="mt-3 text-sm text-emerald-950">
+                    <strong>29,90 € / mese</strong> per professionisti sanitari non medici;
+                    <strong> 49,90 € / mese</strong> per medici, previa verifica della qualifica.
+                    <strong> Zero commissioni</strong> sulle prestazioni.
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-emerald-950">
+                    Il paziente prenota tramite FG Home Care, ma paga la prestazione
+                    direttamente al professionista, fuori dalla piattaforma.
+                    FG Home Care non incassa pagamenti dai pazienti per queste prestazioni:
+                    il professionista gestisce direttamente l&apos;incasso e la fatturazione al paziente.
+                    Prenotazioni, conferme e calendario restano in piattaforma.
+                  </p>
+                  <p className="mt-3 text-xs text-emerald-900">
+                    DIRECT non è ancora selezionabile: sarà disponibile soltanto dopo
+                    l&apos;attivazione e la verifica dei relativi servizi. Per ora scegli Basic o Premium.
+                  </p>
+                </div>
+
                 <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                   <div className="px-4 py-3">
                     <p className="font-semibold text-blue-950">Tabella delle commissioni</p>

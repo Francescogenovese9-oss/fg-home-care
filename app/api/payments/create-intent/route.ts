@@ -133,6 +133,7 @@ export async function POST(
           professional_id,
           status,
           payment_status,
+          service_payment_route,
           hourly_rate,
           selected_service_price_eur,
           duration_minutes,
@@ -197,6 +198,18 @@ export async function POST(
             "Non sei autorizzato a pagare questa prenotazione.",
         },
         { status: 403 }
+      );
+    }
+
+    // Payment route is frozen at booking time. A later plan change must
+    // never turn a DIRECT appointment into a Stripe patient charge.
+    if (appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY") {
+      return NextResponse.json(
+        {
+          message: "Questa prestazione si paga direttamente al professionista.",
+          paymentRoute: "PAY_PROFESSIONAL_DIRECTLY",
+        },
+        { status: 409, headers: { "Cache-Control": "no-store" } }
       );
     }
 
@@ -355,6 +368,20 @@ export async function POST(
             "Profilo professionista non trovato.",
         },
         { status: 404 }
+      );
+    }
+
+    // Defense in depth: DIRECT services are paid to the professional
+    // outside FG Home Care. Never create or reuse a Stripe PaymentIntent.
+    if (
+      professional.subscription_plan === "DIRECT"
+    ) {
+      return NextResponse.json(
+        {
+          message: "Per il piano DIRECT la prestazione si paga direttamente al professionista, non su FG Home Care.",
+          paymentRoute: "PAY_PROFESSIONAL_DIRECTLY",
+        },
+        { status: 409, headers: { "Cache-Control": "no-store" } }
       );
     }
 

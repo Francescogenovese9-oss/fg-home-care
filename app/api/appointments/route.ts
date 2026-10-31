@@ -880,6 +880,37 @@ export async function POST(
     }
 
 
+    // The patient cannot choose payment routing. Read the persisted,
+    // server-controlled professional plan and require an active subscription.
+    // The global transaction gate at the start of this handler is unchanged.
+    const { data: billingProfessional, error: billingProfessionalError } =
+      await supabaseAdmin
+        .from("professional_profiles")
+        .select("subscription_plan, subscription_status")
+        .eq("user_id", values.professionalId)
+        .maybeSingle();
+
+    if (billingProfessionalError || !billingProfessional) {
+      return NextResponse.json(
+        { message: "Impossibile verificare il piano del professionista." },
+        { status: 503 }
+      );
+    }
+
+    // Never silently switch a DIRECT service to a patient Stripe charge.
+    if (
+      billingProfessional.subscription_plan === "DIRECT" &&
+      (process.env.FG_DIRECT_PLAN_ENABLED !== "true" ||
+        billingProfessional.subscription_status !== "active")
+    ) {
+      return NextResponse.json(
+        { message: "Il piano DIRECT del professionista non è attualmente disponibile per le prenotazioni." },
+        { status: 409, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
+    const directBooking = billingProfessional.subscription_plan === "DIRECT";
+
     /*
      * =====================================================
      * CREAZIONE APPUNTAMENTO
@@ -958,6 +989,13 @@ export async function POST(
 
         status:
           "PENDING",
+
+        service_payment_route: directBooking
+          ? "PAY_PROFESSIONAL_DIRECTLY"
+          : "STRIPE_PLATFORM",
+        ...(directBooking
+          ? { payment_status: "NOT_REQUIRED", commission_percent: 0 }
+          : {}),
       })
       .select(
         `

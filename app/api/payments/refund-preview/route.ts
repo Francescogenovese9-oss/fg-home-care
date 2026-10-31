@@ -57,6 +57,7 @@ import {
             appointment_time,
             subtotal_amount,
             payment_status,
+            service_payment_route,
             status
           `
         )
@@ -80,6 +81,13 @@ import {
         );
       }
   
+      if (appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY") {
+        return NextResponse.json(
+          { message: "Per le prestazioni DIRECT il pagamento e gli eventuali rimborsi sono gestiti direttamente dal professionista." },
+          { status: 409, headers: { "Cache-Control": "no-store" } }
+        );
+      }
+
       if (appointment.status !== "ACCEPTED") {
         return NextResponse.json({ message: "Puoi annullare soltanto una prenotazione accettata." }, { status: 409 });
       }
