@@ -11,6 +11,7 @@ import {
 type Props = {
   plan: "BASIC" | "PREMIUM" | "DIRECT";
   directPurchaseEnabled: boolean;
+  pendingPaidPlan?: "PREMIUM" | "DIRECT" | null;
   profession?: string | null;
   status: string;
   cancelAtPeriodEnd: boolean;
@@ -21,6 +22,7 @@ type Props = {
 export default function ProfessionalSubscriptionCard({
   plan,
   directPurchaseEnabled,
+  pendingPaidPlan,
   profession,
   status,
   cancelAtPeriodEnd,
@@ -107,8 +109,8 @@ export default function ProfessionalSubscriptionCard({
     }
   }
 
-  const currentPlan: ProfessionalPlan = isDirect ? "DIRECT" : isPremium ? "PREMIUM" : "BASIC";
-  const paidPlanActive = isDirect || isPremium;
+  const currentPlan: ProfessionalPlan = pendingPaidPlan || (isDirect ? "DIRECT" : isPremium ? "PREMIUM" : "BASIC");
+  const paidPlanActive = Boolean(pendingPaidPlan) || isDirect || isPremium;
   const buttonClass = "rounded-xl bg-blue-800 px-5 py-3 text-sm font-bold text-white transition hover:bg-blue-900 focus-visible:outline-2 focus-visible:outline-offset-4 focus-visible:outline-blue-700 disabled:cursor-not-allowed disabled:opacity-50";
 
   return (
@@ -122,7 +124,7 @@ export default function ProfessionalSubscriptionCard({
         <p className="font-semibold text-amber-900">Disdetta programmata</p>
         <p className="mt-2 text-sm leading-6 text-amber-800">Il piano {currentPlan} rimane attivo {periodEndFormatted ? `fino al ${periodEndFormatted}` : "fino alla fine del periodo già pagato"}.</p>
       </div> : null}
-      {!verificationApproved ? <p className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900">Puoi confrontare i piani. L’attivazione di Premium e DIRECT richiede l’approvazione del profilo professionale.</p> : null}
+      {!verificationApproved ? <p className="rounded-2xl border border-blue-200 bg-blue-50 p-4 text-sm leading-6 text-blue-900">Puoi confrontare i piani. Visibilità e prenotazioni richiedono l’approvazione del profilo professionale. Nelle nuove registrazioni con Premium o DIRECT il canone viene pagato prima della verifica e decorre dal pagamento.</p> : null}
       {error ? <p role="alert" className="rounded-2xl border border-red-200 bg-red-50 p-4 text-sm text-red-800">{error}</p> : null}
       <div className="space-y-5">
         {(["BASIC", "PREMIUM", "DIRECT"] as ProfessionalPlan[]).map((option) => (

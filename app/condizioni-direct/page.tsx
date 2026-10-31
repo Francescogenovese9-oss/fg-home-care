@@ -27,7 +27,7 @@ export default function DirectTermsPage() {
         </div>
         <p className="mt-8 text-sm leading-7 text-slate-700">Gestore: FG Home Care, ditta individuale di Francesco Genovese, P. IVA 03587900782, Via Dogana 20, 87032 Amantea (CS), Italia. Email: info@fghomecare.it. PEC: amministrazionefghomecare@pec.it.</p>
         <nav aria-label="Documenti del piano DIRECT" className="mt-8 flex flex-wrap gap-5 text-sm font-semibold text-blue-700">
-          <a href="/documenti/fg-home-care-documenti-legali-2026-10-31.txt" download className="underline">Scarica i documenti di questa versione</a>
+          <a href="/documenti/fg-home-care-documenti-legali-2026-10-31-v2.txt" download className="underline">Scarica i documenti di questa versione</a>
           <Link href="/termini-e-condizioni" className="underline">Termini e Condizioni</Link>
           <Link href="/privacy" className="underline">Informativa Privacy</Link>
           <Link href="/contatti" className="underline">Contatti e assistenza</Link>

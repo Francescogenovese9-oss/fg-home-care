@@ -43,11 +43,20 @@ export default function ProfessionalPlanCard({ plan, selected = false, badge, do
             {badge ? <span className={`rounded-full px-3 py-1 text-xs font-bold ${item.badge}`}>{badge}</span> : null}
           </div>
           <p className="mt-2 text-base font-semibold text-slate-800">{item.tagline}</p>
-          <div className="mt-5 flex flex-wrap items-baseline gap-1">
-            <span className="text-4xl font-extrabold tracking-tight text-slate-950">{plan === "DIRECT" && doctor ? "49,90" : item.price} €</span>
+          {plan === "DIRECT" ? <div className="mt-5 space-y-3">
+            {[
+              { label: "Professionisti sanitari", price: "29,90", detail: "Per infermieri, fisioterapisti e le altre professioni sanitarie.", active: !doctor },
+              { label: "Medici", price: "49,90", detail: "Per medici di medicina generale, medici chirurghi e specialisti.", active: doctor },
+            ].map(tier => <section key={tier.label} className={`rounded-2xl border p-4 ${tier.active ? "border-emerald-300 bg-emerald-50/80" : "border-slate-200 bg-white/80"}`}>
+              <h4 className="text-sm font-bold text-emerald-950">{tier.label}</h4>
+              <p className="mt-2"><span className="text-3xl font-extrabold tracking-tight text-slate-950">{tier.price} €</span><span className="ml-1 text-sm text-slate-500">/ mese</span></p>
+              <p className="mt-2 text-xs leading-5 text-slate-600">{tier.detail}</p>
+            </section>)}
+            <p className="text-xs leading-5 text-slate-500">Due tariffe, gli stessi strumenti DIRECT. La tariffa dipende dalla qualifica professionale.</p>
+          </div> : <div className="mt-5 flex flex-wrap items-baseline gap-1">
+            <span className="text-4xl font-extrabold tracking-tight text-slate-950">{item.price} €</span>
             <span className="text-sm text-slate-500">/ mese</span>
-          </div>
-          {plan === "DIRECT" ? <p className="mt-2 text-sm leading-6 text-slate-600">{doctor ? <>Medici · <strong className="text-slate-800">29,90 €/mese per sanitari non medici</strong></> : <>Sanitari non medici · <strong className="text-slate-800">49,90 €/mese per medici</strong></>}, secondo la qualifica verificata.</p> : null}
+          </div>}
           <p className={`mt-3 text-sm font-bold ${item.accent}`}>{item.fee}</p>
           <p className="mt-4 text-sm leading-6 text-slate-600">{item.description}</p>
         </div>

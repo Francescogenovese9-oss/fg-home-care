@@ -1,0 +1,247 @@
+FG HOME CARE — DOCUMENTI LEGALI
+Aggiornamento: 31 ottobre 2026
+Versioni: termini-2026-10-31-direct-v2, privacy-2026-10-31-direct-v2, direct-2026-10-31-v2
+
+Questa copia descrive DIRECT attivo. Le nuove condizioni DIRECT sono accettate separatamente prima della sottoscrizione. Nessuna modifica retroattiva dei consensi o degli abbonamenti esistenti.
+
+
+TERMINI E CONDIZIONI
+====================
+
+Piano DIRECT — pagamento della prestazione al professionista
+DIRECT prevede un canone base mensile di 29,90 € per professionisti sanitari o 49,90 € per medici. Nelle nuove registrazioni il primo canone si paga dopo la conferma dell’email, prima dell’accesso all’area professionale; il profilo diventa visibile e prenotabile solo dopo la verifica e l’approvazione dei documenti. Il canone decorre dal pagamento, al netto dell’IVA eventualmente dovuta. Non sono applicate commissioni FG Home Care sulle singole prestazioni DIRECT. Il paziente prenota e riceve conferma in piattaforma, ma paga la prestazione direttamente al professionista, che gestisce incasso e documentazione fiscale. FG Home Care riceve dal professionista il canone del servizio digitale. Le condizioni specifiche DIRECT, riportate anche in questa pagina e disponibili prima della sottoscrizione, disciplinano attivazione, rinnovo, disdetta e annullamenti.
+
+1. Identificazione del gestore
+FG Home Care — ditta individuale, P. IVA 03587900782, sede legale in Via Dogana 20, 87032 Amantea (CS), Italia. Email: info@fghomecare.it. Nome e cognome del titolare: Francesco Genovese. PEC: amministrazionefghomecare@pec.it.
+
+2. Natura del servizio
+FG Home Care è una piattaforma digitale che facilita l'incontro tra pazienti e professionisti sanitari indipendenti, permettendo ricerca, prenotazione e pagamento di prestazioni domiciliari. Non eroga direttamente prestazioni sanitarie, non formula diagnosi né prescrive terapie e non sostituisce il rapporto professionale tra paziente e operatore.
+
+3. Registrazione e account
+Gli utenti devono fornire dati veritieri, custodire le credenziali e utilizzare il servizio lecitamente. Con BASIC non è dovuto un canone. Nelle nuove registrazioni con PREMIUM o DIRECT, dopo la conferma dell’email è richiesto il pagamento del primo canone per completare l’iscrizione e accedere all’area professionale. Il canone decorre dalla data di pagamento e si rinnova mensilmente, anche durante l’attesa della verifica. Si possono quindi completare il profilo e caricare i documenti: pubblicazione, visibilità ai pazienti e prenotazioni richiedono la successiva approvazione. Il pagamento non garantisce l’approvazione. Le registrazioni e gli abbonamenti già esistenti non sono modificati retroattivamente da questo percorso. Limitazioni e sospensioni devono essere proporzionate e rispettare gli obblighi di legge.
+
+4. Professionisti, verifiche e responsabilità
+Ogni professionista opera autonomamente e deve mantenere abilitazioni, iscrizioni, autorizzazioni e coperture assicurative richieste. È responsabile delle valutazioni cliniche, del consenso informato ove richiesto e dell'esecuzione delle prestazioni. Le verifiche documentali della piattaforma non garantiscono in assoluto la qualità delle prestazioni. FG Home Care risponde dei propri obblighi e delle proprie condotte secondo legge; non sono escluse responsabilità inderogabili.
+
+5. Prenotazioni
+Il paziente richiede la prestazione scegliendo professionista, disponibilità, durata e tariffa. La richiesta è soggetta ad accettazione del professionista. Prima del pagamento sono presentate le condizioni economiche applicabili. Il pagamento non sostituisce l'eventuale consenso informato sanitario.
+
+6. Pagamenti e documentazione fiscale
+Sono distinti il canone del professionista e il corrispettivo della prestazione al paziente. Per DIRECT, Stripe elabora il canone mensile del professionista; il paziente paga la prestazione fuori piattaforma direttamente al professionista. Per le prestazioni BASIC/PREMIUM, i pagamenti in piattaforma, quando abilitati, sono elaborati tramite Stripe secondo il piano applicabile. I pazienti non sottoscrivono abbonamenti a pagamento a FG Home Care. Ogni professionista cura gli adempimenti fiscali relativi alle proprie prestazioni; FG Home Care cura quelli dei propri corrispettivi. I costi e il totale richiesto sono presentati prima della conferma. La disponibilità di DIRECT non implica che siano abilitati anche i pagamenti delle prestazioni BASIC/PREMIUM.
+
+7. Cancellazioni del paziente per prestazioni pagate in piattaforma
+Le seguenti percentuali riguardano esclusivamente prestazioni accettate e pagate tramite la piattaforma, non le prestazioni DIRECT. Prima dell’inizio previsto: almeno 24 ore di anticipo, rimborso del 100%; da 12 ore incluse a meno di 24 ore, rimborso del 50%; meno di 12 ore, nessun rimborso automatico. Gli orari sono calcolati nel fuso Europe/Rome. Dopo l’inizio previsto non è disponibile la cancellazione ordinaria: per contestazioni contattare l’assistenza. Per DIRECT si applica la sezione specifica su pagamento diretto e annullamenti, senza rimborso Stripe della prestazione. Restano salvi i diritti inderogabili previsti dalla legge.
+
+8. Annullamento del professionista e rimborsi delle prestazioni
+Se il professionista annulla prima dell’inizio una prenotazione pagata in piattaforma, è previsto il rimborso integrale tramite Stripe; i tempi di accredito dipendono dagli intermediari. Per DIRECT, le somme eventualmente incassate direttamente dal professionista e i relativi rimborsi sono gestiti tra professionista e paziente secondo le condizioni comunicate e la legge: FG Home Care non dispone di tali somme e non può riaccreditarle tramite Stripe. Le contestazioni per prestazioni non eseguite o inadempimenti sono distinte dalle cancellazioni volontarie. Gli eventuali rimborsi del canone DIRECT sono distinti da quelli della prestazione e sono disciplinati nelle condizioni dell’abbonamento.
+
+9. Piano BASIC
+Il piano BASIC è gratuito per i professionisti, senza canone mensile. La commissione ordinaria sulle prestazioni prenotate e pagate tramite la piattaforma è del 15%, salvo condizioni promozionali o riduzioni validamente comunicate.
+
+10. Piano PREMIUM
+Il piano PREMIUM prevede un canone base di 19,90 € al mese, al netto dell’IVA eventualmente dovuta, da pagare per completare una nuova registrazione dopo la conferma dell’email. La decorrenza è dalla conferma del pagamento, senza attendere l’approvazione documentale, necessaria per visibilità e prenotazioni. Sono previste commissioni progressive sulle prestazioni completate e pagate tramite la piattaforma con lo stesso paziente: 8% sulla prima, 7% sulla seconda, 6% sulla terza e 5% dalla quarta. Include maggiore visibilità, badge Premium, statistiche avanzate e supporto prioritario nei limiti delle funzionalità effettivamente disponibili. Il trattamento fiscale applicabile è indicato prima della sottoscrizione. Queste commissioni non si applicano alle prestazioni DIRECT.
+
+11. Rinnovo e disdetta PREMIUM
+L'abbonamento PREMIUM è ricorrente con rinnovo mensile automatico, salvo disdetta. Il professionista può gestirlo dall'area riservata tramite il portale Stripe. La disdetta ordinaria ha effetto alla fine del periodo già pagato; fino ad allora permangono i vantaggi PREMIUM. Alla cessazione, il profilo torna al piano BASIC, con commissione ordinaria del 15% sulle nuove prenotazioni. Eventuali rimborsi del canone e mancati pagamenti sono soggetti alle condizioni applicabili e alla legge.
+
+12. Obblighi degli utenti
+Gli utenti devono usare la piattaforma lecitamente e fornire informazioni corrette. I professionisti devono aggiornare tariffe e disponibilità, rispettare obblighi professionali, fiscali e di riservatezza. I pazienti devono comunicare le informazioni organizzative necessarie e garantire condizioni adeguate per l'accesso al luogo della prestazione.
+
+12-bis. Videoconsulti
+I videoconsulti sono offerti dai professionisti che li rendono disponibili, con tariffa mostrata prima della prenotazione. Il professionista valuta se la prestazione a distanza sia appropriata, informa il paziente sui limiti e garantisce la riservatezza. Il paziente può caricare documenti sanitari esclusivamente nell'area riservata del videoconsulto. I documenti sono destinati alla cancellazione alla chiusura della sessione; in caso di abbandono senza chiusura interviene una procedura automatica periodica. Il videoconsulto non sostituisce le prestazioni urgenti o le visite in presenza quando necessarie.
+
+12-ter. Prenotazioni ripetute
+Eventuali riduzioni progressive delle commissioni per prenotazioni ripetute con lo stesso professionista sono applicate secondo le regole del piano attivo e indicate nel riepilogo economico. Non sono garantite riduzioni diverse da quelle effettivamente visualizzate.
+
+13. Protezione dei dati
+Il trattamento dei dati personali è disciplinato dall'Informativa Privacy dedicata. I dati relativi alla salute richiedono specifiche garanzie; le brevi descrizioni e le comunicazioni devono contenere soltanto informazioni pertinenti e necessarie. L'accettazione dei presenti termini non equivale a un consenso indiscriminato al trattamento di dati sanitari.
+
+14. Segnalazioni e controversie
+Gli utenti possono contattare l'assistenza tramite la pagina Contatti per problemi relativi a prenotazioni, pagamenti, account e utilizzo del servizio. Le contestazioni sanitarie sono valutate tenendo conto delle responsabilità del professionista e di quelle proprie della piattaforma. Restano fermi i diritti inderogabili dei consumatori.
+
+15. Sospensione degli account
+FG Home Care può limitare o sospendere gli account in caso di violazioni contrattuali, frodi, problemi di sicurezza o perdita dei requisiti professionali, adottando misure proporzionate e rispettando gli eventuali obblighi di motivazione e contestazione.
+
+16. Emergenze sanitarie
+FG Home Care non è un servizio di emergenza. In caso di emergenza sanitaria contattare il 112 o i servizi territoriali competenti.
+
+17. Versioni e modifiche contrattuali
+Questa versione include il pagamento iniziale per nuove registrazioni PREMIUM e DIRECT e le relative condizioni di verifica successiva. Non trasforma automaticamente gli abbonamenti esistenti, non registra nuove accettazioni per utenti già iscritti e non modifica retroattivamente periodi già pagati o prenotazioni già concordate. Le modifiche che incidono sui rapporti esistenti sono comunicate su supporto durevole con i preavvisi e le tutele applicabili; per gli utenti commerciali, ove applicabile il regolamento (UE) 2019/1150, il preavviso è di almeno 15 giorni o più quando necessario, salvo le eccezioni previste dalla legge e una valida rinuncia. Le versioni precedenti restano conservate nello storico documentale del gestore.
+
+18. Legge applicabile
+Le presenti condizioni sono disciplinate dalla legge italiana, ferme le disposizioni inderogabili applicabili e le tutele dei consumatori.
+
+
+CONDIZIONI DIRECT
+=================
+
+1. Oggetto e destinatari dell’abbonamento DIRECT
+DIRECT è un piano attivo di abbonamento al servizio digitale di FG Home Care destinato ai professionisti che utilizzano la piattaforma per la propria attività. È distinto dal contratto per la prestazione sanitaria o assistenziale concluso tra paziente e professionista. Nelle nuove registrazioni con DIRECT, dopo la conferma dell’email, il professionista deve completare il pagamento del primo canone per accedere alla propria area riservata. La sola selezione della card non comporta un addebito: l’ordine con obbligo di pagamento viene confermato nel Checkout Stripe. Il paziente non paga un canone a FG Home Care.
+
+2. Canone, imposte e commissioni
+Il canone base mensile è di 29,90 € per i professionisti sanitari e di 49,90 € per i medici (medici chirurghi, di medicina generale e specialisti). In fase di nuova registrazione il canone è determinato dalla qualifica dichiarata e registrata dal server; la qualifica sarà successivamente verificata attraverso i documenti. La tariffa medici è distinta dalla tariffa delle altre professioni sanitarie. Dichiarazioni inesatte non attribuiscono il diritto a una tariffa diversa: eventuali incongruenze richiedono l’assistenza, senza modifiche automatiche degli abbonamenti esistenti. I canoni sono al netto dell’IVA eventualmente dovuta; il totale richiesto, la valuta e le eventuali imposte sono presentati nel riepilogo prima della conferma dell’abbonamento. Non si presume un’esenzione fiscale in base alla sola natura sanitaria dell’attività. FG Home Care applica zero commissioni sulle prestazioni DIRECT e cura gli adempimenti fiscali relativi al proprio canone. Le commissioni degli strumenti di incasso scelti autonomamente dal professionista restano regolate dai relativi fornitori.
+
+3. Sottoscrizione e attivazione
+Per una nuova registrazione con DIRECT il percorso è: scelta del piano e dichiarazione della qualifica, conferma dell’email, lettura e accettazione delle condizioni, pagamento del primo canone nel Checkout Stripe. Dopo la conferma effettiva del pagamento si accede all’area professionale per completare il profilo e caricare i documenti. Il canone decorre dal pagamento, anche durante l’attesa della verifica: pagare non equivale a ottenere l’approvazione, né rende il profilo pubblico o prenotabile. Visibilità, prenotazioni e benefici DIRECT richiedono inoltre approvazione e corrispondenza tra qualifica verificata e tariffa sottoscritta. Per gli utenti già registrati l’attivazione dalla dashboard rimane subordinata all’approvazione del profilo. Può controllare e correggere i dati prima della conferma finale dell’ordine con obbligo di pagamento. Il completamento della registrazione a pagamento dipende dalla conferma della prima fattura pagata e dello stato attivo ricevuta da Stripe; il solo ritorno alla pagina del sito non concede il piano. In presenza di un abbonamento già attivo, in prova o con pagamenti da regolarizzare, occorre prima gestire quello esistente dal portale di fatturazione: non si attiva un secondo abbonamento in parallelo. Le presenti condizioni sono redatte in italiano; le interfacce di Stripe possono seguire la lingua selezionata dall’utente. Copia delle presenti condizioni è scaricabile e i riferimenti della versione accettata sono associati alla richiesta di sottoscrizione.
+
+4. Durata e rinnovo mensile
+DIRECT decorre dal pagamento del primo canone, ha durata mensile e rinnovo automatico mediante il metodo di pagamento gestito da Stripe, salvo disdetta. La data del successivo addebito e il periodo corrente sono indicati nell’area riservata e nel portale di fatturazione. Il canone remunera l’accesso agli strumenti della piattaforma e non dipende dal numero di richieste o di prestazioni ricevute: non è garantito un volume minimo di prenotazioni, di ricavi o di visibilità.
+
+5. Disdetta, cessazione e richieste sul canone
+Il professionista può usare Gestisci abbonamento nella dashboard oppure, durante il completamento della registrazione, Gestisci il pagamento esistente per accedere al portale Stripe e disdire il rinnovo. Se i documenti non sono approvati o la qualifica è contestata, il pagamento non sana la mancanza dei requisiti: occorre rivolgersi all’assistenza per rettifica, chiusura del rapporto ed eventuali rimedi sul canone secondo il caso e la legge. Non è previsto un addebito automatico aggiuntivo per correggere una qualifica. La disdetta ordinaria a fine periodo mantiene l’abbonamento fino alla scadenza già pagata, ferme le condizioni di verifica necessarie per operare; alla cessazione il profilo torna a BASIC. Se non riesce ad accedere al portale, può inviare una richiesta esplicita a info@fghomecare.it o alla PEC amministrazionefghomecare@pec.it, indicando account e abbonamento senza trasmettere dati completi della carta. La disdetta non determina automaticamente il rimborso proporzionale del periodo già iniziato. Addebiti errati o duplicati, inadempimenti e altri diritti inderogabili sono valutati separatamente: nessuna clausola esclude rimborsi o rimedi dovuti per legge.
+
+6. Mancato pagamento e prenotazioni già confermate
+Le nuove prenotazioni DIRECT richiedono un abbonamento attivo. Se il pagamento non si completa o lo stato dell’abbonamento non è attivo, le funzioni riservate possono non essere disponibili. Eventuali tentativi di pagamento successivi sono gestiti da Stripe secondo le impostazioni dell’abbonamento. La cessazione non trasforma retroattivamente una prenotazione DIRECT in una prestazione da pagare a FG Home Care: le modalità economiche già registrate per quella prenotazione restano distinte dal piano applicato alle nuove richieste. Gli obblighi relativi alle prestazioni già concordate devono essere gestiti tra paziente e professionista, anche in caso di cessazione del piano.
+
+7. Pagamento della prestazione, fatture e annullamenti DIRECT
+La richiesta del paziente è soggetta all’accettazione del professionista. Il paziente paga la prestazione direttamente al professionista, con il mezzo concordato tra loro; FG Home Care non incassa quel corrispettivo, non lo custodisce e non effettua trasferimenti o rimborsi Stripe per la prestazione DIRECT. Il professionista comunica prima dell’accordo il prezzo complessivo, gli eventuali costi aggiuntivi e le proprie condizioni lecite di annullamento e rimborso, e rilascia il documento fiscale dovuto. L’annullamento della prenotazione nell’app non prova un rimborso di somme versate fuori piattaforma. Le percentuali di rimborso 100%/50%/0% previste per pagamenti di prestazioni in piattaforma non si applicano automaticamente a DIRECT. Il paziente può annullare una prenotazione DIRECT accettata dall’area riservata prima dell’inizio previsto; oltre tale momento deve contattare il professionista e, per problemi della piattaforma, l’assistenza. Restano salvi i diritti inderogabili del paziente.
+
+8. Responsabilità e assenza di garanzie di risultato
+FG Home Care fornisce strumenti digitali per profili, richieste, conferme, calendario, comunicazioni e notifiche secondo le funzionalità disponibili. Il professionista mantiene la responsabilità della prestazione, delle abilitazioni, del consenso sanitario, dell’incasso e degli adempimenti professionali e fiscali propri. La verifica del profilo non garantisce un esito clinico né sostituisce la scelta e la valutazione del professionista. FG Home Care risponde dei propri obblighi e delle proprie condotte secondo legge; non sono escluse responsabilità inderogabili, né limitati i diritti del paziente verso chi sia effettivamente responsabile.
+
+9. Dati del canone e informazioni sanitarie
+Per il canone, Stripe gestisce il pagamento e FG Home Care tratta gli identificativi necessari del cliente, dell’abbonamento e delle fatture, importi, valuta, stato e scadenze, oltre ai riferimenti della versione delle condizioni accettata e alla data della richiesta. Le descrizioni sanitarie e le chat non sono richieste per acquistare il canone e non devono essere inserite nei dati di fatturazione. Il pagamento diretto della prestazione non elimina i dati della prenotazione già trattati dalla piattaforma. L’Informativa Privacy descrive i trattamenti del gestore; il professionista informa separatamente il paziente sui propri trattamenti clinici, di incasso e fatturazione.
+
+10. Recesso, modifiche e assistenza
+L’abbonamento professionale DIRECT è sottoscritto per finalità inerenti all’attività del professionista: la disdetta contrattuale descritta sopra non equivale al recesso del consumatore. Restano comunque salve le tutele inderogabili applicabili in base alla reale qualità delle parti e al singolo contratto; non si esclude in via generale un diritto previsto dalla legge. Le modifiche economiche o contrattuali non incidono retroattivamente su periodi già pagati e prenotazioni già concordate. Agli utenti commerciali interessati sono comunicate su supporto durevole con il preavviso previsto dalla normativa applicabile; ove applicabile il regolamento (UE) 2019/1150, almeno 15 giorni, o più quando necessario, salvo le eccezioni di legge e una valida rinuncia al preavviso. Per problemi del canone o del servizio: info@fghomecare.it, PEC amministrazionefghomecare@pec.it e pagina Contatti. Restano applicabili i Termini e Condizioni generali e la legge italiana, senza deroga ai fori e alle tutele inderogabili.
+
+
+INFORMATIVA PRIVACY
+===================
+
+Piano DIRECT — prenotazioni e canone professionale
+DIRECT distingue tre flussi: i dati della prenotazione trattati da FG Home Care; i dati del canone professionale elaborato tramite Stripe; i dati dell’incasso della prestazione gestito direttamente dal professionista. FG Home Care non riceve tramite il proprio Checkout il pagamento della prestazione DIRECT né richiede la carta del paziente per essa. La piattaforma continua a trattare richieste, note, messaggi, calendario e notifiche anche per DIRECT, secondo le finalità e le garanzie descritte sotto. Il professionista fornisce al paziente le proprie informazioni sui trattamenti relativi alla prestazione e al pagamento diretto.
+
+DIRECT — dati di abbonamento, destinatari e basi giuridiche
+Per gestire il canone FG Home Care tratta dati identificativi e di contatto del professionista, dati di fatturazione necessari, identificativi Stripe del cliente, dell’abbonamento e delle fatture, importi, valuta, esito e stato dei pagamenti, scadenze e disdetta. Sono registrati inoltre data e versione delle condizioni accettate, il piano scelto, la qualifica dichiarata necessaria a determinare il canone e la conferma del pagamento iniziale. Nelle nuove registrazioni PREMIUM e DIRECT il primo canone è richiesto dopo la conferma dell’email e prima dell’accesso all’area professionale, mentre la verifica documentale per la pubblicazione del profilo avviene successivamente. Le finalità sono esecuzione e prova del contratto (art. 6, par. 1, lett. b, GDPR), obblighi contabili e fiscali (lett. c) e tutela dei diritti e prevenzione di abusi nei limiti del legittimo interesse applicabile (lett. f). Il rifiuto di fornire i dati necessari impedisce la sottoscrizione, non implica consenso al marketing. I dati della carta sono inseriti nell’interfaccia Stripe: FG Home Care utilizza gli identificativi e gli esiti necessari, non richiede il numero completo della carta nella prenotazione. Stripe tratta i dati secondo i ruoli e le condizioni applicabili alle proprie attività; la sua informativa è consultabile su stripe.com/it/privacy. I dati richiesti per acquistare il canone non comprendono le note sanitarie o i messaggi relativi alla prestazione.
+
+DIRECT — conservazione amministrativa e pagamenti esterni
+La cessazione di DIRECT o la cancellazione dell’account non comportano l’eliminazione immediata dei dati contabili e delle prove del contratto che devono essere conservati per obblighi di legge o per tutelare diritti. Le scritture e i documenti contabili soggetti all’art. 2220 c.c. sono conservati per dieci anni dall’ultima registrazione, salvi termini ulteriori imposti da norme o controversie documentate; gli altri dati seguono tempi proporzionati alla finalità e le regole di conservazione sotto riportate. FG Home Care non conserva le ricevute di incassi esterni del professionista come se fossero pagamenti della piattaforma: il paziente deve richiedere al professionista la documentazione della prestazione e le informazioni sui relativi trattamenti. La registrazione di una prenotazione o del suo annullamento non attesta l’incasso o il rimborso fuori piattaforma.
+
+1. Titolare del trattamento
+Gestore della piattaforma: FG Home Care — ditta individuale, P. IVA 03587900782, sede legale in Via Dogana 20, 87032 Amantea (CS), Italia. Email: info@fghomecare.it. Nome e cognome del titolare: Francesco Genovese. PEC: amministrazionefghomecare@pec.it. Per richieste in materia di protezione dei dati è possibile scrivere a info@fghomecare.it o alla PEC indicata.
+
+2. Tipologie di dati
+La piattaforma può trattare dati identificativi e di contatto, credenziali e identificativi dell'account, ruolo (paziente o professionista), città e provincia, informazioni relative a profili professionali, qualifiche e documenti di verifica, richieste di prenotazione, messaggi, dati tecnici e di sicurezza. La breve descrizione inserita dal paziente, le note di prenotazione e i messaggi possono contenere dati relativi alla salute. I referti e gli altri documenti sanitari possono essere caricati esclusivamente nell'area riservata di un videoconsulto.
+
+2-bis. Note di prenotazione e chat
+Nel modulo di prenotazione il paziente può inserire il motivo della richiesta nelle note e informazioni pratiche per accedere al luogo della prestazione. Paziente e professionista possono inoltre scambiarsi messaggi tramite la chat collegata alla prenotazione. Questi campi di testo libero possono contenere informazioni sulla salute: il paziente è invitato a limitarsi alle informazioni strettamente necessarie. I documenti sanitari non devono essere inseriti nelle note o nella chat, ma caricati soltanto nella sezione documenti del videoconsulto. Le note di prenotazione sono consultabili dalle parti della prenotazione; i messaggi della chat sono accessibili ai partecipanti autenticati. L’accesso amministrativo ordinario alle prenotazioni è stato limitato, ma i sistemi server con privilegi tecnici richiedono ulteriori controlli organizzativi. La descrizione del bisogno sanitario e le comunicazioni devono essere limitate ai dati necessari per organizzare e svolgere la prestazione. La base giuridica del trattamento di dati sanitari deve essere individuata e documentata separatamente rispetto alla semplice accettazione dei Termini.
+
+3. Finalità e basi giuridiche
+I dati necessari alla creazione dell'account, alla ricerca dei professionisti, alla gestione delle prenotazioni e all'assistenza sono trattati per fornire il servizio richiesto (art. 6, par. 1, lett. b, GDPR); i dati necessari agli obblighi contabili e normativi per adempiere a obblighi di legge (lett. c); i dati tecnici di sicurezza e prevenzione degli abusi per il legittimo interesse alla protezione della piattaforma (lett. f), previa valutazione applicabile. Per i dati sanitari inseriti nella richiesta di prenotazione, FG Home Care richiede il consenso esplicito e separato dell'interessato (art. 9, par. 2, lett. a, GDPR), registrando data e versione dell'informativa al momento della richiesta. La revoca può essere comunicata ai recapiti indicati e viene gestita tenendo conto dei trattamenti già effettuati e degli eventuali obblighi applicabili. Per gli ulteriori trattamenti sanitari e per l'attività autonoma del professionista occorre individuare le rispettive condizioni di liceità.
+
+4. Professionisti e autonomia
+I professionisti possono trattare dati personali nell'ambito della prestazione resa. I rispettivi ruoli privacy (titolari autonomi, contitolari o responsabili, a seconda delle attività concrete) dovranno essere definiti sulla base dei flussi effettivi e degli accordi applicabili; non sono determinati automaticamente dalla sola presenza del professionista sulla piattaforma.
+
+5. Fornitori e destinatari
+Il codice della piattaforma prevede l'utilizzo di Supabase (autenticazione, database e archiviazione), Vercel (hosting), Stripe (pagamenti e abbonamenti), Brevo (email transazionali), Whereby (stanze per videoconsulti) e OpenRouter (assistenza automatizzata con intelligenza artificiale, se configurata). L'assistenza AI può inviare al servizio esterno il testo libero inserito dall'utente per elaborare un suggerimento orientativo; è necessario verificare la configurazione effettiva e le condizioni di trattamento prima dell&apos;attivazione con dati sanitari. I dati delle prenotazioni sono condivisi con il professionista interessato nei limiti necessari. L'accesso ai dati da parte di fornitori e soggetti autorizzati è disciplinato dai rispettivi ruoli e accordi applicabili.
+
+6. Trasferimenti internazionali
+Eventuali trasferimenti di dati personali al di fuori dello Spazio economico europeo dovranno essere verificati in base alla configurazione concreta dei servizi utilizzati e accompagnati, quando necessario, dalle garanzie previste dal GDPR. Non si presume che i servizi siano localizzati esclusivamente nello Spazio economico europeo: sedi di trattamento, subfornitori e garanzie di trasferimento devono essere verificati nei rispettivi accordi.
+
+7. Tempi di conservazione
+Per le prestazioni completate, la chat e le note non sono più accessibili ai partecipanti. Una procedura giornaliera programmata nel database elimina i messaggi e le note sanitarie archiviate dopo 30 giorni dal completamento, salvo sospensioni documentate per controversie o obblighi applicabili. I documenti sanitari caricati durante il videoconsulto sono destinati all'eliminazione al termine della sessione. Il comando «Termina videoconsulto» avvia la cancellazione dall'archiviazione applicativa; un controllo automatico giornaliero interviene sui documenti di sessioni scadute o chiuse anche quando nessun partecipante torna sulla pagina. Per ragioni tecniche l'eliminazione può non essere istantanea in caso di abbandono del browser o errori del servizio: non si garantisce la rimozione immediata da backup e sistemi del fornitore. I tempi di conservazione dei backup, dei log e dei dati amministrativi devono ancora essere verificati e definiti.
+
+7-bis. Cancellazione e richieste privacy
+La cancellazione automatica dopo 30 giorni riguarda i messaggi e le note sanitarie archiviate delle prestazioni completate, non lo storico amministrativo della prenotazione o i dati relativi ai pagamenti. Restano possibili sospensioni documentate e obblighi legali di conservazione. Le richieste degli interessati sono valutate secondo il GDPR; le richieste possono essere inviate a info@fghomecare.it; la conservazione dei backup e dei log tecnici dipende dalle politiche documentate dei fornitori e dagli obblighi applicabili.
+
+8. Sicurezza e dati relativi alla salute
+L'accesso ai dati deve essere limitato ai soggetti autorizzati e protetto mediante misure tecniche e organizzative proporzionate ai rischi. Prima del lancio devono essere verificate le misure applicate ai messaggi, ai documenti professionali, alle prenotazioni e agli eventuali dati sanitari, nonché la necessità di una valutazione d'impatto sulla protezione dei dati (DPIA).
+
+9. Diritti degli interessati
+Nei casi previsti dal GDPR gli interessati possono richiedere accesso, rettifica, cancellazione, limitazione, portabilità, opposizione e revocare eventuali consensi senza pregiudicare la liceità del trattamento precedente. Possono inoltre proporre reclamo al Garante per la protezione dei dati personali. Le richieste possono essere inviate a info@fghomecare.it; è disponibile anche la PEC amministrazionefghomecare@pec.it.
+
+10. Cookie e comunicazioni promozionali
+L'utilizzo di cookie o strumenti analoghi, anche di terze parti, richiede un'analisi tecnica per distinguere quelli necessari da quelli che richiedono consenso. Le comunicazioni promozionali, se previste, saranno gestite con una scelta separata e facoltativa quando richiesta dalla normativa. La semplice registrazione non equivale a consenso al marketing.
+
+11. Aggiornamenti
+Aggiornamento del 31 ottobre 2026 per il piano DIRECT. Le modifiche sostanziali dei trattamenti sono rese note con modalità adeguate. Le basi giuridiche e i consensi precedenti non sono riscritti retroattivamente; se cambiano finalità che richiedono consenso, è necessaria una scelta separata prima del nuovo trattamento.
+
+Nota sulle verifiche: l’informativa comprende le limitazioni e le verifiche di configurazione, conservazione e rapporti con fornitori indicate nelle singole sezioni. L’aggiornamento DIRECT non attesta il completamento di tali verifiche.
+
+
+CARTA DEI SERVIZI
+=================
+
+Piano DIRECT — servizio attivo e pagamento al professionista
+DIRECT prevede un canone base mensile di 29,90 € per professionisti sanitari oppure 49,90 € per medici, al netto dell’IVA eventualmente dovuta. Il riepilogo prima della sottoscrizione indica il totale da confermare. FG Home Care non applica commissioni sulle singole prestazioni DIRECT.
+
+Il professionista sottoscrive con FG Home Care il servizio digitale; il paziente concorda la prestazione con il professionista e lo paga direttamente. Il professionista gestisce incasso, condizioni della prestazione e documentazione fiscale del paziente. FG Home Care cura la fatturazione del proprio canone, non incassa né rimborsa le somme versate fuori piattaforma per la prestazione.
+
+Profili, richieste, accettazione, calendario, messaggi e notifiche restano in piattaforma. Il paziente non paga un abbonamento a FG Home Care. Le nuove registrazioni PREMIUM e DIRECT richiedono, dopo la conferma dell’email, l’accettazione delle condizioni e il pagamento del primo canone tramite Stripe prima di accedere all’area professionale. Il canone decorre dal pagamento, anche mentre si attende la verifica dei documenti. Il pagamento non rende il profilo visibile o prenotabile: servono la successiva verifica e approvazione. BASIC resta senza canone e gli abbonamenti esistenti non sono modificati. Non è garantito un numero minimo di richieste o un risultato economico.
+
+Il canone si rinnova automaticamente ogni mese salvo disdetta dal portale raggiungibile con Gestisci abbonamento. La disdetta ordinaria ha effetto alla fine del periodo già pagato; alla cessazione il profilo torna BASIC. Le nuove prenotazioni DIRECT richiedono piano attivo. Le prenotazioni già registrate come DIRECT non diventano retroattivamente pagamenti in piattaforma.
+
+Per una prenotazione DIRECT accettata, il paziente può annullare dall’area riservata prima dell’inizio previsto. Un eventuale rimborso di denaro già versato direttamente deve essere richiesto al professionista: l’annullamento nell’app non esegue un rimborso. Le percentuali di rimborso delle prestazioni pagate in piattaforma non si estendono automaticamente a DIRECT. I diritti inderogabili del paziente restano salvi.
+
+Le Condizioni DIRECT, consultabili e scaricabili prima dell’acquisto, descrivono rinnovo, disdetta, mancati pagamenti, rimborsi del canone, ruoli privacy e responsabilità. BASIC e PREMIUM mantengono i propri corrispettivi e commissioni; la disponibilità dei pagamenti in piattaforma è distinta da quella di DIRECT.
+
+Identificazione del gestore
+FG Home Care — ditta individuale, P. IVA 03587900782, sede legale in Via Dogana 20, 87032 Amantea (CS), Italia. Email: info@fghomecare.it. Nome e cognome del titolare: Francesco Genovese. PEC: amministrazionefghomecare@pec.it.
+
+Le informazioni aggiornate su prenotazioni, pagamenti e condizioni economiche sono disponibili nei rispettivi percorsi della piattaforma.
+
+1. Missione e natura del servizio
+FG Home Care è una piattaforma digitale che facilita l'incontro tra persone interessate a servizi sanitari o assistenziali e professionisti che propongono autonomamente le proprie prestazioni, a domicilio e, ove disponibile, a distanza.
+
+La piattaforma offre strumenti di ricerca, presentazione dei profili, comunicazione, prenotazione e pagamento. FG Home Care non eroga direttamente le prestazioni sanitarie, non formula diagnosi e non sostituisce il rapporto tra paziente e professionista.
+
+2. Come funziona
+L'utente può consultare i profili, valutare le informazioni disponibili e richiedere una prenotazione secondo le disponibilità pubblicate. Le prestazioni e le relative condizioni sono indicate dal professionista.
+
+L'utilizzo della piattaforma da parte dei pazienti non richiede un abbonamento. Eventuali costi della prestazione sono mostrati nel percorso di prenotazione e pagamento.
+
+3. Requisiti e autonomia dei professionisti
+I professionisti sono tenuti a possedere e mantenere titoli, abilitazioni, iscrizioni e requisiti richiesti dalla legge per le attività offerte, nonché le coperture assicurative eventualmente obbligatorie.
+
+La piattaforma può richiedere documenti e svolgere verifiche prima della pubblicazione del profilo. Tali verifiche non costituiscono una garanzia assoluta dell'operato del professionista né sostituiscono i controlli delle autorità competenti.
+
+Il professionista esercita autonomamente le proprie valutazioni tecniche e cliniche e decide se la prestazione richiesta sia appropriata e realizzabile in sicurezza.
+
+4. Responsabilità durante le prestazioni
+Il professionista che esegue la prestazione risponde, secondo la normativa applicabile, delle proprie azioni e omissioni, della corretta esecuzione delle attività, della sicurezza delle procedure e degli eventuali danni causati a persone o cose nell'ambito del proprio operato.
+
+FG Home Care non dirige né supervisiona l'attività clinica dei professionisti autonomi. La piattaforma e il suo titolare non assumono la responsabilità sanitaria delle prestazioni svolte da terzi; restano comunque ferme tutte le responsabilità che la legge attribuisce direttamente al gestore e che non possono essere escluse.
+
+Le controversie relative all'esecuzione della prestazione possono essere rivolte al professionista interessato, senza limitare i diritti del paziente nei confronti di altri soggetti eventualmente responsabili ai sensi di legge.
+
+5. Prenotazioni, pagamenti e segnalazioni
+Le condizioni economiche, le modalità di pagamento e le regole applicabili a cancellazioni e rimborsi sono rese disponibili nei percorsi pertinenti e nei Termini e Condizioni.
+
+Utenti e professionisti possono segnalare informazioni inesatte, condotte inappropriate e problemi relativi all'utilizzo del servizio tramite la pagina Contatti. FG Home Care può esaminare le segnalazioni e adottare misure proporzionate, nel rispetto della legge.
+
+6. Riservatezza e protezione dei dati
+FG Home Care tratta i dati personali necessari alla gestione degli account, delle ricerche, delle prenotazioni, delle comunicazioni, dei pagamenti e della sicurezza del servizio secondo il Regolamento (UE) 2016/679 (GDPR) e le altre norme applicabili.
+
+La breve descrizione della richiesta e i messaggi possono contenere dati relativi alla salute e richiedono particolari garanzie. Il caricamento di documenti sanitari è consentito soltanto nell'area del videoconsulto; i documenti sono destinati alla cancellazione alla chiusura della sessione, con una procedura periodica di recupero per i casi di abbandono. L'apposita informativa privacy descrive finalità, basi giuridiche, destinatari, conservazione, trasferimenti e diritti degli interessati, con le limitazioni e le verifiche ancora indicate nel documento.
+
+I professionisti restano tenuti agli obblighi di segreto professionale, riservatezza e protezione dei dati connessi alle prestazioni da essi svolte, secondo i rispettivi ruoli previsti dalla normativa.
+
+7. Emergenze e limiti del servizio
+FG Home Care non è un servizio di emergenza, pronto soccorso o continuità assistenziale. In caso di emergenza sanitaria occorre contattare immediatamente i servizi di soccorso competenti, incluso il 112 dove operativo.
+
+Le informazioni presenti sul sito non costituiscono consulenza medica personalizzata e non sostituiscono una valutazione clinica.
+
+8. Trasparenza e documenti contrattuali
+Questa Carta dei Servizi illustra gli impegni e le caratteristiche generali della piattaforma. Non sostituisce i Termini e Condizioni, l’informativa privacy, la Cookie Policy o le informazioni precontrattuali applicabili.
+
+Nessuna disposizione della Carta limita i diritti inderogabili dei consumatori, dei pazienti o degli interessati, né esclude responsabilità che non possono essere escluse per legge.
+
+
+COOKIE E STRUMENTI TECNICI
+==========================
+
+1. Gestore e ambito
+FG Home Care, ditta individuale di Francesco Genovese, P. IVA 03587900782, Via Dogana 20, 87032 Amantea (CS), info@fghomecare.it, PEC amministrazionefghomecare@pec.it. Questo documento descrive gli strumenti utilizzati per accesso, funzionamento e conteggi statistici della piattaforma, distinguendoli dai servizi esterni di pagamento. Le impostazioni e le durate dei servizi esterni sono descritte nelle informative dei relativi fornitori; per chiarimenti sulla configurazione applicabile è possibile contattare il gestore.
+
+2. Accesso e sessione
+L’autenticazione Supabase utilizza cookie di sessione con nomi legati al progetto, normalmente con prefisso sb-, per riconoscere l’accesso, rinnovare la sessione e gestire i passaggi di autenticazione. La durata dipende dalla sessione e dalle impostazioni del servizio; alcuni dati possono restare fino a scadenza o rimozione. Si tratta di funzioni necessarie all’area riservata. Il browser consente di visualizzare ed eliminare questi dati: il blocco può impedire accesso e prenotazioni.
+
+3. Statistiche applicative e memoria di sessione
+La piattaforma usa in sessionStorage una marcatura giornaliera fg_site_view_ seguita dalla data per evitare conteggi ripetuti nella stessa sessione del browser. L’endpoint statistico salva conteggi aggregati per giorno, categoria di provenienza e paese, non il testo delle richieste sanitarie o l’indirizzo IP completo nel contatore applicativo. I log tecnici dell’hosting sono un trattamento distinto. Altre marcature di sessione evitano duplicazioni degli eventi dell’assistenza orientativa. Questi dati di sessione sono rimossi normalmente alla chiusura della scheda o della sessione del browser; il comportamento dipende anche dal ripristino delle schede e dalle impostazioni del browser. L’eventuale impiego di strumenti statistici diversi, profilazione o tracciamento non necessario richiede le informazioni e le scelte preventive previste dalla normativa: non è autorizzato dall’accettazione dei Termini.
+
+4. Stripe e il canone DIRECT
+Quando il professionista apre il Checkout o il portale di fatturazione, accede all’interfaccia Stripe, che può utilizzare propri strumenti di sessione, sicurezza, prevenzione delle frodi e, se scelti dall’utente, servizi di pagamento o memorizzazione ulteriori. Le informazioni aggiornate sono disponibili su stripe.com/it/privacy e stripe.com/it/legal/cookies-policy. La scelta DIRECT in registrazione non richiede l’inserimento di una carta. Il paziente non apre un Checkout FG Home Care per pagare una prestazione DIRECT al professionista: eventuali strumenti di pagamento esterni scelti tra loro sono regolati dalle informative dei relativi fornitori.
+
+5. Altri servizi esterni e scelte
+Videoconsulti e altre funzioni che aprono servizi esterni possono comportare strumenti propri del fornitore. L’Informativa Privacy indica i servizi previsti dall’applicazione e le verifiche ancora necessarie. Le impostazioni di cookie e archiviazione possono essere gestite nel browser; quelle dei fornitori nelle rispettive interfacce. Non vengono dedotti consensi al marketing o alla profilazione dalla registrazione, dalla navigazione o dal consenso ai dati sanitari. Per chiarimenti o diritti in materia di dati personali contattare il gestore ai recapiti indicati.

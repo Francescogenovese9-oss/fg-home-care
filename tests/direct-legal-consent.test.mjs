@@ -33,6 +33,7 @@ test("checkout rejects missing consent before Stripe and records the accepted ve
   });
   const dependencies = {
     "next/server": {NextResponse: {json: (body, init) => ({status: init?.status ?? 200, body})}},
+    "@/lib/subscriptions/paid-signup": {getSignupPlan: () => null, needsSignupPayment: () => false},
     "@/lib/subscriptions/direct-rollout": {isDirectEnabledFor: () => true},
     "@/lib/legal/versions": {DIRECT_TERMS_VERSION, TERMS_VERSION, PRIVACY_VERSION, hasAcceptedDirectTerms},
     "@/lib/supabase/server": {createClient: async () => client(account)},

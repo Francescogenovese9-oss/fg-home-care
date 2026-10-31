@@ -1,3 +1,4 @@
+import { syncApprovedSignupSubscription } from "@/lib/subscriptions/complete-paid-signup";
 import {
   NextRequest,
   NextResponse,
@@ -523,6 +524,9 @@ export async function PATCH(
         }
       );
     }
+
+    try { await syncApprovedSignupSubscription(userId); }
+    catch (syncError) { console.error("Riconciliazione piano dopo verifica:", syncError); }
 
     /*
      * =====================================================

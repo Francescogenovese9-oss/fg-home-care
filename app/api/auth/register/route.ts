@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { createClient } from "@/lib/supabase/server";
 import { registerSchema } from "@/lib/validations/register";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
+import { PAID_SIGNUP_VERSION } from "@/lib/subscriptions/paid-signup";
 import { TERMS_VERSION } from "@/lib/legal/versions";
 
 export async function POST(request: NextRequest) {
@@ -27,6 +29,7 @@ export async function POST(request: NextRequest) {
     }
     const supabase = await createClient();
 
+    const registrationStarted = Date.now();
     const { data, error } = await supabase.auth.signUp({
       email: values.email.trim().toLowerCase(),
       password: values.password,
@@ -55,7 +58,7 @@ export async function POST(request: NextRequest) {
           requested_subscription_plan: values.role === "PROFESSIONAL" ? values.subscriptionPlan || "BASIC" : null,
           subscription_plan:
             values.role === "PROFESSIONAL"
-              ? values.subscriptionPlan === "DIRECT" ? "BASIC" : values.subscriptionPlan || "BASIC"
+              ? "BASIC"
               : null,
         },
       },
@@ -90,6 +93,17 @@ export async function POST(request: NextRequest) {
         },
         { status: 500 }
       );
+    }
+
+    // Never change an existing account returned by duplicate-signup protection.
+    // This server-only marker applies solely to newly created paid signups.
+    if (values.role === "PROFESSIONAL" && (values.subscriptionPlan === "PREMIUM" || values.subscriptionPlan === "DIRECT") &&
+        data.user.identities?.length && Date.parse(data.user.created_at) >= registrationStarted - 1000) {
+      const { error: setupError } = await getSupabaseAdmin().auth.admin.updateUserById(data.user.id, {
+        app_metadata: { ...data.user.app_metadata, signup_subscription_version: PAID_SIGNUP_VERSION,
+          signup_subscription_plan: values.subscriptionPlan, signup_profession: values.profession },
+      });
+      if (setupError) throw new Error("Impossibile preparare il pagamento dell’abbonamento. Contatta l’assistenza.");
     }
 
     return NextResponse.json(
