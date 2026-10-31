@@ -17,7 +17,7 @@ export default function RegisterPage() {
           />
         </Link>
 
-        <RegisterForm />
+        <RegisterForm directSelectable={process.env.FG_DIRECT_PLAN_ENABLED === "true"} />
       </div>
     </main>
   );

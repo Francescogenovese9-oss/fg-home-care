@@ -1,3 +1,4 @@
+import { isDirectEnabledFor } from "@/lib/subscriptions/direct-rollout";
 import {
   NextRequest,
   NextResponse,
@@ -26,7 +27,7 @@ export const runtime = "nodejs";
 export async function POST(
   _request: NextRequest
 ) {
-  if (process.env.NEXT_PUBLIC_TRANSACTIONS_ENABLED !== "true" || process.env.FG_DIRECT_PLAN_ENABLED !== "true") {
+  if (process.env.NEXT_PUBLIC_TRANSACTIONS_ENABLED !== "true") {
     return NextResponse.json(
       { message: "Le prenotazioni e i pagamenti online saranno disponibili a breve." },
       { status: 503, headers: { "Cache-Control": "no-store" } }
@@ -59,6 +60,10 @@ export async function POST(
           status: 401,
         }
       );
+    }
+
+    if (!isDirectEnabledFor(user.id)) {
+      return NextResponse.json({ message: "DIRECT non è ancora disponibile per questo account." }, { status: 503 });
     }
 
     const {

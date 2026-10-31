@@ -31,7 +31,7 @@ type RegisterApiResponse = {
   email?: string;
 };
 
-export default function RegisterForm() {
+export default function RegisterForm({ directSelectable = false }: { directSelectable?: boolean }) {
   const router = useRouter();
 
   const [serverError, setServerError] = useState("");
@@ -345,7 +345,7 @@ export default function RegisterForm() {
                 <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5">
                   <div className="flex flex-wrap items-center justify-between gap-2">
                     <h3 className="text-xl font-bold text-emerald-950">Piano DIRECT</h3>
-                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-800">In preparazione</span>
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-800">{selectedSubscriptionPlan === "DIRECT" ? "Selezionato" : directSelectable ? "Disponibile" : "In preparazione"}</span>
                   </div>
                   <p className="mt-3 text-sm text-emerald-950">
                     <strong>29,90 € / mese</strong> per professionisti sanitari non medici;
@@ -360,10 +360,19 @@ export default function RegisterForm() {
                     Prenotazioni, conferme e calendario restano in piattaforma.
                   </p>
                   <p className="mt-3 text-xs text-emerald-900">
-                    DIRECT non è ancora selezionabile: sarà disponibile soltanto dopo
-                    l&apos;attivazione e la verifica dei relativi servizi. Per ora scegli Basic o Premium.
+                    {directSelectable
+                      ? "La scelta non attiva un abbonamento: il profilo inizia da Basic. Dopo la verifica dei documenti potrai attivare DIRECT dalla dashboard, prima di utilizzare le relative funzioni."
+                      : "DIRECT è in collaudo. Per ora puoi registrarti con Basic o Premium."}
                   </p>
                 </div>
+
+                {directSelectable && (
+                  <button type="button" aria-pressed={selectedSubscriptionPlan === "DIRECT"}
+                    onClick={() => setValue("subscriptionPlan", "DIRECT", { shouldValidate: true, shouldDirty: true })}
+                    className="rounded-xl bg-emerald-800 px-5 py-3 text-sm font-bold text-white">
+                    {selectedSubscriptionPlan === "DIRECT" ? "DIRECT selezionato" : "Scegli DIRECT"}
+                  </button>
+                )}
 
                 <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                   <div className="px-4 py-3">

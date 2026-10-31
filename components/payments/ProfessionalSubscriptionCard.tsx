@@ -6,6 +6,7 @@ import {
 
 type Props = {
   plan: "BASIC" | "PREMIUM" | "DIRECT";
+  directPurchaseEnabled: boolean;
   profession?: string | null;
   status: string;
   cancelAtPeriodEnd: boolean;
@@ -15,6 +16,7 @@ type Props = {
 
 export default function ProfessionalSubscriptionCard({
   plan,
+  directPurchaseEnabled,
   profession,
   status,
   cancelAtPeriodEnd,
@@ -223,11 +225,11 @@ export default function ProfessionalSubscriptionCard({
             </p>
             <button
               type="button"
-              disabled={loading || !verificationApproved || process.env.NEXT_PUBLIC_DIRECT_PLAN_ENABLED !== "true"}
+              disabled={loading || !verificationApproved || !directPurchaseEnabled}
               onClick={() => openStripe("/api/stripe/subscription/direct/checkout")}
               className="mt-3 rounded-xl bg-slate-900 px-5 py-3 text-sm font-bold text-white disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {loading ? "Apertura..." : process.env.NEXT_PUBLIC_DIRECT_PLAN_ENABLED === "true" ? "Attiva DIRECT" : "DIRECT in preparazione"}
+              {loading ? "Apertura..." : directPurchaseEnabled ? "Attiva DIRECT" : "DIRECT in preparazione"}
             </button>
           </div>
         )}

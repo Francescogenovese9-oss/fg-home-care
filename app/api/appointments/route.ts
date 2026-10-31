@@ -1,3 +1,5 @@
+import { canRequestAppointment, isDirectEnabledFor } from "@/lib/subscriptions/direct-rollout";
+
 import {
   NextRequest,
   NextResponse,
@@ -111,13 +113,6 @@ function addMinutesToTime(
 export async function POST(
   request: NextRequest
 ) {
-  if (process.env.NEXT_PUBLIC_TRANSACTIONS_ENABLED !== "true") {
-    return NextResponse.json(
-      { message: "Le prenotazioni e i pagamenti online saranno disponibili a breve." },
-      { status: 503, headers: { "Cache-Control": "no-store" } }
-    );
-  }
-
   try {
     /*
      * =====================================================
@@ -216,6 +211,13 @@ export async function POST(
         {
           status: 401,
         }
+      );
+    }
+
+    if (!canRequestAppointment(user.id, values.professionalId)) {
+      return NextResponse.json(
+        { message: "Le prenotazioni online non sono ancora disponibili per questi account." },
+        { status: 503, headers: { "Cache-Control": "no-store" } }
       );
     }
 
@@ -900,7 +902,7 @@ export async function POST(
     // Never silently switch a DIRECT service to a patient Stripe charge.
     if (
       billingProfessional.subscription_plan === "DIRECT" &&
-      (process.env.FG_DIRECT_PLAN_ENABLED !== "true" ||
+      (!isDirectEnabledFor(values.professionalId) ||
         billingProfessional.subscription_status !== "active")
     ) {
       return NextResponse.json(

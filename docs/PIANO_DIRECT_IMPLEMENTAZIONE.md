@@ -52,3 +52,62 @@ Data: 2026-10-30. Branch di lavoro: feature/direct-plan-2990-staging.
 - Non committare chiavi `sk_test`, `sk_live`, webhook secret o credenziali Supabase. Configurare tramite variabili protette dell'ambiente isolato.
 - Il deploy isolato deve mantenere `NEXT_PUBLIC_TRANSACTIONS_ENABLED=false` finché non è pronto il collaudo con utenze di prova; l'abilitazione di `FG_DIRECT_PLAN_ENABLED` va effettuata solo dopo la migrazione DB testata.
 - Ultima CI verificata: commit `55a75cd5` verde. La PR #10 resta draft e `main` invariato.
+
+
+## Collaudo sul dominio ufficiale — aggiornamento del 31 ottobre 2026
+
+L'utente ha autorizzato il collaudo su www.fghomecare.it, senza ulteriori anteprime,
+con DIRECT riservato a due account nuovi di prova. Nessun pagamento reale,
+nessun accesso alle chiavi di pagamento e nessuna modifica agli abbonamenti esistenti.
+
+### Implementazione predisposta nel ramo
+- Allowlist **lato server per UUID**, con `FG_DIRECT_TEST_PATIENT_ID`,
+  `FG_DIRECT_TEST_PROFESSIONAL_ID` e `FG_DIRECT_TEST_UNTIL` (data ISO con fuso).
+  Le tre variabili sono configurazione, non credenziali. Nessun valore predefinito.
+- La coppia di prova può richiedere appuntamenti anche con il blocco pubblico attivo;
+  non può prenotare altri professionisti e altri pazienti non possono prenotare
+  il professionista di prova. Ruolo, documenti approvati, pubblicazione del profilo
+  e stato dell'abbonamento restano controllati dai percorsi esistenti.
+- Il profilo di prova è escluso dal marketplace per visitatori estranei, dai suoi
+  URL pubblici e dalla sitemap. Questi sono controlli applicativi: non costituiscono
+  un isolamento del database o una nuova policy RLS.
+- Il checkout resta bloccato quando `NEXT_PUBLIC_TRANSACTIONS_ENABLED=false`.
+  Nessun pagamento del paziente e nessun canone live vanno eseguiti per collaudare.
+- La scelta DIRECT in registrazione, disponibile solo al futuro avvio pubblico,
+  salva una preferenza e inizia da BASIC: non attiva un abbonamento.
+- Corretto il rifiuto DIRECT: mantiene `payment_status=NOT_REQUIRED`, coerente
+  con `appointments_direct_payment_status_check`. BASIC/PREMIUM invariati.
+- Non sono stati creati utenti, approvati documenti, attivati piani di prova,
+  eseguiti webhook o inviate notifiche di collaudo in questa sessione.
+
+### Esiti e blocchi effettivi
+- Build completa e controllo TypeScript riusciti con i flag pubblici disabilitati.
+- Dieci test automatici passati: routing, assenza di PaymentIntent paziente DIRECT,
+  rifiuto/completamento e compatibilità legacy, isolamento coppia di prova,
+  scadenza e configurazioni mancanti/non valide.
+- Lint dei file modificati: nessun errore; avvisi preesistenti da riportare.
+- Production attuale: commit `81bc1c731ab3a7239341f0957d0df4b71c7cceb2`,
+  deployment `dpl_4g2cqHLgvnhBNdySMtXCuCgfUGrG`, candidato rollback Vercel.
+- Configurazione Production letta: `NEXT_PUBLIC_TRANSACTIONS_ENABLED=false`,
+  `FG_DIRECT_PLAN_ENABLED=false`, `NEXT_PUBLIC_DIRECT_PLAN_ENABLED=false`.
+- La variabile `SUPABASE_SERVICE_ROLE_KEY` risulta assegnata soltanto al ramo preview.
+  Il tentativo di ripristinarne l'ambito Production, conservando il segreto,
+  è stato respinto dalla revisione automatica: serve autorizzazione esplicita.
+  Non distribuire il codice con una credenziale backend Production mancante.
+- Registrazione UI: richiede intervento utente per password e accettazione termini,
+  secondo la capacità browserAuth. Servono due email di prova controllate dall'utente.
+- Non è stato eseguito alcun nuovo deploy Production. Nessun collaudo end-to-end
+  o funzionamento live degli abbonamenti può essere dichiarato superato.
+
+### Prossimi passi concreti
+1. Completare le registrazioni normali dei due utenti e confermare le email.
+2. Ripristinare la credenziale backend nell'ambito Production senza cambiarne il valore;
+   verificare che appartenga al progetto Supabase corretto senza mostrarla.
+3. Configurare gli UUID e una scadenza breve, mantenendo i flag pubblici a false;
+   distribuire questo ramo in Production, registrando deployment e commit esatti.
+4. Preparare solo il nuovo professionista di prova e collaudare le operazioni richieste.
+   Un eventuale stato DIRECT predisposto come fixture non dimostra il funzionamento
+   del pagamento dell'abbonamento o del webhook: riportare distintamente simulazioni
+   e operazioni realmente eseguite. Non alterare abbonamenti preesistenti.
+5. Aprire al pubblico solo dopo il superamento dei controlli necessari; rollback
+   al deployment sopra se il rilascio compromette i flussi esistenti.

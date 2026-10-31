@@ -1,3 +1,5 @@
+import { getDecisionPaymentStatus } from "@/lib/payments/service-payment-route";
+import { canViewRolloutProfessional, isDirectEnabledFor } from "@/lib/subscriptions/direct-rollout";
 import {
   parseRomeDateTime,
 } from "@/lib/payments/cancellation-policy";
@@ -609,6 +611,10 @@ export async function PATCH(
      * =====================================================
      */
 
+    if (!canViewRolloutProfessional(appointment.patient_id, user.id)) {
+      return NextResponse.json({ message: "Appuntamento di collaudo non accessibile." }, { status: 403 });
+    }
+
     // DIRECT bookings do not require a patient payment on the platform.
     // Read the professional plan from the server and verify the active subscription.
     // Preserve legacy NOT_REQUIRED behavior for older appointments.
@@ -633,7 +639,7 @@ export async function PATCH(
         appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" &&
         (professionalPlan.subscription_plan !== "DIRECT" ||
           professionalPlan.subscription_status !== "active" ||
-          process.env.FG_DIRECT_PLAN_ENABLED !== "true")
+          !isDirectEnabledFor(user.id))
       ) {
         return NextResponse.json(
           { message: "La prenotazione DIRECT richiede un abbonamento DIRECT attivo." },
@@ -653,7 +659,7 @@ export async function PATCH(
 
       if (professionalPlan.subscription_plan === "DIRECT") {
         if (
-          process.env.FG_DIRECT_PLAN_ENABLED !== "true" ||
+          !isDirectEnabledFor(user.id) ||
           professionalPlan.subscription_status !== "active" ||
           appointment.payment_status !== "NOT_REQUIRED" ||
           appointment.service_payment_route !== "PAY_PROFESSIONAL_DIRECTLY"
@@ -670,15 +676,7 @@ export async function PATCH(
     const nextPaymentStatus:
       | PaymentStatus
       | undefined =
-      action ===
-      "ACCEPT"
-        ? directBooking
-          ? "NOT_REQUIRED"
-          : "REQUIRES_PAYMENT"
-        : action ===
-            "REJECT"
-          ? "CANCELLED"
-          : undefined;
+      getDecisionPaymentStatus(action, appointment.service_payment_route);
 
     /*
      * =====================================================

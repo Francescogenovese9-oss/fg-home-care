@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { canRequestAppointment, canViewRolloutProfessional } from "@/lib/subscriptions/direct-rollout";
 import {
   notFound,
   redirect,
@@ -39,6 +40,8 @@ export default async function BookProfessionalPage({
       `/login?redirect=${encodeURIComponent(bookingPath)}`
     );
   }
+
+  if (!canViewRolloutProfessional(user.id, userId)) notFound();
 
   const { data: accountProfile } =
     await supabase
@@ -156,6 +159,7 @@ export default async function BookProfessionalPage({
 
         <AppointmentRequestForm
           professionalId={data.user_id}
+          bookingEnabled={canRequestAppointment(user.id, data.user_id)}
           bookingSource={isCareGuidance ? "CARE_GUIDANCE" : "DIRECT"}
           professionalName={
             professionalName

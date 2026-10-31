@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { canViewRolloutProfessional } from "@/lib/subscriptions/direct-rollout";
 
 import Link from "next/link";
 
@@ -219,7 +220,10 @@ export default async function ProfessionalsPage({
   }
 
   // Difesa aggiuntiva: la vista pubblica non deve essere l'unico controllo.
-  const candidates = (professionalsData ?? []) as PublicProfessional[];
+  const { data: { user: viewer } } = await supabase.auth.getUser();
+  const candidates = ((professionalsData ?? []) as PublicProfessional[]).filter(
+    (professional) => canViewRolloutProfessional(viewer?.id, professional.user_id)
+  );
   let professionals: PublicProfessional[] = [];
   if (candidates.length > 0) {
     const { data: eligible, error: eligibilityError } = await getSupabaseAdmin()

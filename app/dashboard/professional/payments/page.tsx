@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isDirectEnabledFor } from "@/lib/subscriptions/direct-rollout";
 import { redirect } from "next/navigation";
 
 import LogoutButton from "@/components/auth/LogoutButton";
@@ -361,6 +362,7 @@ export default async function ProfessionalPaymentsPage({
 
         <ProfessionalSubscriptionCard
           plan={subscriptionPlan}
+          directPurchaseEnabled={process.env.NEXT_PUBLIC_TRANSACTIONS_ENABLED === "true" && isDirectEnabledFor(user.id)}
           profession={professionalProfile.profession}
           status={
             professionalProfile.subscription_status ??

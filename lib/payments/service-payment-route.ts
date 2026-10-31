@@ -26,3 +26,13 @@ export function canCreatePlatformPaymentIntent(
 ): boolean {
   return paymentRoute === "STRIPE_PLATFORM";
 }
+
+/** The booking snapshot remains authoritative even when a request is rejected. */
+export function getDecisionPaymentStatus(
+  action: "ACCEPT" | "REJECT" | "COMPLETE",
+  paymentRoute: string | null | undefined
+): "NOT_REQUIRED" | "REQUIRES_PAYMENT" | "CANCELLED" | undefined {
+  if (action === "COMPLETE") return undefined;
+  if (paymentRoute === "PAY_PROFESSIONAL_DIRECTLY") return "NOT_REQUIRED";
+  return action === "ACCEPT" ? "REQUIRES_PAYMENT" : "CANCELLED";
+}

@@ -1,4 +1,5 @@
 import "server-only";
+import { isDirectEnabledFor } from "@/lib/subscriptions/direct-rollout";
 
 import Stripe from "stripe";
 import { isProfession } from "@/lib/professions";
@@ -164,7 +165,7 @@ export async function syncProfessionalSubscription(
     stripePlan === "DIRECT" &&
     matchesDirectPrice &&
     matchesVerifiedProfession &&
-    process.env.FG_DIRECT_PLAN_ENABLED === "true";
+    isDirectEnabledFor(professionalId);
 
   // Keep legacy Premium subscriptions working, but never misclassify
   // a DIRECT Stripe Price as PREMIUM if its metadata is missing or stale.

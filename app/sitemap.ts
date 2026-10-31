@@ -1,4 +1,5 @@
 import type { MetadataRoute } from "next";
+import { canViewRolloutProfessional } from "@/lib/subscriptions/direct-rollout";
 
 import { getSiteUrl } from "@/lib/site-url";
 import { createClient } from "@/lib/supabase/server";
@@ -45,7 +46,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   ];
 
   const professionalPages: MetadataRoute.Sitemap =
-    (professionals ?? []).map(
+    (professionals ?? []).filter((professional) => canViewRolloutProfessional(null, professional.user_id)).map(
       (professional) => ({
         url: `${siteUrl}/professionisti/${professional.user_id}`,
         lastModified: professional.updated_at
