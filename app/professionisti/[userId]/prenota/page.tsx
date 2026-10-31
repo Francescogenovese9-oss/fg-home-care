@@ -7,6 +7,7 @@ import {
 
 import AppointmentRequestForm from "@/components/appointments/AppointmentRequestForm";
 import { createClient } from "@/lib/supabase/server";
+import { getSupabaseAdmin } from "@/lib/supabase/admin";
 
 type PageProps = {
   params: Promise<{
@@ -90,7 +91,26 @@ export default async function BookProfessionalPage({
     notFound();
   }
 
-  const {data:pricedServices}=await supabase.from("professional_services").select("id,service_name,price_eur").eq("professional_id",userId).order("service_name");
+  // Public service policies query professional_profiles, whose RLS can hide
+  // another professional's row from a patient. Read only public price fields
+  // server-side after checking both rollout access and publication eligibility.
+  const admin = getSupabaseAdmin();
+  const { data: billingProfile, error: billingError } = await admin
+    .from("professional_profiles")
+    .select("subscription_plan")
+    .eq("user_id", userId)
+    .eq("verification_status", "APPROVED")
+    .eq("published", true)
+    .maybeSingle();
+  if (billingError) throw new Error("Impossibile verificare il professionista.");
+  if (!billingProfile) notFound();
+
+  const { data: pricedServices, error: servicesError } = await admin
+    .from("professional_services")
+    .select("id,service_name,price_eur")
+    .eq("professional_id", userId)
+    .order("service_name");
+  if (servicesError) throw new Error("Impossibile recuperare le tariffe.");
 
   const professionalName =
     [
@@ -160,6 +180,7 @@ export default async function BookProfessionalPage({
         <AppointmentRequestForm
           professionalId={data.user_id}
           bookingEnabled={canRequestAppointment(user.id, data.user_id)}
+          directPayment={billingProfile.subscription_plan === "DIRECT"}
           bookingSource={isCareGuidance ? "CARE_GUIDANCE" : "DIRECT"}
           professionalName={
             professionalName

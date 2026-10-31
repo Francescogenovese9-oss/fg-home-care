@@ -34,6 +34,7 @@ type AppointmentResponse = {
 type AppointmentRequestFormProps = {
   professionalId: string;
   bookingEnabled: boolean;
+  directPayment: boolean;
   bookingSource: "DIRECT" | "CARE_GUIDANCE";
   professionalName: string;
   homeVisits: boolean;
@@ -57,6 +58,7 @@ function getMinimumDate() {
 export default function AppointmentRequestForm({
   professionalId,
   bookingEnabled,
+  directPayment,
   bookingSource,
   professionalName,
   homeVisits,
@@ -525,7 +527,9 @@ export default function AppointmentRequestForm({
             </p>
 
             <p className="mt-2 text-xs leading-5 text-slate-500">
-              La richiesta non comporta un addebito immediato. Il pagamento sarà richiesto dopo l’accettazione del professionista.
+              {directPayment
+                ? "Piano DIRECT: il paziente paga la prestazione direttamente al professionista. Nessun pagamento della prestazione viene richiesto da FG Home Care."
+                : "La richiesta non comporta un addebito immediato. Il pagamento sarà richiesto dopo l’accettazione del professionista."}
             </p>
           </div>
 
