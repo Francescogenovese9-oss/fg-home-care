@@ -1,3 +1,6 @@
+import { saveAppointmentNotification } from "@/lib/appointments/save-notification";
+import { canRequestAppointmentForPlan, isDirectEnabledFor } from "@/lib/subscriptions/direct-rollout";
+
 import {
   NextRequest,
   NextResponse,
@@ -111,13 +114,6 @@ function addMinutesToTime(
 export async function POST(
   request: NextRequest
 ) {
-  if (process.env.NEXT_PUBLIC_TRANSACTIONS_ENABLED !== "true") {
-    return NextResponse.json(
-      { message: "Le prenotazioni e i pagamenti online saranno disponibili a breve." },
-      { status: 503, headers: { "Cache-Control": "no-store" } }
-    );
-  }
-
   try {
     /*
      * =====================================================
@@ -880,6 +876,43 @@ export async function POST(
     }
 
 
+    // The patient cannot choose payment routing. Read the persisted,
+    // server-controlled professional plan and require an active subscription.
+    const { data: billingProfessional, error: billingProfessionalError } =
+      await supabaseAdmin
+        .from("professional_profiles")
+        .select("subscription_plan, subscription_status")
+        .eq("user_id", values.professionalId)
+        .maybeSingle();
+
+    if (billingProfessionalError || !billingProfessional) {
+      return NextResponse.json(
+        { message: "Impossibile verificare il piano del professionista." },
+        { status: 503 }
+      );
+    }
+
+    if (!canRequestAppointmentForPlan(user.id, values.professionalId, billingProfessional)) {
+      return NextResponse.json(
+        { message: "Le prenotazioni online non sono ancora disponibili per questi account." },
+        { status: 503, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
+    // Never silently switch a DIRECT service to a patient Stripe charge.
+    if (
+      billingProfessional.subscription_plan === "DIRECT" &&
+      (!isDirectEnabledFor(values.professionalId) ||
+        billingProfessional.subscription_status !== "active")
+    ) {
+      return NextResponse.json(
+        { message: "Il piano DIRECT del professionista non è attualmente disponibile per le prenotazioni." },
+        { status: 409, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+
+    const directBooking = billingProfessional.subscription_plan === "DIRECT";
+
     /*
      * =====================================================
      * CREAZIONE APPUNTAMENTO
@@ -958,6 +991,13 @@ export async function POST(
 
         status:
           "PENDING",
+
+        service_payment_route: directBooking
+          ? "PAY_PROFESSIONAL_DIRECTLY"
+          : "STRIPE_PLATFORM",
+        ...(directBooking
+          ? { payment_status: "NOT_REQUIRED", commission_percent: 0 }
+          : {}),
       })
       .select(
         `
@@ -1082,11 +1122,7 @@ export async function POST(
     const {
       error:
         notificationError,
-    } = await supabaseAdmin
-      .from(
-        "notifications"
-      )
-      .insert({
+    } = await saveAppointmentNotification(supabaseAdmin, {
         user_id:
           values.professionalId,
 
@@ -1111,7 +1147,7 @@ export async function POST(
 
         read:
           false,
-      });
+      }, ["APPOINTMENT_CREATED"]);
 
     if (
       notificationError

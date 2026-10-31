@@ -57,6 +57,7 @@ type Appointment = {
 
   status: AppointmentStatus;
   payment_status: PaymentStatus;
+  service_payment_route: "STRIPE_PLATFORM" | "PAY_PROFESSIONAL_DIRECTLY" | null;
 
   currency: string | null;
 
@@ -401,6 +402,7 @@ export default async function PatientAppointmentsPage({
 
           status,
           payment_status,
+          service_payment_route,
 
           currency,
 
@@ -696,7 +698,8 @@ export default async function PatientAppointmentsPage({
         appointment.status ===
           "ACCEPTED" &&
         appointment.payment_status ===
-          "REQUIRES_PAYMENT"
+          "REQUIRES_PAYMENT" &&
+        appointment.service_payment_route !== "PAY_PROFESSIONAL_DIRECTLY"
     ).length;
 
   return (
@@ -931,6 +934,7 @@ export default async function PatientAppointmentsPage({
                    * effettivamente pagabili.
                    */
                   const showPaymentButton =
+                    appointment.service_payment_route !== "PAY_PROFESSIONAL_DIRECTLY" &&
                     appointment.status ===
                       "ACCEPTED" &&
                     (
@@ -948,8 +952,9 @@ export default async function PatientAppointmentsPage({
                   const canReview =
                     appointment.status ===
                       "COMPLETED" &&
-                    appointment.payment_status ===
-                      "PAID" &&
+                    (appointment.payment_status === "PAID" ||
+                      (appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" &&
+                       appointment.payment_status === "NOT_REQUIRED")) &&
                     !reviewedAppointmentIds.has(
                       appointment.id
                     );
@@ -1154,9 +1159,9 @@ export default async function PatientAppointmentsPage({
                                       appointment.payment_status
                                     )}`}
                                   >
-                                    {getPaymentStatusLabel(
-                                      appointment.payment_status
-                                    )}
+                                    {appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY"
+                                      ? "Pagamento diretto al professionista"
+                                      : getPaymentStatusLabel(appointment.payment_status)}
                                   </span>
 
                                   {total && (
@@ -1178,7 +1183,15 @@ export default async function PatientAppointmentsPage({
                               )}
                             </div>
 
-                            {appointment.payment_status ===
+                            {appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" &&
+                              appointment.status === "ACCEPTED" && (
+                              <p className="mt-4 text-sm leading-6 text-blue-700">
+                                Prenotazione DIRECT accettata: paga la prestazione direttamente al professionista, non su FG Home Care.
+                              </p>
+                            )}
+
+                            {appointment.service_payment_route !== "PAY_PROFESSIONAL_DIRECTLY" &&
+                              appointment.payment_status ===
                               "REQUIRES_PAYMENT" && (
                               <p className="mt-4 text-sm leading-6 text-slate-600">
                                 Il
@@ -1283,7 +1296,9 @@ export default async function PatientAppointmentsPage({
 
                             {appointment.service_type === "VIDEO_CONSULTATION" &&
                               appointment.status === "ACCEPTED" &&
-                              appointment.payment_status === "PAID" && (
+                              (appointment.payment_status === "PAID" ||
+                                (appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" &&
+                                 appointment.payment_status === "NOT_REQUIRED")) && (
                               <VideoConsultationButton
                                 appointmentId={appointment.id}
                               />
@@ -1306,7 +1321,10 @@ export default async function PatientAppointmentsPage({
                             </Link>
                           )}
 
-                          {appointment.status === "PENDING" && (
+                          {(appointment.status === "PENDING" ||
+                            (appointment.status === "ACCEPTED" &&
+                             appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" &&
+                             appointment.payment_status === "NOT_REQUIRED")) && (
                             <CancelAppointmentButton
                               appointmentId={appointment.id}
                             />

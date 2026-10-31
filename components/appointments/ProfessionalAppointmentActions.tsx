@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 type AppointmentStatus =
@@ -15,6 +15,7 @@ type ProfessionalAppointmentActionsProps = {
   currentStatus: AppointmentStatus;
   currentNotes?: string | null;
   paymentStatus: string;
+  servicePaymentRoute: string | null;
   appointmentDate: string;
   appointmentTime: string;
   durationMinutes: number;
@@ -30,6 +31,7 @@ export default function ProfessionalAppointmentActions({
   currentStatus,
   currentNotes,
   paymentStatus,
+  servicePaymentRoute,
   appointmentDate,
   appointmentTime,
   durationMinutes,
@@ -45,6 +47,14 @@ export default function ProfessionalAppointmentActions({
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] =
     useState(false);
+  const [currentTime, setCurrentTime] = useState<number | null>(null);
+
+  useEffect(() => {
+    const updateTime = () => setCurrentTime(Date.now());
+    updateTime();
+    const interval = setInterval(updateTime, 60_000);
+    return () => clearInterval(interval);
+  }, []);
 
   async function updateAppointment(
     action: "ACCEPT" | "REJECT" | "COMPLETE"
@@ -126,7 +136,9 @@ export default function ProfessionalAppointmentActions({
     }
     if (!window.confirm(paymentStatus === "PAID"
       ? "Confermi l'annullamento? Il paziente riceverà un rimborso integrale."
-      : "Confermi l'annullamento della prenotazione?")) return;
+      : servicePaymentRoute === "PAY_PROFESSIONAL_DIRECTLY"
+        ? "Confermi l'annullamento DIRECT? Eventuali somme pagate direttamente sono gestite con il paziente."
+        : "Confermi l'annullamento della prenotazione?")) return;
     setError("");
     setMessage("");
     setIsSubmitting(true);
@@ -171,7 +183,8 @@ export default function ProfessionalAppointmentActions({
 
   const paymentAllowsCompletion =
     paymentStatus === "PAID" ||
-    paymentStatus === "NOT_REQUIRED";
+    (paymentStatus === "NOT_REQUIRED" &&
+      servicePaymentRoute === "PAY_PROFESSIONAL_DIRECTLY");
 
   const canComplete =
     currentStatus === "ACCEPTED" &&
@@ -179,7 +192,8 @@ export default function ProfessionalAppointmentActions({
     Number.isInteger(durationMinutes) &&
     durationMinutes > 0 &&
     !Number.isNaN(appointmentEnd.getTime()) &&
-    Date.now() >= appointmentEnd.getTime();
+    currentTime !== null &&
+    currentTime >= appointmentEnd.getTime();
 
   return (
     <section className="mt-6 border-t border-slate-200 pt-6">
@@ -231,7 +245,9 @@ export default function ProfessionalAppointmentActions({
             Devi annullare la prestazione?
           </label>
           <p className="mt-1 text-xs leading-5 text-slate-600">
-            Indica il motivo. Se il paziente ha già pagato, è previsto il rimborso integrale.
+            {servicePaymentRoute === "PAY_PROFESSIONAL_DIRECTLY"
+              ? "Indica il motivo. Per DIRECT non è previsto un rimborso Stripe: eventuali pagamenti diretti vanno gestiti con il paziente."
+              : "Indica il motivo. Se il paziente ha già pagato sulla piattaforma, è previsto il rimborso integrale."}
           </p>
           <textarea
             id={`cancelReason-${appointmentId}`}

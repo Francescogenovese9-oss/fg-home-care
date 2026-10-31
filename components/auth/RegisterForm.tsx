@@ -31,7 +31,7 @@ type RegisterApiResponse = {
   email?: string;
 };
 
-export default function RegisterForm() {
+export default function RegisterForm({ directSelectable = false }: { directSelectable?: boolean }) {
   const router = useRouter();
 
   const [serverError, setServerError] = useState("");
@@ -341,6 +341,38 @@ export default function RegisterForm() {
                     </ul>
                   </button>
                 </div>
+
+                <div className="rounded-2xl border-2 border-emerald-200 bg-emerald-50 p-5">
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <h3 className="text-xl font-bold text-emerald-950">Piano DIRECT</h3>
+                    <span className="rounded-full bg-white px-3 py-1 text-xs font-semibold text-emerald-800">{selectedSubscriptionPlan === "DIRECT" ? "Selezionato" : directSelectable ? "Disponibile" : "In preparazione"}</span>
+                  </div>
+                  <p className="mt-3 text-sm text-emerald-950">
+                    <strong>29,90 € / mese</strong> per professionisti sanitari non medici;
+                    <strong> 49,90 € / mese</strong> per medici, previa verifica della qualifica.
+                    <strong> Zero commissioni</strong> sulle prestazioni.
+                  </p>
+                  <p className="mt-3 text-sm leading-6 text-emerald-950">
+                    Il paziente prenota tramite FG Home Care, ma paga la prestazione
+                    direttamente al professionista, fuori dalla piattaforma.
+                    FG Home Care non incassa pagamenti dai pazienti per queste prestazioni:
+                    il professionista gestisce direttamente l&apos;incasso e la fatturazione al paziente.
+                    Prenotazioni, conferme e calendario restano in piattaforma.
+                  </p>
+                  <p className="mt-3 text-xs text-emerald-900">
+                    {directSelectable
+                      ? "La scelta non attiva un abbonamento: il profilo inizia da Basic. Dopo la verifica dei documenti potrai attivare DIRECT dalla dashboard, prima di utilizzare le relative funzioni."
+                      : "DIRECT è in collaudo. Per ora puoi registrarti con Basic o Premium."}
+                  </p>
+                </div>
+
+                {directSelectable && (
+                  <button type="button" aria-pressed={selectedSubscriptionPlan === "DIRECT"}
+                    onClick={() => setValue("subscriptionPlan", "DIRECT", { shouldValidate: true, shouldDirty: true })}
+                    className="rounded-xl bg-emerald-800 px-5 py-3 text-sm font-bold text-white">
+                    {selectedSubscriptionPlan === "DIRECT" ? "DIRECT selezionato" : "Scegli DIRECT"}
+                  </button>
+                )}
 
                 <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
                   <div className="px-4 py-3">

@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { isDirectEnabledFor } from "@/lib/subscriptions/direct-rollout";
 import { redirect } from "next/navigation";
 
 import LogoutButton from "@/components/auth/LogoutButton";
@@ -156,10 +157,11 @@ export default async function ProfessionalPaymentsPage({
     );
 
   const subscriptionPlan =
-    professionalProfile.subscription_plan ===
-    "PREMIUM"
-      ? "PREMIUM"
-      : "BASIC";
+    professionalProfile.subscription_plan === "DIRECT"
+      ? "DIRECT"
+      : professionalProfile.subscription_plan === "PREMIUM"
+        ? "PREMIUM"
+        : "BASIC";
 
   const subscriptionActive =
     professionalProfile.subscription_status ===
@@ -353,13 +355,15 @@ export default async function ProfessionalPaymentsPage({
               Non è stato possibile continuare
               la configurazione Stripe.
               Riprova oppure aggiorna lo stato
-              dell'account.
+              dell&apos;account.
             </p>
           </div>
         )}
 
         <ProfessionalSubscriptionCard
           plan={subscriptionPlan}
+          directPurchaseEnabled={isDirectEnabledFor(user.id)}
+          profession={professionalProfile.profession}
           status={
             professionalProfile.subscription_status ??
             "INACTIVE"
@@ -667,7 +671,7 @@ export default async function ProfessionalPaymentsPage({
                   </p>
 
                   <p className="mt-1 text-sm leading-6 text-slate-600">
-                    Dopo l'attivazione dei
+                    Dopo l&apos;attivazione dei
                     pagamenti FG Home Care,
                     gli importi spettanti
                     saranno destinati al tuo

@@ -27,10 +27,10 @@ export async function remindAppointmentsToComplete(
   const { data: appointments, error } = await supabase
     .from("appointments")
     .select(
-      "id,professional_id,appointment_date,appointment_time,duration_minutes,status,payment_status"
+      "id,professional_id,appointment_date,appointment_time,duration_minutes,status,payment_status,service_payment_route"
     )
     .eq("status", "ACCEPTED")
-    .eq("payment_status", "PAID")
+    .or("payment_status.eq.PAID,and(payment_status.eq.NOT_REQUIRED,service_payment_route.eq.PAY_PROFESSIONAL_DIRECTLY)")
     .order("appointment_date", { ascending: true })
     .order("appointment_time", { ascending: true })
     .limit(limit);

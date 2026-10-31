@@ -33,6 +33,8 @@ type AppointmentResponse = {
 
 type AppointmentRequestFormProps = {
   professionalId: string;
+  bookingEnabled: boolean;
+  directPayment: boolean;
   bookingSource: "DIRECT" | "CARE_GUIDANCE";
   professionalName: string;
   homeVisits: boolean;
@@ -55,6 +57,8 @@ function getMinimumDate() {
 
 export default function AppointmentRequestForm({
   professionalId,
+  bookingEnabled,
+  directPayment,
   bookingSource,
   professionalName,
   homeVisits,
@@ -204,7 +208,7 @@ export default function AppointmentRequestForm({
     }
   }
 
-  if (process.env.NEXT_PUBLIC_TRANSACTIONS_ENABLED !== "true") {
+  if (!bookingEnabled) {
     return (
       <Card className="shadow-sm">
         <CardHeader><CardTitle>Prenotazioni online in arrivo</CardTitle></CardHeader>
@@ -411,7 +415,7 @@ export default function AppointmentRequestForm({
 
               <div className="space-y-2">
                 <Label htmlFor="serviceAccessNotes">
-                  Indicazioni per l'accesso
+                  Indicazioni per l&apos;accesso
                   <span className="ml-1 font-normal text-slate-500">
                     (facoltative)
                   </span>
@@ -523,14 +527,16 @@ export default function AppointmentRequestForm({
             </p>
 
             <p className="mt-2 text-xs leading-5 text-slate-500">
-              La richiesta non comporta un addebito immediato. Il pagamento sarà richiesto dopo l’accettazione del professionista.
+              {directPayment
+                ? "Piano DIRECT: il paziente paga la prestazione direttamente al professionista. Nessun pagamento della prestazione viene richiesto da FG Home Care."
+                : "La richiesta non comporta un addebito immediato. Il pagamento sarà richiesto dopo l’accettazione del professionista."}
             </p>
           </div>
 
           <div className="rounded-xl border border-blue-200 bg-blue-50 p-4">
             <label htmlFor="healthDataConsent" className="flex items-start gap-3 text-sm text-slate-800">
               <input id="healthDataConsent" type="checkbox" className="mt-1 h-5 w-5 shrink-0 accent-blue-700" {...register("healthDataConsent")} />
-              <span>Consenso esplicito per i dati relativi alla salute. Acconsento al trattamento, da parte di FG Home Care, delle informazioni sulla salute che inserisco nella richiesta, per gestire la prenotazione e trasmetterle esclusivamente al professionista scelto. Ho letto l'<a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 underline">Informativa Privacy</a>. Comprendo che posso revocare il consenso contattando il titolare, senza pregiudicare i trattamenti già effettuati. Il consenso è distinto dall'accettazione dei Termini e dall'eventuale consenso sanitario alla prestazione.</span>
+              <span>Consenso esplicito per i dati relativi alla salute. Acconsento al trattamento, da parte di FG Home Care, delle informazioni sulla salute che inserisco nella richiesta, per gestire la prenotazione e trasmetterle esclusivamente al professionista scelto. Ho letto l&apos;<a href="/privacy" target="_blank" rel="noopener noreferrer" className="font-semibold text-blue-700 underline">Informativa Privacy</a>. Comprendo che posso revocare il consenso contattando il titolare, senza pregiudicare i trattamenti già effettuati. Il consenso è distinto dall&apos;accettazione dei Termini e dall&apos;eventuale consenso sanitario alla prestazione.</span>
             </label>
             {errors.healthDataConsent && <p role="alert" className="mt-2 text-sm text-red-600">{errors.healthDataConsent.message}</p>}
           </div>

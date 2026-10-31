@@ -37,7 +37,7 @@ export const registerSchema = z
       .optional(),
     registrationNumber: z.string().optional(),
     vatNumber: z.string().optional(),
-    subscriptionPlan: z.enum(["BASIC", "PREMIUM"]).optional(),
+    subscriptionPlan: z.enum(["BASIC", "PREMIUM", "DIRECT"]).optional(),
   })
   .superRefine((data, context) => {
     if (data.email.toLowerCase() !== data.confirmEmail.toLowerCase()) {

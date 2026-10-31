@@ -139,6 +139,7 @@ export async function POST(
           professional_id,
           status,
           payment_status,
+          service_payment_route,
           appointment_date,
           appointment_time,
           subtotal_amount,
@@ -166,6 +167,13 @@ export async function POST(
             "Impossibile leggere la prenotazione.",
         },
         { status: 500 }
+      );
+    }
+
+    if (appointment?.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY") {
+      return NextResponse.json(
+        { message: "La prestazione DIRECT non è stata pagata tramite FG Home Care: nessun rimborso Stripe è disponibile." },
+        { status: 409, headers: { "Cache-Control": "no-store" } }
       );
     }
 

@@ -21,6 +21,9 @@ export async function POST(request: NextRequest) {
     }
 
     const values = validation.data;
+    if (values.role === "PROFESSIONAL" && values.subscriptionPlan === "DIRECT" && process.env.FG_DIRECT_PLAN_ENABLED !== "true") {
+      return NextResponse.json({ message: "DIRECT è in fase di collaudo e non è ancora disponibile per nuove registrazioni." }, { status: 503 });
+    }
     const supabase = await createClient();
 
     const { data, error } = await supabase.auth.signUp({
@@ -48,9 +51,10 @@ export async function POST(request: NextRequest) {
             values.role === "PROFESSIONAL"
               ? values.vatNumber || null
               : null,
+          requested_subscription_plan: values.role === "PROFESSIONAL" ? values.subscriptionPlan || "BASIC" : null,
           subscription_plan:
             values.role === "PROFESSIONAL"
-              ? values.subscriptionPlan || "BASIC"
+              ? values.subscriptionPlan === "DIRECT" ? "BASIC" : values.subscriptionPlan || "BASIC"
               : null,
         },
       },

@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import { canViewRolloutProfessional } from "@/lib/subscriptions/direct-rollout";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -184,7 +185,7 @@ async function getProfessional(
 ): Promise<
   Professional | null
 > {
-
+  if (!canViewRolloutProfessional(null, userId)) return null;
 
   const { data: eligible, error: eligibilityError } = await getSupabaseAdmin()
     .from("professional_profiles")
@@ -360,6 +361,10 @@ export default async function ProfessionalPublicPage({
     userId,
   } = await params;
 
+
+  const viewerClient = await createClient();
+  const { data: { user: viewer } } = await viewerClient.auth.getUser();
+  if (!canViewRolloutProfessional(viewer?.id, userId)) notFound();
 
   const search = await searchParams;
   const source = Array.isArray(search.source) ? search.source[0] : search.source;
@@ -826,7 +831,7 @@ export default async function ProfessionalPublicPage({
         ? encodeURIComponent(
             professional.updated_at
           )
-        : Date.now().toString();
+        : "default";
 
     avatarUrl =
       `${avatarData.publicUrl}?v=${version}`;
