@@ -36,6 +36,12 @@ export default function Footer() {
               <span aria-hidden="true">→</span>
             </Link>
             <p className="mt-3 text-xs leading-5 text-blue-100">Funzionamento, diritti e responsabilità.</p>
+            <div className="mt-3 flex flex-wrap justify-center gap-x-4 gap-y-2 text-sm underline underline-offset-4">
+              <Link href="/termini-e-condizioni">Termini e Condizioni</Link>
+              <Link href="/privacy">Privacy</Link>
+              <Link href="/condizioni-direct">Condizioni DIRECT</Link>
+              <Link href="/cookie-policy">Cookie</Link>
+            </div>
           </nav>
         </div>
         <div className="mt-8 border-t border-blue-700 pt-5 text-center text-xs text-blue-100">

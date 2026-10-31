@@ -28,7 +28,7 @@ jobs:
       - run: npm ci
       - run: npx tsc --noEmit
       - name: DIRECT regression tests
-        run: node --experimental-strip-types --test tests/direct-routing.test.mjs tests/direct-rollout.test.mjs
+        run: node --experimental-strip-types --test tests/direct-routing.test.mjs tests/direct-rollout.test.mjs tests/direct-legal-consent.test.mjs
       - name: Lint (continue to build for diagnostics)
         id: lint
         continue-on-error: true

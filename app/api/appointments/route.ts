@@ -1,4 +1,5 @@
 import { saveAppointmentNotification } from "@/lib/appointments/save-notification";
+import { PRIVACY_VERSION } from "@/lib/legal/versions";
 import { canRequestAppointmentForPlan, isDirectEnabledFor } from "@/lib/subscriptions/direct-rollout";
 
 import {
@@ -987,7 +988,7 @@ export async function POST(
           values.patientNotes ?? null,
 
         health_data_consent_at: new Date().toISOString(),
-        health_data_consent_version: "privacy-2026-10-30-v1",
+        health_data_consent_version: PRIVACY_VERSION,
 
         status:
           "PENDING",

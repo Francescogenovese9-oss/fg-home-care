@@ -4,7 +4,7 @@ import Header from "@/components/layout/Header";
 
 const pagesWithOwnHeader=[
  "/","/chi-siamo","/servizi","/videoconsulti","/contatti",
- "/privacy","/termini-e-condizioni","/carta-dei-servizi"
+ "/privacy","/termini-e-condizioni","/carta-dei-servizi","/condizioni-direct","/cookie-policy"
 ];
 export default function GlobalBrandBackBar(){
  const pathname=usePathname();

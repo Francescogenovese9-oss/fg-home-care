@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
+import { LEGAL_UPDATED_LABEL } from "@/lib/legal/versions";
 import { useRouter } from "next/navigation";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -487,6 +488,8 @@ export default function RegisterForm({ directSelectable = false }: { directSelec
                 { href: "/termini-e-condizioni", label: "Termini e Condizioni" },
                 { href: "/privacy", label: "Informativa Privacy" },
                 { href: "/carta-dei-servizi", label: "Carta dei Servizi" },
+                { href: "/condizioni-direct", label: "Condizioni DIRECT" },
+                { href: "/cookie-policy", label: "Cookie e strumenti tecnici" },
               ].map((document) => (
                 <Link
                   key={document.href}
@@ -500,7 +503,8 @@ export default function RegisterForm({ directSelectable = false }: { directSelec
               ))}
             </div>
             <p className="mt-4 text-xs leading-5 text-slate-500">
-              Termini e Informativa Privacy sono bozze da completare prima del lancio commerciale.
+              Documenti aggiornati al {LEGAL_UPDATED_LABEL}, con le condizioni del piano DIRECT.
+              L&apos;attivazione a pagamento richiede una scelta separata dopo l&apos;approvazione del profilo.
             </p>
           </section>
 

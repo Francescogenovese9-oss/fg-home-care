@@ -1,4 +1,5 @@
 import { isDirectEnabledFor } from "@/lib/subscriptions/direct-rollout";
+import { DIRECT_TERMS_VERSION, TERMS_VERSION, PRIVACY_VERSION, hasAcceptedDirectTerms } from "@/lib/legal/versions";
 import {
   NextRequest,
   NextResponse,
@@ -25,7 +26,7 @@ import { isProfession } from "@/lib/professions";
 export const runtime = "nodejs";
 
 export async function POST(
-  _request: NextRequest
+  request: NextRequest
 ) {
   try {
     const supabase =
@@ -185,6 +186,15 @@ export async function POST(
         }
       );
     }
+
+    const consent = await request.json().catch(() => null);
+    if (!hasAcceptedDirectTerms(consent)) {
+      return NextResponse.json(
+        { message: "Leggi e accetta le condizioni DIRECT aggiornate prima di continuare.", directTermsVersion: DIRECT_TERMS_VERSION },
+        { status: 400, headers: { "Cache-Control": "no-store" } }
+      );
+    }
+    const termsAcceptedAt = new Date().toISOString();
 
     // Do not open a second subscription while an existing one can
     // still recover, renew or be resumed through the Billing Portal.
@@ -380,6 +390,10 @@ export async function POST(
             `${siteUrl}/dashboard/professional/payments?direct=canceled`,
 
           metadata: {
+            fg_direct_terms_version: DIRECT_TERMS_VERSION,
+            fg_terms_version: TERMS_VERSION,
+            fg_privacy_version: PRIVACY_VERSION,
+            fg_direct_terms_accepted_at: termsAcceptedAt,
             fg_home_care_professional_id:
               user.id,
 
@@ -389,6 +403,10 @@ export async function POST(
 
           subscription_data: {
             metadata: {
+              fg_direct_terms_version: DIRECT_TERMS_VERSION,
+              fg_terms_version: TERMS_VERSION,
+              fg_privacy_version: PRIVACY_VERSION,
+              fg_direct_terms_accepted_at: termsAcceptedAt,
               fg_home_care_professional_id:
                 user.id,
 
