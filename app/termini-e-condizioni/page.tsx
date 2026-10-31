@@ -1,8 +1,14 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import Header from "@/components/layout/Header";
 import Footer from "@/components/layout/Footer";
 import { directConditions } from "@/lib/legal/direct-conditions";
 import { LEGAL_UPDATED_LABEL, TERMS_VERSION } from "@/lib/legal/versions";
+
+export const metadata: Metadata = {
+  title: "Termini e Condizioni | FG Home Care",
+  description: "Regole del servizio, responsabilità, pagamenti e condizioni del piano DIRECT attivo.",
+};
 
 const sections = [
   {"title": "Piano DIRECT — pagamento della prestazione al professionista", "text": "DIRECT è disponibile per i professionisti approvati: canone base mensile di 29,90 € per professionisti sanitari non medici o 49,90 € per le categorie di medici previste, secondo la qualifica verificata, al netto dell’IVA eventualmente dovuta. Non sono applicate commissioni FG Home Care sulle singole prestazioni DIRECT. Il paziente prenota e riceve conferma in piattaforma, ma paga la prestazione direttamente al professionista, che gestisce incasso e documentazione fiscale. FG Home Care riceve dal professionista il canone del servizio digitale. Le condizioni specifiche DIRECT, riportate anche in questa pagina e disponibili prima della sottoscrizione, disciplinano attivazione, rinnovo, disdetta e annullamenti."},
