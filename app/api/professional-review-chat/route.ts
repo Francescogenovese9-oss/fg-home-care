@@ -36,11 +36,11 @@ export async function POST(req:Request){
    // Notifications and email are dispatched server-side; never expose sensitive message content in email.
    const admin=getSupabaseAdmin();
    const {data:recipient}=await admin.from("profiles").select("email").eq("id",professionalId).maybeSingle();
-   const {error:notifyError}=await admin.from("notifications").insert({user_id:professionalId,type:"MESSAGE_RECEIVED",title:"Nuova comunicazione sulla registrazione",message:"L'amministrazione di FG Home Care ti ha inviato un messaggio.",link:"/dashboard/professional/review-chat",read:false});
+   const {error:notifyError}=await admin.from("notifications").insert({user_id:professionalId,type:"MESSAGE_RECEIVED",title:"Nuova comunicazione sulla registrazione",message:"L'amministrazione di FG Home Care ti ha inviato un messaggio.",link:"/dashboard/professional",read:false});
    if(notifyError)console.error("Review chat notification failed",notifyError);
    const apiKey=process.env.RESEND_API_KEY;
    if(apiKey && recipient?.email){
-     const result=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":`Bearer ${apiKey}`,"Content-Type":"application/json"},body:JSON.stringify({from:process.env.RESEND_FROM_EMAIL??"FG Home Care <noreply@fghomecare.it>",to:[recipient.email],subject:"FG Home Care – Nuova comunicazione sulla tua registrazione",text:"Hai ricevuto una comunicazione dall'amministrazione di FG Home Care. Accedi alla tua area riservata per leggerla: https://www.fghomecare.it/dashboard/professional/review-chat"})});
+     const result=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":`Bearer ${apiKey}`,"Content-Type":"application/json"},body:JSON.stringify({from:process.env.RESEND_FROM_EMAIL??"FG Home Care <noreply@fghomecare.it>",to:[recipient.email],subject:"FG Home Care – Nuova comunicazione sulla tua registrazione",text:"Hai ricevuto una comunicazione dall'amministrazione di FG Home Care. Accedi alla tua area riservata per leggerla: https://www.fghomecare.it/dashboard/professional"})});
      if(!result.ok)console.error("Review chat email failed",result.status);
    }else console.warn("Review chat email unavailable: missing provider configuration or recipient");
  }
