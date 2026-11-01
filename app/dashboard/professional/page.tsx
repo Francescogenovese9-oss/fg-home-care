@@ -1,3 +1,4 @@
+import ReviewChat from "@/components/professionals/ReviewChat";
 import Link from "next/link";
 import type { NotificationPreview } from "@/components/notifications/NotificationBell";
 import { redirect } from "next/navigation";
@@ -1389,6 +1390,8 @@ export default async function ProfessionalDashboardPage() {
             </Link>
           </article>
         </section>
+
+        {professionalProfile && <div className="mt-8"><ReviewChat professionalId={user.id} viewerId={user.id} open={professionalProfile.verification_status === "PENDING"} /></div>}
 
         {/* =================================================
             STRIPE + INCASSI
