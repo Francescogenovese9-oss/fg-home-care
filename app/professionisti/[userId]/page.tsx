@@ -1,5 +1,6 @@
+import { getTestProfessional } from "@/lib/subscriptions/test-professional";
 import type { Metadata } from "next";
-import { canViewRolloutProfessional } from "@/lib/subscriptions/direct-rollout";
+import { canViewRolloutProfessional, isDirectTestPair } from "@/lib/subscriptions/direct-rollout";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -370,12 +371,13 @@ export default async function ProfessionalPublicPage({
   const source = Array.isArray(search.source) ? search.source[0] : search.source;
   const isCareGuidance = source === "care";
 
+  const testBooking = Boolean(viewer && isDirectTestPair(viewer.id, userId));
   const { data: eligible, error: eligibilityError } = await getSupabaseAdmin()
     .from("professional_profiles")
     .select("user_id")
     .eq("user_id", userId)
     .eq("verification_status", "APPROVED")
-    .eq("published", true)
+    .eq("published", !testBooking)
     .maybeSingle();
   if (eligibilityError || !eligible) {
     if (eligibilityError) console.error("Errore verifica accesso profilo pubblico:", eligibilityError);
@@ -397,7 +399,7 @@ export default async function ProfessionalPublicPage({
 
     error:
       professionalError,
-  } = await supabase
+  } = testBooking && viewer ? await getTestProfessional(viewer.id, userId) : await supabase
     .from(
       "public_professionals"
     )

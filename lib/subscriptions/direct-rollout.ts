@@ -6,7 +6,7 @@ const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 function testIds(env: RolloutEnvironment) {
   const patient = env.FG_DIRECT_TEST_PATIENT_ID?.trim().toLowerCase();
   const professional = env.FG_DIRECT_TEST_PROFESSIONAL_ID?.trim().toLowerCase();
-  if (!patient || !professional || !uuid.test(patient) || !uuid.test(professional) || patient === professional) return null;
+  if (patient !== "98548773-e1f9-4d5a-a963-c1ec8c14084f" || professional !== "4a603f21-7b57-47fb-9d41-69845235cbfa" || !uuid.test(patient) || !uuid.test(professional)) return null;
   return { patient, professional };
 }
 

@@ -2,8 +2,8 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import { canRequestAppointment, canRequestAppointmentForPlan, canViewRolloutProfessional, isDirectEnabledFor, isDirectTestPair } from "../lib/subscriptions/direct-rollout.ts";
 
-const patient = "00000000-0000-4000-8000-000000000001";
-const professional = "00000000-0000-4000-8000-000000000002";
+const patient = "98548773-e1f9-4d5a-a963-c1ec8c14084f";
+const professional = "4a603f21-7b57-47fb-9d41-69845235cbfa";
 const outsider = "00000000-0000-4000-8000-000000000003";
 const now = Date.parse("2026-10-31T12:00:00Z");
 const env = {
@@ -68,4 +68,8 @@ test("a DIRECT plan cannot bypass test-account isolation or expiry", () => {
   assert.equal(canRequestAppointmentForPlan(outsider, professional, active, live, now), false);
   assert.equal(canRequestAppointmentForPlan(patient, professional, active, live, Date.parse(env.FG_DIRECT_TEST_UNTIL)), false);
   assert.equal(canRequestAppointmentForPlan(outsider, outsider, {subscription_plan: "PREMIUM", subscription_status: "active"}, {...live, NEXT_PUBLIC_TRANSACTIONS_ENABLED: "true"}, now), true);
+});
+
+ test("configuration cannot authorize a different trial pair", () => {
+  assert.equal(isDirectTestPair(outsider, professional, {...env, FG_DIRECT_TEST_PATIENT_ID: outsider}, now), false);
 });
