@@ -1,6 +1,5 @@
-import { getTestProfessional } from "@/lib/subscriptions/test-professional";
 import Link from "next/link";
-import { canRequestAppointmentForPlan, canViewRolloutProfessional, isDirectTestPair } from "@/lib/subscriptions/direct-rollout";
+import { canRequestAppointmentForPlan } from "@/lib/subscriptions/direct-rollout";
 import {
   notFound,
   redirect,
@@ -43,7 +42,6 @@ export default async function BookProfessionalPage({
     );
   }
 
-  if (!canViewRolloutProfessional(user.id, userId)) notFound();
 
   const { data: accountProfile } =
     await supabase
@@ -58,9 +56,7 @@ export default async function BookProfessionalPage({
     );
   }
 
-  const testBooking = isDirectTestPair(user.id, userId);
   const { data, error } =
-    testBooking ? await getTestProfessional(user.id, userId) :
     await supabase
       .from("public_professionals")
       .select(
@@ -103,7 +99,7 @@ export default async function BookProfessionalPage({
     .select("subscription_plan, subscription_status")
     .eq("user_id", userId)
     .eq("verification_status", "APPROVED")
-    .eq("published", !testBooking)
+    .eq("published", true)
     .maybeSingle();
   if (billingError) throw new Error("Impossibile verificare il professionista.");
   if (!billingProfile) notFound();
@@ -183,13 +179,12 @@ export default async function BookProfessionalPage({
         <AppointmentRequestForm
           professionalId={data.user_id}
           bookingEnabled={canRequestAppointmentForPlan(user.id, data.user_id, billingProfile)}
-          testBooking={testBooking}
-          directPayment={testBooking || billingProfile.subscription_plan === "DIRECT"}
+          directPayment={billingProfile.subscription_plan === "DIRECT"}
           bookingSource={isCareGuidance ? "CARE_GUIDANCE" : "DIRECT"}
           professionalName={
             professionalName
           }
-          homeVisits={!testBooking && data.home_visits}
+          homeVisits={data.home_visits}
           videoConsultations={
             data.video_consultations
           }

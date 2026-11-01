@@ -1,8 +1,6 @@
-import { parseRomeDateTime } from "@/lib/payments/cancellation-policy";
-import { getTestProfessional } from "@/lib/subscriptions/test-professional";
 import { saveAppointmentNotification } from "@/lib/appointments/save-notification";
 import { PRIVACY_VERSION } from "@/lib/legal/versions";
-import { canRequestAppointmentForPlan, isDirectEnabledFor, isDirectTestPair } from "@/lib/subscriptions/direct-rollout";
+import { canRequestAppointmentForPlan, isDirectEnabledFor } from "@/lib/subscriptions/direct-rollout";
 
 import {
   NextRequest,
@@ -322,17 +320,13 @@ export async function POST(
      * =====================================================
      */
 
-    const testBooking = isDirectTestPair(user.id, values.professionalId);
-    if (testBooking && values.serviceType !== "VIDEO_CONSULTATION") {
-      return NextResponse.json({ message: "Il collaudo consente solo videoconsulti." }, { status: 403 });
-    }
     const {
       data:
         professional,
 
       error:
         professionalError,
-    } = testBooking ? await getTestProfessional(user.id, values.professionalId) : await supabase
+    } = await supabase
       .from(
         "public_professionals"
       )
@@ -397,7 +391,8 @@ export async function POST(
     if (
       professional.verification_status !==
         "APPROVED" ||
-      (!testBooking && professional.published !== true)
+      professional.published !==
+        true
     ) {
       return NextResponse.json(
         {
@@ -488,11 +483,6 @@ export async function POST(
           status: 400,
         }
       );
-    }
-
-    if (testBooking && !isDirectTestPair(user.id, values.professionalId, process.env,
-      parseRomeDateTime(values.appointmentDate, values.appointmentTime).getTime() + values.durationMinutes * 60_000)) {
-      return NextResponse.json({ message: "Il videoconsulto deve terminare prima della scadenza del collaudo." }, { status: 400 });
     }
 
     /*
@@ -922,7 +912,7 @@ export async function POST(
       );
     }
 
-    const directBooking = testBooking || billingProfessional.subscription_plan === "DIRECT";
+    const directBooking = billingProfessional.subscription_plan === "DIRECT";
 
     /*
      * =====================================================

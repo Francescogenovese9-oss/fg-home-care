@@ -1,43 +1,11 @@
-/** Server-side rollout policy. Never use user metadata, email or request data as an allowlist. */
+/** Server-controlled rollout. No account-specific exemptions. */
 type RolloutEnvironment = Record<string, string | undefined>;
 
-const uuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function testIds(env: RolloutEnvironment) {
-  const patient = env.FG_DIRECT_TEST_PATIENT_ID?.trim().toLowerCase();
-  const professional = env.FG_DIRECT_TEST_PROFESSIONAL_ID?.trim().toLowerCase();
-  if (patient !== "98548773-e1f9-4d5a-a963-c1ec8c14084f" || professional !== "4a603f21-7b57-47fb-9d41-69845235cbfa" || !uuid.test(patient) || !uuid.test(professional)) return null;
-  return { patient, professional };
-}
-
-export function isDirectTestPair(patientId: string, professionalId: string, env: RolloutEnvironment = process.env, now = Date.now()) {
-  const ids = testIds(env);
-  const until = Date.parse(env.FG_DIRECT_TEST_UNTIL ?? "");
-  return Boolean(ids && Number.isFinite(until) && now < until &&
-    patientId.toLowerCase() === ids.patient && professionalId.toLowerCase() === ids.professional);
-}
-
-export function isDirectEnabledFor(professionalId: string, env: RolloutEnvironment = process.env, now = Date.now()) {
-  const ids = testIds(env);
-  // Test accounts expire even after the public rollout is enabled.
-  if (ids && professionalId.toLowerCase() === ids.professional) {
-    return isDirectTestPair(ids.patient, professionalId, env, now);
-  }
+export function isDirectEnabledFor(_professionalId: string, env: RolloutEnvironment = process.env) {
   return env.FG_DIRECT_PLAN_ENABLED === "true";
 }
 
-export function canViewRolloutProfessional(viewerId: string | null | undefined, professionalId: string, env: RolloutEnvironment = process.env, now = Date.now()) {
-  const ids = testIds(env);
-  if (!ids || professionalId.toLowerCase() !== ids.professional) return true;
-  return Boolean(viewerId && (viewerId.toLowerCase() === ids.professional ||
-    isDirectTestPair(viewerId, professionalId, env, now)));
-}
-
-export function canRequestAppointment(patientId: string, professionalId: string, env: RolloutEnvironment = process.env, now = Date.now()) {
-  const ids = testIds(env);
-  if (ids && (patientId.toLowerCase() === ids.patient || professionalId.toLowerCase() === ids.professional)) {
-    return isDirectTestPair(patientId, professionalId, env, now);
-  }
+export function canRequestAppointment(_patientId: string, _professionalId: string, env: RolloutEnvironment = process.env) {
   return env.NEXT_PUBLIC_TRANSACTIONS_ENABLED === "true";
 }
 
@@ -47,13 +15,8 @@ export function canRequestAppointmentForPlan(
   professionalId: string,
   plan: { subscription_plan: string | null; subscription_status: string | null },
   env: RolloutEnvironment = process.env,
-  now = Date.now(),
 ) {
-  const ids = testIds(env);
-  if (ids && (patientId.toLowerCase() === ids.patient || professionalId.toLowerCase() === ids.professional)) {
-    return isDirectTestPair(patientId, professionalId, env, now);
-  }
-  return canRequestAppointment(patientId, professionalId, env, now) ||
+  return canRequestAppointment(patientId, professionalId, env) ||
     (plan.subscription_plan === "DIRECT" && plan.subscription_status === "active" &&
-      isDirectEnabledFor(professionalId, env, now));
+      isDirectEnabledFor(professionalId, env));
 }

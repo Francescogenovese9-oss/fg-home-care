@@ -1,4 +1,3 @@
-import { canViewRolloutProfessional } from "@/lib/subscriptions/direct-rollout";
 import {
   NextRequest,
   NextResponse,
@@ -131,10 +130,6 @@ export async function POST(
           status: 403,
         }
       );
-    }
-
-    if (!canViewRolloutProfessional(appointment.patient_id, appointment.professional_id)) {
-      return NextResponse.json({ message: "Collaudo scaduto o non autorizzato." }, { status: 403 });
     }
 
     if (

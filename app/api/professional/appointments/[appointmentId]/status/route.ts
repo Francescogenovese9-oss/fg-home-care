@@ -1,6 +1,6 @@
 import { saveAppointmentNotification } from "@/lib/appointments/save-notification";
 import { getDecisionPaymentStatus } from "@/lib/payments/service-payment-route";
-import { canViewRolloutProfessional, isDirectEnabledFor, isDirectTestPair } from "@/lib/subscriptions/direct-rollout";
+import { isDirectEnabledFor } from "@/lib/subscriptions/direct-rollout";
 import {
   parseRomeDateTime,
 } from "@/lib/payments/cancellation-policy";
@@ -330,7 +330,6 @@ export async function PATCH(
           id,
           patient_id,
           professional_id,
-          service_type,
           status,
           payment_status,
           service_payment_route,
@@ -613,18 +612,10 @@ export async function PATCH(
      * =====================================================
      */
 
-    if (!canViewRolloutProfessional(appointment.patient_id, user.id)) {
-      return NextResponse.json({ message: "Appuntamento di collaudo non accessibile." }, { status: 403 });
-    }
-
     // DIRECT bookings do not require a patient payment on the platform.
     // Read the professional plan from the server and verify the active subscription.
     // Preserve legacy NOT_REQUIRED behavior for older appointments.
-    const testBooking = isDirectTestPair(appointment.patient_id, appointment.professional_id) &&
-      appointment.service_type === "VIDEO_CONSULTATION" &&
-      appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" &&
-      appointment.payment_status === "NOT_REQUIRED";
-    let directBooking = testBooking;
+    let directBooking = false;
     if (action === "ACCEPT") {
       const adminForPlan = getSupabaseAdmin();
       const { data: professionalPlan, error: planError } = await adminForPlan
@@ -642,7 +633,7 @@ export async function PATCH(
 
       // Never reclassify the booking based on a later subscription change.
       if (
-        appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" && !testBooking &&
+        appointment.service_payment_route === "PAY_PROFESSIONAL_DIRECTLY" &&
         (professionalPlan.subscription_plan !== "DIRECT" ||
           professionalPlan.subscription_status !== "active" ||
           !isDirectEnabledFor(user.id))
@@ -663,7 +654,7 @@ export async function PATCH(
         );
       }
 
-      if (professionalPlan.subscription_plan === "DIRECT" && !testBooking) {
+      if (professionalPlan.subscription_plan === "DIRECT") {
         if (
           !isDirectEnabledFor(user.id) ||
           professionalPlan.subscription_status !== "active" ||

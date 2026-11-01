@@ -33,7 +33,6 @@ type AppointmentResponse = {
 
 type AppointmentRequestFormProps = {
   professionalId: string;
-  testBooking?: boolean;
   bookingEnabled: boolean;
   directPayment: boolean;
   bookingSource: "DIRECT" | "CARE_GUIDANCE";
@@ -58,7 +57,6 @@ function getMinimumDate() {
 
 export default function AppointmentRequestForm({
   professionalId,
-  testBooking = false,
   bookingEnabled,
   directPayment,
   bookingSource,
@@ -529,7 +527,7 @@ export default function AppointmentRequestForm({
             </p>
 
             <p className="mt-2 text-xs leading-5 text-slate-500">
-              {testBooking ? "Collaudo privato gratuito: nessun pagamento, checkout o addebito. Il professionista deve accettare la richiesta." : directPayment
+              {directPayment
                 ? "Piano DIRECT: il paziente paga la prestazione direttamente al professionista. Nessun pagamento della prestazione viene richiesto da FG Home Care."
                 : "La richiesta non comporta un addebito immediato. Il pagamento sarà richiesto dopo l’accettazione del professionista."}
             </p>

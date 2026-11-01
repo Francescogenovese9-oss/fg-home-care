@@ -1,6 +1,4 @@
-import { getTestProfessional } from "@/lib/subscriptions/test-professional";
 import type { Metadata } from "next";
-import { canViewRolloutProfessional, isDirectTestPair } from "@/lib/subscriptions/direct-rollout";
 
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -186,7 +184,6 @@ async function getProfessional(
 ): Promise<
   Professional | null
 > {
-  if (!canViewRolloutProfessional(null, userId)) return null;
 
   const { data: eligible, error: eligibilityError } = await getSupabaseAdmin()
     .from("professional_profiles")
@@ -363,21 +360,17 @@ export default async function ProfessionalPublicPage({
   } = await params;
 
 
-  const viewerClient = await createClient();
-  const { data: { user: viewer } } = await viewerClient.auth.getUser();
-  if (!canViewRolloutProfessional(viewer?.id, userId)) notFound();
 
   const search = await searchParams;
   const source = Array.isArray(search.source) ? search.source[0] : search.source;
   const isCareGuidance = source === "care";
 
-  const testBooking = Boolean(viewer && isDirectTestPair(viewer.id, userId));
   const { data: eligible, error: eligibilityError } = await getSupabaseAdmin()
     .from("professional_profiles")
     .select("user_id")
     .eq("user_id", userId)
     .eq("verification_status", "APPROVED")
-    .eq("published", !testBooking)
+    .eq("published", true)
     .maybeSingle();
   if (eligibilityError || !eligible) {
     if (eligibilityError) console.error("Errore verifica accesso profilo pubblico:", eligibilityError);
@@ -399,7 +392,7 @@ export default async function ProfessionalPublicPage({
 
     error:
       professionalError,
-  } = testBooking && viewer ? await getTestProfessional(viewer.id, userId) : await supabase
+  } = await supabase
     .from(
       "public_professionals"
     )
