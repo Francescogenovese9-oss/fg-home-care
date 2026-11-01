@@ -18,8 +18,8 @@ export default function ChiSiamoPage() {
 
       <main>
         <section className="relative overflow-hidden bg-gradient-to-br from-blue-50 via-white to-sky-50">
-          <div className="absolute -right-32 top-10 h-96 w-96 rounded-full bg-blue-100/50 blur-3xl" />
-          <div className="absolute -left-32 bottom-0 h-80 w-80 rounded-full bg-sky-100/50 blur-3xl" />
+          <div aria-hidden="true" className="pointer-events-none absolute -right-32 top-10 h-96 w-96 rounded-full bg-[radial-gradient(circle,rgba(219,234,254,0.65)_0%,transparent_72%)]" />
+          <div aria-hidden="true" className="pointer-events-none absolute -left-32 bottom-0 h-80 w-80 rounded-full bg-[radial-gradient(circle,rgba(224,242,254,0.65)_0%,transparent_72%)]" />
 
           <div className="relative mx-auto grid max-w-7xl items-center gap-14 px-6 py-20 lg:grid-cols-[1.05fr_0.95fr] lg:py-24">
             <div>
