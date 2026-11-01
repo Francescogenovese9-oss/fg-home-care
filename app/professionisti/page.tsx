@@ -1,3 +1,4 @@
+import { getTestProfessional } from "@/lib/subscriptions/test-professional";
 import type { Metadata } from "next";
 import { canViewRolloutProfessional } from "@/lib/subscriptions/direct-rollout";
 
@@ -221,6 +222,10 @@ export default async function ProfessionalsPage({
 
   // Difesa aggiuntiva: la vista pubblica non deve essere l'unico controllo.
   const { data: { user: viewer } } = await supabase.auth.getUser();
+  const trialProfessionalId = process.env.FG_DIRECT_TEST_PROFESSIONAL_ID ?? "";
+  const trialProfessional = viewer
+    ? (await getTestProfessional(viewer.id, trialProfessionalId)).data
+    : null;
   const candidates = ((professionalsData ?? []) as PublicProfessional[]).filter(
     (professional) => canViewRolloutProfessional(viewer?.id, professional.user_id)
   );
@@ -634,6 +639,23 @@ export default async function ProfessionalsPage({
           </p>
         </div>
       </section>
+
+      {trialProfessional && (
+        <section aria-label="Videoconsulto di prova" className="mx-auto max-w-7xl px-6 pt-8">
+          <div className="rounded-2xl border border-blue-200 bg-white p-6 shadow-sm">
+            <p className="text-sm font-semibold text-blue-700">Collaudo privato · gratuito</p>
+            <h2 className="mt-2 text-2xl font-bold text-slate-900">
+              {[trialProfessional.first_name, trialProfessional.last_name].filter(Boolean).join(" ") || "Professionista di prova"}
+            </h2>
+            <p className="mt-2 text-slate-600">{trialProfessional.profession} · Profilo approvato · Videoconsulto abilitato</p>
+            <p className="mt-2 text-sm text-slate-600">Scheda riservata al tuo account per la prova. Nessun pagamento o addebito richiesto.</p>
+            <Link href={`/professionisti/${trialProfessional.user_id}/prenota`}
+              className="mt-5 inline-flex rounded-xl bg-blue-700 px-5 py-3 font-semibold text-white hover:bg-blue-800">
+              Prenota il videoconsulto di prova
+            </Link>
+          </div>
+        </section>
+      )}
 
         {isCareGuidance && (
           <>
