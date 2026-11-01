@@ -1,3 +1,4 @@
+import ReviewChat from "@/components/professionals/ReviewChat";
 import Link from "next/link";
 import { notFound, redirect } from "next/navigation";
 
@@ -403,6 +404,7 @@ export default async function ProfessionalReviewPage({
           ← Torna all’elenco
         </Link>
 
+        <div className="mt-8"><ReviewChat professionalId={userId} viewerId={adminUser.id} open={professionalProfile.verification_status === "PENDING"} /></div>
         <section className="mt-8 rounded-2xl bg-white p-8 shadow-sm">
           <div className="flex flex-col gap-6 md:flex-row md:items-center">
             {avatarUrl ? (
