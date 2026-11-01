@@ -38,11 +38,11 @@ export async function POST(req:Request){
    const {data:recipient}=await admin.from("profiles").select("email").eq("id",professionalId).maybeSingle();
    const {error:notifyError}=await admin.from("notifications").insert({user_id:professionalId,type:"MESSAGE_RECEIVED",title:"Nuova comunicazione sulla registrazione",message:"L'amministrazione di FG Home Care ti ha inviato un messaggio.",link:"/dashboard/professional",read:false});
    if(notifyError)console.error("Review chat notification failed",notifyError);
-   const apiKey=process.env.RESEND_API_KEY;
+   const apiKey=process.env.BREVO_API_KEY;
    if(apiKey && recipient?.email){
-     const result=await fetch("https://api.resend.com/emails",{method:"POST",headers:{"Authorization":`Bearer ${apiKey}`,"Content-Type":"application/json"},body:JSON.stringify({from:process.env.RESEND_FROM_EMAIL??"FG Home Care <noreply@fghomecare.it>",to:[recipient.email],subject:"FG Home Care – Nuova comunicazione sulla tua registrazione",text:"Hai ricevuto una comunicazione dall'amministrazione di FG Home Care. Accedi alla tua area riservata per leggerla: https://www.fghomecare.it/dashboard/professional"})});
+     const result=await fetch("https://api.brevo.com/v3/smtp/email",{method:"POST",headers:{"api-key":apiKey,"Content-Type":"application/json"},body:JSON.stringify({sender:{name:process.env.BREVO_SENDER_NAME??"FG Home Care",email:process.env.BREVO_SENDER_EMAIL},to:[{email:recipient.email}],subject:"FG Home Care – Nuova comunicazione sulla tua registrazione",textContent:"Hai ricevuto una comunicazione dall'amministrazione di FG Home Care. Accedi alla tua area riservata per leggerla: https://www.fghomecare.it/dashboard/professional"})});
      if(!result.ok)console.error("Review chat email failed",result.status);
-   }else console.warn("Review chat email unavailable: missing provider configuration or recipient");
+   }else console.warn("Review chat email unavailable: missing Brevo configuration or recipient");
  }
  return NextResponse.json({id:message.id},{status:201});
 }
